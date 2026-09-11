@@ -1,0 +1,1207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sorting · DSA Field Notes</title>
+<meta name="description" content="Insertion sort, merge sort, quick sort, bucket sort - step-by-step diagrams, stability, tested Python, Big-O, mistakes, practice, self-check.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arr"/></marker>
+    <marker id="arrNew" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrNew"/></marker>
+    <marker id="arrOld" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrOld"/></marker>
+    <marker id="arrCur" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrCur"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="site-head">
+  <a class="brand" href="../index.html">DSA <span>Field Notes</span></a>
+  <div class="crumbs"><a href="../index.html">Course map</a> <span>/</span> <span>04 Sorting</span></div>
+</header>
+<header class="top">
+  <div class="eyebrow">NeetCode · DSA for Beginners · Lessons 10-13</div>
+  <h1>Sorting Field Notes</h1>
+  <p class="lede">Insertion sort, merge sort, quick sort, bucket sort. Each one traced on the exact arrays from the videos, with every swap drawn. After this page you can write all four from memory, say their Big-O, and explain which one to pick and why.</p>
+</header>
+
+<nav class="sections" aria-label="Sections">
+  <a href="#why">Why</a>
+  <a href="#insertion">Insertion</a>
+  <a href="#merge">Merge</a>
+  <a href="#quick">Quick</a>
+  <a href="#bucket">Bucket</a>
+  <a href="#patterns">Patterns</a>
+  <a href="#complexity">Big-O</a>
+  <a href="#mistakes">Mistakes</a>
+  <a href="#practice">Practice</a>
+  <a href="#quiz">Self-check</a>
+</nav>
+
+<!-- ============================ WHY ============================ -->
+<section id="why">
+  <h2><span class="num">0</span>Why four sorts, not one</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>Sorting a hand of five playing cards: you pick up each new card and slide it left until it fits. That is <strong>insertion sort</strong>. Sorting a full deck of 52: you split it into two piles, give one to a friend, each of you sorts a half, then you merge the two sorted piles. That is <strong>merge sort</strong>. Same job, different tool, because the size of the job changed.</p>
+  </div>
+
+  <p><dfn>Sorting</dfn> means "rearrange a list so each item is less than or equal to the next one". Every sort in this topic is built from two moves: <em>compare</em> two values, and <em>move</em> a value. The four algorithms differ in <em>which</em> values they compare and <em>how far</em> they move them. That choice decides the running time, the memory used, and whether equal items keep their original order.</p>
+
+  <figure>
+    <svg viewBox="0 0 700 190" role="img" aria-label="Four panels: insertion sort grows a sorted part one item at a time; merge sort splits and merges halves; quick sort partitions around a pivot; bucket sort counts values and writes them back.">
+      <!-- panel 1: insertion -->
+      <text x="12" y="20" class="t ptrlab">INSERTION</text>
+      <rect x="10" y="42" width="103" height="42" class="mem"/>
+      <rect x="12" y="46" width="34" height="34" class="nd"/><text x="29" y="68" class="t" text-anchor="middle">2</text>
+      <rect x="46" y="46" width="34" height="34" class="nd"/><text x="63" y="68" class="t" text-anchor="middle">3</text>
+      <rect x="80" y="46" width="34" height="34" class="nd"/><text x="97" y="68" class="t" text-anchor="middle">4</text>
+      <rect x="114" y="46" width="34" height="34" class="nd newnd"/><text x="131" y="68" class="t" text-anchor="middle">1</text>
+      <path d="M131,44 C 131,26 20,26 14,42" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="12" y="104" class="t small">sorted part</text>
+      <text x="12" y="126" class="t small">take the next item,</text>
+      <text x="12" y="140" class="t small">slide it left into place</text>
+      <text x="12" y="164" class="t small">O(n²) · stable · in place</text>
+
+      <!-- panel 2: merge -->
+      <text x="182" y="20" class="t ptrlab">MERGE</text>
+      <rect x="182" y="40" width="28" height="26" class="nd"/><text x="196" y="58" class="t mono" text-anchor="middle">2</text>
+      <rect x="210" y="40" width="28" height="26" class="nd"/><text x="224" y="58" class="t mono" text-anchor="middle">3</text>
+      <rect x="238" y="40" width="28" height="26" class="nd"/><text x="252" y="58" class="t mono" text-anchor="middle">4</text>
+      <rect x="282" y="40" width="28" height="26" class="nd"/><text x="296" y="58" class="t mono" text-anchor="middle">1</text>
+      <rect x="310" y="40" width="28" height="26" class="nd"/><text x="324" y="58" class="t mono" text-anchor="middle">6</text>
+      <path d="M224,68 L 246,90" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M310,68 L 288,90" class="ptr newp" marker-end="url(#arrNew)"/>
+      <rect x="196" y="92" width="28" height="26" class="nd newnd"/><text x="210" y="110" class="t mono" text-anchor="middle">1</text>
+      <rect x="224" y="92" width="28" height="26" class="nd newnd"/><text x="238" y="110" class="t mono" text-anchor="middle">2</text>
+      <rect x="252" y="92" width="28" height="26" class="nd newnd"/><text x="266" y="110" class="t mono" text-anchor="middle">3</text>
+      <rect x="280" y="92" width="28" height="26" class="nd newnd"/><text x="294" y="110" class="t mono" text-anchor="middle">4</text>
+      <rect x="308" y="92" width="28" height="26" class="nd newnd"/><text x="322" y="110" class="t mono" text-anchor="middle">6</text>
+      <text x="182" y="140" class="t small">split in halves, merge</text>
+      <text x="182" y="154" class="t small">two sorted halves</text>
+      <text x="182" y="176" class="t small">O(n log n) · stable · O(n) extra</text>
+
+      <!-- panel 3: quick -->
+      <text x="356" y="20" class="t ptrlab">QUICK</text>
+      <rect x="356" y="46" width="30" height="30" class="nd"/><text x="371" y="66" class="t mono" text-anchor="middle">2</text>
+      <rect x="386" y="46" width="30" height="30" class="nd"/><text x="401" y="66" class="t mono" text-anchor="middle">1</text>
+      <rect x="416" y="46" width="30" height="30" class="nd newnd"/><text x="431" y="66" class="t mono" text-anchor="middle">3</text>
+      <rect x="446" y="46" width="30" height="30" class="nd"/><text x="461" y="66" class="t mono" text-anchor="middle">6</text>
+      <rect x="476" y="46" width="30" height="30" class="nd"/><text x="491" y="66" class="t mono" text-anchor="middle">4</text>
+      <text x="386" y="96" class="t small" text-anchor="middle">&lt; pivot</text>
+      <text x="431" y="96" class="t newlab" text-anchor="middle" font-size="11">pivot</text>
+      <text x="476" y="96" class="t small" text-anchor="middle">&gt; pivot</text>
+      <text x="356" y="126" class="t small">partition around a pivot,</text>
+      <text x="356" y="140" class="t small">recurse on both sides</text>
+      <text x="356" y="164" class="t small">O(n log n) avg, O(n²) worst</text>
+      <text x="356" y="178" class="t small">not stable, in place</text>
+
+      <!-- panel 4: bucket -->
+      <text x="530" y="20" class="t ptrlab">BUCKET</text>
+      <text x="545" y="38" class="t small" text-anchor="middle">0</text>
+      <text x="575" y="38" class="t small" text-anchor="middle">1</text>
+      <text x="605" y="38" class="t small" text-anchor="middle">2</text>
+      <rect x="530" y="42" width="30" height="26" class="nd"/><text x="545" y="60" class="t mono" text-anchor="middle">2</text>
+      <rect x="560" y="42" width="30" height="26" class="nd"/><text x="575" y="60" class="t mono" text-anchor="middle">1</text>
+      <rect x="590" y="42" width="30" height="26" class="nd"/><text x="605" y="60" class="t mono" text-anchor="middle">3</text>
+      <text x="632" y="60" class="t small">counts</text>
+      <path d="M575,70 L 575,88" class="ptr newp" marker-end="url(#arrNew)"/>
+      <rect x="530" y="92" width="26" height="26" class="nd newnd"/><text x="543" y="110" class="t mono" text-anchor="middle">0</text>
+      <rect x="556" y="92" width="26" height="26" class="nd newnd"/><text x="569" y="110" class="t mono" text-anchor="middle">0</text>
+      <rect x="582" y="92" width="26" height="26" class="nd newnd"/><text x="595" y="110" class="t mono" text-anchor="middle">1</text>
+      <rect x="608" y="92" width="26" height="26" class="nd newnd"/><text x="621" y="110" class="t mono" text-anchor="middle">2</text>
+      <rect x="634" y="92" width="26" height="26" class="nd newnd"/><text x="647" y="110" class="t mono" text-anchor="middle">2</text>
+      <rect x="660" y="92" width="26" height="26" class="nd newnd"/><text x="673" y="110" class="t mono" text-anchor="middle">2</text>
+      <text x="530" y="140" class="t small">count each value,</text>
+      <text x="530" y="154" class="t small">write them back in order</text>
+      <text x="530" y="176" class="t small">O(n) · small known range</text>
+    </svg>
+    <figcaption><b>Four ways to answer the same question.</b> Insertion sort is the one you do by hand. Merge and quick sort are <dfn>divide and conquer</dfn>: split the problem, solve the parts, combine. Bucket sort does not compare at all; it counts. Orange marks the cells that were just written.</figcaption>
+  </figure>
+
+  <p>The videos build the algorithms in this order because each one fixes a weakness of the one before. Insertion sort is simple but O(n²). Merge sort is O(n log n) always, but needs extra memory. Quick sort is O(n log n) on average with no extra memory, but can degrade to O(n²). Bucket sort is O(n), but only when the values live in a small, known range.</p>
+</section>
+
+<!-- ============================ INSERTION ============================ -->
+<section id="insertion">
+  <h2><span class="num">1</span>Insertion sort</h2>
+  <p>Simple, easy to implement and understand. Not efficient for large data sets. It is the sort to learn first because the idea of a <em>sorted portion that grows</em> shows up again in merge sort.</p>
+
+  <h3>The idea: a sorted part that grows by one</h3>
+  <p>Given <code>[2,3,4,1,6]</code>, the goal is <code>[1,2,3,4,6]</code>. Insertion sort sorts <em>portions</em> of the array at a time. An array of size 1 is already sorted (there is nothing to compare it with). So we assume the first element is sorted: it is its own subarray. The next subarray is size 2 from the start, <code>[2,3,...]</code>: compare the two. Then size 3, and so on, until the sorted portion is the whole array.</p>
+  <p>For the full array we need two pointers, <code>i</code> and <code>j</code>:</p>
+  <ul>
+    <li><code>i</code> points at the element we are currently inserting into the sorted portion.</li>
+    <li><code>j</code> starts one index to the left of <code>i</code>.</li>
+    <li>Goal: find the position where <code>arr[i]</code> should be inserted into the sorted portion.</li>
+    <li>Keep swapping it with <code>arr[j]</code> until we find the correct position; after each swap shift <code>j</code> left by 1.</li>
+    <li>Stop once the element is greater than or equal to the element to its left.</li>
+  </ul>
+
+<pre><code><span class="k">def</span> insertionSort(arr):
+    <span class="c"># Traverse through 1 to len(arr)</span>
+    <span class="k">for</span> i <span class="k">in</span> range(<span class="s">1</span>, len(arr)):
+        j = i - <span class="s">1</span>
+        <span class="k">while</span> j &gt;= <span class="s">0</span> <span class="k">and</span> arr[j + <span class="s">1</span>] &lt; arr[j]:
+            <span class="c"># arr[j] and arr[j + 1] are out of order so swap them</span>
+            tmp = arr[j + <span class="s">1</span>]
+            arr[j + <span class="s">1</span>] = arr[j]
+            arr[j] = tmp
+            j -= <span class="s">1</span>
+    <span class="k">return</span> arr</code></pre>
+
+  <p>The three <code>tmp</code> lines are NeetCode's swap. In Python you write the same thing as one line: <code>arr[j], arr[j+1] = arr[j+1], arr[j]</code>. Both versions are tested.</p>
+
+<pre><code><span class="k">def</span> insertion_sort_py(arr):
+    <span class="k">for</span> i <span class="k">in</span> range(<span class="s">1</span>, len(arr)):
+        j = i - <span class="s">1</span>
+        <span class="k">while</span> j &gt;= <span class="s">0</span> <span class="k">and</span> arr[j + <span class="s">1</span>] &lt; arr[j]:
+            arr[j], arr[j + <span class="s">1</span>] = arr[j + <span class="s">1</span>], arr[j]   <span class="c"># tuple swap, no tmp</span>
+            j -= <span class="s">1</span>
+    <span class="k">return</span> arr</code></pre>
+
+  <p>Note the condition <code>arr[j + 1] &lt; arr[j]</code>. <code>arr[j + 1]</code> is the element we are inserting; it moves left one slot per swap, so its index is always <code>j + 1</code>. This works on any data type as long as two values can be compared: numbers, strings, tuples. Insertion sort is easier to write iteratively; the next two sorts are recursive.</p>
+
+  <figure>
+    <svg viewBox="0 0 660 270" role="img" aria-label="Pass i equals 3 of insertion sort on 2 3 4 1 6. The value 1 is swapped left three times, j moving from 2 to 1 to 0 to minus 1, until the sorted part becomes 1 2 3 4.">
+      <!-- row 0: start of pass i=3 -->
+      <text x="20" y="53" class="t mono">pass i=3</text>
+      <text x="200" y="22" class="t small" text-anchor="middle">sorted so far</text>
+      <rect x="147" y="27" width="147" height="42" class="mem"/>
+      <text x="270" y="22" class="t ptrlab" text-anchor="middle">j</text>
+      <text x="318" y="22" class="t newlab" text-anchor="middle">i</text>
+      <rect x="150" y="30" width="48" height="36" class="nd"/><text x="174" y="53" class="t" text-anchor="middle">2</text>
+      <rect x="198" y="30" width="48" height="36" class="nd"/><text x="222" y="53" class="t" text-anchor="middle">3</text>
+      <rect x="246" y="30" width="48" height="36" class="nd"/><text x="270" y="53" class="t" text-anchor="middle">4</text>
+      <rect x="294" y="30" width="48" height="36" class="nd newnd"/><text x="318" y="53" class="t" text-anchor="middle">1</text>
+      <rect x="342" y="30" width="48" height="36" class="nd"/><text x="366" y="53" class="t" text-anchor="middle">6</text>
+      <path d="M318,68 C 318,84 270,84 270,68" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="410" y="53" class="t small">1 &lt; 4 → swap ①, j → 1</text>
+
+      <!-- row 1 -->
+      <text x="20" y="111" class="t mono">j=1</text>
+      <text x="222" y="80" class="t ptrlab" text-anchor="middle">j</text>
+      <rect x="150" y="88" width="48" height="36" class="nd"/><text x="174" y="111" class="t" text-anchor="middle">2</text>
+      <rect x="198" y="88" width="48" height="36" class="nd"/><text x="222" y="111" class="t" text-anchor="middle">3</text>
+      <rect x="246" y="88" width="48" height="36" class="nd newnd"/><text x="270" y="111" class="t" text-anchor="middle">1</text>
+      <rect x="294" y="88" width="48" height="36" class="nd"/><text x="318" y="111" class="t" text-anchor="middle">4</text>
+      <rect x="342" y="88" width="48" height="36" class="nd"/><text x="366" y="111" class="t" text-anchor="middle">6</text>
+      <path d="M270,126 C 270,142 222,142 222,126" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="410" y="111" class="t small">1 &lt; 3 → swap ②, j → 0</text>
+
+      <!-- row 2 -->
+      <text x="20" y="169" class="t mono">j=0</text>
+      <text x="174" y="138" class="t ptrlab" text-anchor="middle">j</text>
+      <rect x="150" y="146" width="48" height="36" class="nd"/><text x="174" y="169" class="t" text-anchor="middle">2</text>
+      <rect x="198" y="146" width="48" height="36" class="nd newnd"/><text x="222" y="169" class="t" text-anchor="middle">1</text>
+      <rect x="246" y="146" width="48" height="36" class="nd"/><text x="270" y="169" class="t" text-anchor="middle">3</text>
+      <rect x="294" y="146" width="48" height="36" class="nd"/><text x="318" y="169" class="t" text-anchor="middle">4</text>
+      <rect x="342" y="146" width="48" height="36" class="nd"/><text x="366" y="169" class="t" text-anchor="middle">6</text>
+      <path d="M222,184 C 222,200 174,200 174,184" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="410" y="169" class="t small">1 &lt; 2 → swap ③, j → -1</text>
+
+      <!-- row 3 -->
+      <text x="20" y="227" class="t mono">j=-1</text>
+      <rect x="147" y="201" width="195" height="42" class="mem"/>
+      <rect x="150" y="204" width="48" height="36" class="nd newnd"/><text x="174" y="227" class="t" text-anchor="middle">1</text>
+      <rect x="198" y="204" width="48" height="36" class="nd"/><text x="222" y="227" class="t" text-anchor="middle">2</text>
+      <rect x="246" y="204" width="48" height="36" class="nd"/><text x="270" y="227" class="t" text-anchor="middle">3</text>
+      <rect x="294" y="204" width="48" height="36" class="nd"/><text x="318" y="227" class="t" text-anchor="middle">4</text>
+      <rect x="342" y="204" width="48" height="36" class="nd"/><text x="366" y="227" class="t" text-anchor="middle">6</text>
+      <text x="410" y="227" class="t small">j &lt; 0 → stop. sorted part is 0..3</text>
+      <!-- index labels -->
+      <text x="174" y="258" class="t small" text-anchor="middle">0</text>
+      <text x="222" y="258" class="t small" text-anchor="middle">1</text>
+      <text x="270" y="258" class="t small" text-anchor="middle">2</text>
+      <text x="318" y="258" class="t small" text-anchor="middle">3</text>
+      <text x="366" y="258" class="t small" text-anchor="middle">4</text>
+    </svg>
+    <figcaption><b>The dashed box is the sorted portion; it grows by one each pass.</b> Pass <code>i=3</code> is the only pass on this array that swaps. The value 1 (orange) bubbles left one slot per swap while <code>j</code> walks left. The loop stops when <code>j</code> falls off the left edge, or when the element to the left is not bigger.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Pass <code>i</code></th><th>Inserting</th><th>Sorted part before</th><th>Compares</th><th>Swaps</th><th>Array after</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>3</td><td>[2]</td><td>3 &lt; 2? no</td><td>0</td><td>[2, 3, 4, 1, 6]</td></tr>
+      <tr><td>2</td><td>4</td><td>[2, 3]</td><td>4 &lt; 3? no</td><td>0</td><td>[2, 3, 4, 1, 6]</td></tr>
+      <tr><td>3</td><td>1</td><td>[2, 3, 4]</td><td>1 &lt; 4, 1 &lt; 3, 1 &lt; 2, then j = -1</td><td>3</td><td>[1, 2, 3, 4, 6]</td></tr>
+      <tr><td>4</td><td>6</td><td>[1, 2, 3, 4]</td><td>6 &lt; 4? no</td><td>0</td><td>[1, 2, 3, 4, 6]</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>The outer loop starts at <code>i = 1</code>, not 0. Index 0 is the sorted portion of size 1. Starting at 0 gives <code>j = -1</code> immediately and the while condition <code>j &gt;= 0</code> fails, so it would not crash, but it is a wasted turn and it shows you did not understand the setup.</p>
+  </div>
+
+  <h3>Stability: do equal values keep their order?</h3>
+  <p><dfn>Stable</dfn> means "the relative order of equal elements is preserved after sorting". Take <code>[7,3,7]</code>. There are two 7s, at index 0 and index 2. Call them 7<sub>a</sub> and 7<sub>b</sub> so we can tell them apart. Pass <code>i=1</code>: 3 swaps with 7<sub>a</sub>. Pass <code>i=2</code>: is 7<sub>b</sub> &lt; 7<sub>a</sub>? No, they are equal, so the while loop stops. The two 7s keep their relative order. Insertion sort is <strong>stable</strong>. Not all sorts are; quick sort below is not.</p>
+
+  <figure>
+    <svg viewBox="0 0 620 150" role="img" aria-label="Insertion sort on 7a 3 7b. Pass one swaps 3 with 7a. Pass two compares 7b with 7a, finds them equal, and stops, so 7a stays before 7b.">
+      <text x="20" y="53" class="t mono">i=1</text>
+      <rect x="100" y="30" width="56" height="36" class="nd"/><text x="128" y="53" class="t" text-anchor="middle">7<tspan font-size="9">a</tspan></text>
+      <rect x="156" y="30" width="56" height="36" class="nd newnd"/><text x="184" y="53" class="t" text-anchor="middle">3</text>
+      <rect x="212" y="30" width="56" height="36" class="nd"/><text x="240" y="53" class="t" text-anchor="middle">7<tspan font-size="9">b</tspan></text>
+      <path d="M184,68 C 184,84 128,84 128,68" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="300" y="53" class="t small">3 &lt; 7<tspan font-size="9">a</tspan> → swap. Then j = -1, stop.</text>
+
+      <text x="20" y="118" class="t mono">i=2</text>
+      <rect x="100" y="95" width="56" height="36" class="nd"/><text x="128" y="118" class="t" text-anchor="middle">3</text>
+      <rect x="156" y="95" width="56" height="36" class="nd"/><text x="184" y="118" class="t" text-anchor="middle">7<tspan font-size="9">a</tspan></text>
+      <rect x="212" y="95" width="56" height="36" class="nd newnd"/><text x="240" y="118" class="t" text-anchor="middle">7<tspan font-size="9">b</tspan></text>
+      <text x="300" y="112" class="t small">7<tspan font-size="9">b</tspan> &lt; 7<tspan font-size="9">a</tspan>? No, equal → while stops.</text>
+      <text x="300" y="128" class="t ptrlab" font-size="12">7<tspan font-size="9">a</tspan> stays left of 7<tspan font-size="9">b</tspan>: stable</text>
+    </svg>
+    <figcaption><b>Stability comes from the strict <code>&lt;</code> in the while condition.</b> An equal element never swaps past its twin. If you wrote <code>&lt;=</code> instead, 7<sub>b</sub> would jump over 7<sub>a</sub> and the sort would become unstable. Same output for plain numbers, different output when the 7s are records like <code>(7, "Ann")</code> and <code>(7, "Bob")</code>.</figcaption>
+  </figure>
+
+  <h3>Time and space</h3>
+  <ul>
+    <li><strong>Best case, O(n):</strong> the array is already sorted. The inner while loop never executes; the outer loop still visits each element once.</li>
+    <li><strong>Worst case, O(n²):</strong> the inner loop executes up to <code>n</code> times for each of the <code>n</code> elements. The worst-case input is an array sorted in reverse (descending) order: every new element must travel all the way to the front. On <code>[5,4,3,2,1]</code> that is 4 + 3 + 2 + 1 = 10 swaps, and in general n(n-1)/2.</li>
+    <li><strong>Average case (random order): still O(n²).</strong> On average each element travels about halfway, and n²/4 is still O(n²).</li>
+    <li><strong>Space, O(1):</strong> it sorts <dfn>in place</dfn> (inside the original array) and allocates no additional data structure. Only <code>i</code>, <code>j</code>, <code>tmp</code>.</li>
+  </ul>
+
+  <div class="callout">
+    <span class="lab">Why the star in O(n²)*</span>
+    <p>NeetCode writes insertion sort as O(n²)* in the final table. The star means "but O(n) if the input is already or nearly sorted". Interviewers like this: if you are given a sorted array with one new item at the end, insertion sort finishes in one pass, and merge sort still does all its n log n work.</p>
+  </div>
+</section>
+
+<!-- ============================ MERGE ============================ -->
+<section id="merge">
+  <h2><span class="num">2</span>Merge sort</h2>
+  <p>Extremely common. Many language standard libraries use it or a variant of it (Python's <code>sorted()</code> is a merge sort hybrid, see Patterns). Idea: keep splitting the array into halves until each subarray has size one, then sort by <em>merging</em> two sorted subarrays at a time, working back up.</p>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>You have 1,000 exam papers to sort by student number. Split the pile in two and hand each half to a helper. Each helper splits again, and so on, until every person holds one paper (which is "sorted"). Then pairs of people merge their piles: look at the top paper of each pile, take the smaller, repeat. Piles double in size at each step until one sorted pile remains.</p>
+  </div>
+
+  <p>This is <dfn>divide and conquer</dfn>: divide the problem into subproblems, solve them, then combine the solutions. The recursion has two branches (left half, right half), like Fibonacci from the recursion topic.</p>
+
+  <h3>mergeSort(): the recursive part is short</h3>
+<pre><code><span class="c"># Implementation of MergeSort</span>
+<span class="k">def</span> mergeSort(arr, s, e):
+    <span class="k">if</span> e - s + <span class="s">1</span> &lt;= <span class="s">1</span>:
+        <span class="k">return</span> arr
+
+    <span class="c"># The middle index of the array</span>
+    m = (s + e) // <span class="s">2</span>
+
+    <span class="c"># Sort the left half</span>
+    mergeSort(arr, s, m)
+
+    <span class="c"># Sort the right half</span>
+    mergeSort(arr, m + <span class="s">1</span>, e)
+
+    <span class="c"># Merge sorted halfs</span>
+    merge(arr, s, m, e)
+
+    <span class="k">return</span> arr</code></pre>
+
+  <ul>
+    <li><strong>Base case:</strong> length <code>e - s + 1</code> is 1 or less. Already sorted, return.</li>
+    <li>Compute the middle index <code>m = (s + e) // 2</code>.</li>
+    <li>Recursively <code>mergeSort</code> the left half <code>s..m</code> and the right half <code>m+1..e</code>.</li>
+    <li>Merge the two sorted halves with <code>merge()</code>.</li>
+  </ul>
+  <p><code>s</code> and <code>e</code> are <em>inclusive</em> start and end indexes. You call it as <code>mergeSort(arr, 0, len(arr) - 1)</code>. Passing indexes instead of slicing keeps everything in the one original array.</p>
+
+  <figure>
+    <svg viewBox="0 0 680 372" role="img" aria-label="Merge sort on 3 2 4 1 6. The top half of the picture splits the array down to single elements; the bottom half merges them back up in call order: 2 3, then 2 3 4, then 1 6, then 1 2 3 4 6.">
+      <!-- side labels -->
+      <text x="14" y="100" class="t ptrlab" transform="rotate(-90 14 100)" text-anchor="middle">split</text>
+      <text x="14" y="290" class="t newlab" transform="rotate(-90 14 290)" text-anchor="middle">merge</text>
+      <!-- L0 root -->
+      <rect x="270" y="16" width="28" height="24" class="nd"/><text x="284" y="33" class="t mono" text-anchor="middle">3</text>
+      <rect x="298" y="16" width="28" height="24" class="nd"/><text x="312" y="33" class="t mono" text-anchor="middle">2</text>
+      <rect x="326" y="16" width="28" height="24" class="nd"/><text x="340" y="33" class="t mono" text-anchor="middle">4</text>
+      <rect x="354" y="16" width="28" height="24" class="nd"/><text x="368" y="33" class="t mono" text-anchor="middle">1</text>
+      <rect x="382" y="16" width="28" height="24" class="nd"/><text x="396" y="33" class="t mono" text-anchor="middle">6</text>
+      <text x="418" y="33" class="t small">s=0 e=4 m=2</text>
+      <!-- L1 -->
+      <path d="M300,42 L 220,64" class="ptr" marker-end="url(#arr)"/>
+      <path d="M380,42 L 460,64" class="ptr" marker-end="url(#arr)"/>
+      <rect x="158" y="66" width="28" height="24" class="nd"/><text x="172" y="83" class="t mono" text-anchor="middle">3</text>
+      <rect x="186" y="66" width="28" height="24" class="nd"/><text x="200" y="83" class="t mono" text-anchor="middle">2</text>
+      <rect x="214" y="66" width="28" height="24" class="nd"/><text x="228" y="83" class="t mono" text-anchor="middle">4</text>
+      <text x="80" y="83" class="t small">s=0 e=2 m=1</text>
+      <rect x="452" y="66" width="28" height="24" class="nd"/><text x="466" y="83" class="t mono" text-anchor="middle">1</text>
+      <rect x="480" y="66" width="28" height="24" class="nd"/><text x="494" y="83" class="t mono" text-anchor="middle">6</text>
+      <text x="516" y="83" class="t small">s=3 e=4 m=3</text>
+      <!-- L2 -->
+      <path d="M180,92 L 130,114" class="ptr" marker-end="url(#arr)"/>
+      <path d="M228,92 L 270,114" class="ptr" marker-end="url(#arr)"/>
+      <path d="M466,92 L 446,114" class="ptr" marker-end="url(#arr)"/>
+      <path d="M494,92 L 514,114" class="ptr" marker-end="url(#arr)"/>
+      <rect x="92" y="116" width="28" height="24" class="nd"/><text x="106" y="133" class="t mono" text-anchor="middle">3</text>
+      <rect x="120" y="116" width="28" height="24" class="nd"/><text x="134" y="133" class="t mono" text-anchor="middle">2</text>
+      <rect x="266" y="116" width="28" height="24" class="nd"/><text x="280" y="133" class="t mono" text-anchor="middle">4</text>
+      <rect x="426" y="116" width="28" height="24" class="nd"/><text x="440" y="133" class="t mono" text-anchor="middle">1</text>
+      <rect x="506" y="116" width="28" height="24" class="nd"/><text x="520" y="133" class="t mono" text-anchor="middle">6</text>
+      <text x="304" y="133" class="t small">size 1: base case</text>
+      <!-- L3 -->
+      <path d="M110,142 L 98,164" class="ptr" marker-end="url(#arr)"/>
+      <path d="M134,142 L 144,164" class="ptr" marker-end="url(#arr)"/>
+      <rect x="81" y="166" width="28" height="24" class="nd"/><text x="95" y="183" class="t mono" text-anchor="middle">3</text>
+      <rect x="131" y="166" width="28" height="24" class="nd"/><text x="145" y="183" class="t mono" text-anchor="middle">2</text>
+      <!-- M1: merge [3],[2] -> [2,3] -->
+      <path d="M95,192 L 108,214" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M145,192 L 132,214" class="ptr newp" marker-end="url(#arrNew)"/>
+      <rect x="92" y="216" width="28" height="24" class="nd newnd"/><text x="106" y="233" class="t mono" text-anchor="middle">2</text>
+      <rect x="120" y="216" width="28" height="24" class="nd newnd"/><text x="134" y="233" class="t mono" text-anchor="middle">3</text>
+      <text x="156" y="233" class="t newlab" font-size="11">① merge(arr, 0, 0, 1)</text>
+      <!-- M2 left: merge [2,3],[4] -> [2,3,4] ; right: [1],[6] -> [1,6] -->
+      <path d="M120,242 L 180,264" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M280,142 L 222,264" class="ptr newp" marker-end="url(#arrNew)"/>
+      <rect x="158" y="266" width="28" height="24" class="nd newnd"/><text x="172" y="283" class="t mono" text-anchor="middle">2</text>
+      <rect x="186" y="266" width="28" height="24" class="nd newnd"/><text x="200" y="283" class="t mono" text-anchor="middle">3</text>
+      <rect x="214" y="266" width="28" height="24" class="nd newnd"/><text x="228" y="283" class="t mono" text-anchor="middle">4</text>
+      <text x="26" y="283" class="t newlab" font-size="11">② merge(arr,0,1,2) →</text>
+      <path d="M440,142 L 466,264" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M520,142 L 494,264" class="ptr newp" marker-end="url(#arrNew)"/>
+      <rect x="452" y="266" width="28" height="24" class="nd newnd"/><text x="466" y="283" class="t mono" text-anchor="middle">1</text>
+      <rect x="480" y="266" width="28" height="24" class="nd newnd"/><text x="494" y="283" class="t mono" text-anchor="middle">6</text>
+      <text x="516" y="283" class="t newlab" font-size="11">③ merge(arr, 3, 3, 4)</text>
+      <!-- M3 -->
+      <path d="M220,292 L 300,314" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M460,292 L 380,314" class="ptr newp" marker-end="url(#arrNew)"/>
+      <rect x="270" y="316" width="28" height="24" class="nd newnd"/><text x="284" y="333" class="t mono" text-anchor="middle">1</text>
+      <rect x="298" y="316" width="28" height="24" class="nd newnd"/><text x="312" y="333" class="t mono" text-anchor="middle">2</text>
+      <rect x="326" y="316" width="28" height="24" class="nd newnd"/><text x="340" y="333" class="t mono" text-anchor="middle">3</text>
+      <rect x="354" y="316" width="28" height="24" class="nd newnd"/><text x="368" y="333" class="t mono" text-anchor="middle">4</text>
+      <rect x="382" y="316" width="28" height="24" class="nd newnd"/><text x="396" y="333" class="t mono" text-anchor="middle">6</text>
+      <text x="418" y="333" class="t newlab" font-size="11">④ merge(arr, 0, 2, 4)</text>
+      <text x="340" y="362" class="t small" text-anchor="middle">teal = split (divide)   orange = merge (combine), numbered in the order the code runs them</text>
+    </svg>
+    <figcaption><b>Order of calls matters.</b> <code>merge()</code> for a subarray does not run until <em>both</em> recursive <code>mergeSort()</code> calls on it have returned. So <code>[3,2]</code> is merged into <code>[2,3]</code> (step ①, the <code>mergeSort(arr, s, m)</code> branch) before the code even looks at <code>[4]</code> (the <code>mergeSort(arr, m+1, e)</code> branch). Merging happens at every level of the recursion, not only at the bottom row.</figcaption>
+  </figure>
+
+  <h3>merge(): the three-pointer part does the work</h3>
+  <p>Two sorted halves sit next to each other in <code>arr</code>: <code>s..m</code> and <code>m+1..e</code>. Copy them into temporary lists <code>L</code> and <code>R</code>, then walk both with one pointer each and write the smaller value back into <code>arr</code>.</p>
+  <ul>
+    <li><code>k</code> tracks where the next element in <code>arr</code> must be placed. Starts at <code>s</code>.</li>
+    <li><code>i</code> points to the element in the left subarray <code>L</code> being compared to the <code>j</code> element in the right subarray <code>R</code>.</li>
+    <li>One of <code>i</code> or <code>j</code> increments depending on which element is smaller; <code>k</code> increments regardless.</li>
+  </ul>
+
+<pre><code><span class="c"># Merge in-place</span>
+<span class="k">def</span> merge(arr, s, m, e):
+    <span class="c"># Copy the sorted left &amp; right halfs to temp arrays</span>
+    L = arr[s: m + <span class="s">1</span>]
+    R = arr[m + <span class="s">1</span>: e + <span class="s">1</span>]
+
+    i = <span class="s">0</span> <span class="c"># index for L</span>
+    j = <span class="s">0</span> <span class="c"># index for R</span>
+    k = s <span class="c"># index for arr</span>
+
+    <span class="c"># Merge the two sorted halfs into the original array</span>
+    <span class="k">while</span> i &lt; len(L) <span class="k">and</span> j &lt; len(R):
+        <span class="k">if</span> L[i] &lt;= R[j]:
+            arr[k] = L[i]
+            i += <span class="s">1</span>
+        <span class="k">else</span>:
+            arr[k] = R[j]
+            j += <span class="s">1</span>
+        k += <span class="s">1</span>
+
+    <span class="c"># One of the halfs will have elements remaining</span>
+    <span class="k">while</span> i &lt; len(L):
+        arr[k] = L[i]
+        i += <span class="s">1</span>
+        k += <span class="s">1</span>
+    <span class="k">while</span> j &lt; len(R):
+        arr[k] = R[j]
+        j += <span class="s">1</span>
+        k += <span class="s">1</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 640 200" role="img" aria-label="Merging L equals 2 3 4 with R equals 1 6 into arr. Step 1 took 1 from R into arr index 0. Step 2 compares L at i equals 0, value 2, with R at j equals 1, value 6, and writes 2 into arr index 1.">
+      <!-- L -->
+      <text x="40" y="65" class="t ptrlab" text-anchor="end">L</text>
+      <text x="84" y="24" class="t mono" text-anchor="middle">i</text>
+      <path d="M84,30 L84,42" class="cur" marker-end="url(#arrCur)"/>
+      <rect x="60" y="44" width="48" height="36" class="nd"/><text x="84" y="67" class="t" text-anchor="middle">2</text>
+      <rect x="108" y="44" width="48" height="36" class="nd"/><text x="132" y="67" class="t" text-anchor="middle">3</text>
+      <rect x="156" y="44" width="48" height="36" class="nd"/><text x="180" y="67" class="t" text-anchor="middle">4</text>
+      <!-- R -->
+      <text x="280" y="65" class="t ptrlab" text-anchor="end">R</text>
+      <text x="372" y="24" class="t mono" text-anchor="middle">j</text>
+      <path d="M372,30 L372,42" class="cur" marker-end="url(#arrCur)"/>
+      <rect x="300" y="44" width="48" height="36" class="nd dim"/><text x="324" y="67" class="t" text-anchor="middle" opacity=".35">1</text>
+      <rect x="348" y="44" width="48" height="36" class="nd"/><text x="372" y="67" class="t" text-anchor="middle">6</text>
+      <!-- arr -->
+      <text x="40" y="155" class="t ptrlab" text-anchor="end">arr</text>
+      <text x="132" y="114" class="t mono" text-anchor="middle">k</text>
+      <path d="M132,120 L132,132" class="cur" marker-end="url(#arrCur)"/>
+      <rect x="60" y="134" width="48" height="36" class="nd"/><text x="84" y="157" class="t" text-anchor="middle">1</text>
+      <rect x="108" y="134" width="48" height="36" class="nd newnd"/><text x="132" y="157" class="t" text-anchor="middle">2</text>
+      <rect x="156" y="134" width="48" height="36" class="nd"/>
+      <rect x="204" y="134" width="48" height="36" class="nd"/>
+      <rect x="252" y="134" width="48" height="36" class="nd"/>
+      <text x="84" y="188" class="t small" text-anchor="middle">0</text>
+      <text x="132" y="188" class="t small" text-anchor="middle">1</text>
+      <text x="180" y="188" class="t small" text-anchor="middle">2</text>
+      <text x="228" y="188" class="t small" text-anchor="middle">3</text>
+      <text x="276" y="188" class="t small" text-anchor="middle">4</text>
+      <!-- arrows: old (step 1) and new (step 2) -->
+      <path d="M324,82 C 324,110 100,110 88,132" class="ptr old" marker-end="url(#arrOld)"/>
+      <path d="M84,82 C 84,100 128,110 132,132" class="ptr newp" marker-end="url(#arrNew)"/>
+      <!-- annotation -->
+      <text x="420" y="58" class="t small">step ① (grey): 2 ≤ 1? no → arr[0] = R[0] = 1, j → 1</text>
+      <text x="420" y="82" class="t newlab" font-size="12">step ② (orange): 2 ≤ 6? yes</text>
+      <text x="420" y="100" class="t small">arr[k=1] = L[i=0] = 2</text>
+      <text x="420" y="116" class="t small">i → 1, k → 2   (j stays)</text>
+      <text x="420" y="150" class="t small">k always moves. i or j moves,</text>
+      <text x="420" y="166" class="t small">never both in one step.</text>
+    </svg>
+    <figcaption><b>Three pointers, one write per step.</b> This is the final merge of the example: <code>L = [2,3,4]</code>, <code>R = [1,6]</code>, <code>k</code> starts at <code>s = 0</code>. The grey arrow is the previous step; the orange one is the current step. The <code>i</code>/<code>j</code> walk is the <em>two pointer</em> technique from the arrays topic: it combines two sorted arrays in O(n + m) time because each pointer only ever moves forward.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Step</th><th>Compare <code>L[i] &lt;= R[j]</code></th><th>Take</th><th><code>i</code></th><th><code>j</code></th><th><code>k</code></th><th><code>arr</code> after</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>2 ≤ 1? no</td><td>R[0] = 1</td><td>0</td><td>1</td><td>1</td><td>[1, _, _, _, _]</td></tr>
+      <tr><td>2</td><td>2 ≤ 6? yes</td><td>L[0] = 2</td><td>1</td><td>1</td><td>2</td><td>[1, 2, _, _, _]</td></tr>
+      <tr><td>3</td><td>3 ≤ 6? yes</td><td>L[1] = 3</td><td>2</td><td>1</td><td>3</td><td>[1, 2, 3, _, _]</td></tr>
+      <tr><td>4</td><td>4 ≤ 6? yes</td><td>L[2] = 4</td><td>3</td><td>1</td><td>4</td><td>[1, 2, 3, 4, _]</td></tr>
+      <tr><td>5</td><td>i = len(L), first loop ends</td><td>R[1] = 6 (leftover loop)</td><td>3</td><td>2</td><td>5</td><td>[1, 2, 3, 4, 6]</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>The two "leftover" loops at the end are not optional. When one half runs out, the other half still has elements, and they are already sorted, so they are copied straight in. Only one of the two loops actually runs on any given call. Forgetting them is the most common merge sort bug: the output has the right length but the last few slots keep their old values.</p>
+  </div>
+
+  <h3>The same algorithm in idiomatic Python</h3>
+  <p>In interviews people often write the slicing version: it returns a new list instead of sorting in place. Same algorithm, same Big-O, and easier to read. Know both; the index version is what NeetCode shows and it is what you need for the in-place variants.</p>
+
+<pre><code><span class="k">def</span> merge_sort_py(arr):
+    <span class="k">if</span> len(arr) &lt;= <span class="s">1</span>:
+        <span class="k">return</span> arr
+    m = len(arr) // <span class="s">2</span>
+    left = merge_sort_py(arr[:m])       <span class="c"># sorted copy of the left half</span>
+    right = merge_sort_py(arr[m:])      <span class="c"># sorted copy of the right half</span>
+    out, i, j = [], <span class="s">0</span>, <span class="s">0</span>
+    <span class="k">while</span> i &lt; len(left) <span class="k">and</span> j &lt; len(right):
+        <span class="k">if</span> left[i] &lt;= right[j]:
+            out.append(left[i]); i += <span class="s">1</span>
+        <span class="k">else</span>:
+            out.append(right[j]); j += <span class="s">1</span>
+    out.extend(left[i:])                <span class="c"># leftovers, one of these is empty</span>
+    out.extend(right[j:])
+    <span class="k">return</span> out</code></pre>
+
+  <h3>Time: O(n log n), and where the log comes from</h3>
+  <p>Count the <em>levels</em> of the recursion. Each level halves the length: n, then n/2, then n/4, ... down to 1. If it takes x halvings to reach 1, then n / 2<sup>x</sup> = 1, so n = 2<sup>x</sup>, so x = log<sub>2</sub> n. There are <strong>log n levels</strong>. Now count the <em>cost per level</em>: at any level, the merges together touch every one of the n elements exactly once (compare and place), so each level costs <strong>n</strong>. Total = levels × cost per level = <strong>n log n</strong>.</p>
+
+  <figure>
+    <svg viewBox="0 0 660 216" role="img" aria-label="Four rows of boxes. Row 0 is one box of width n. Row 1 is two boxes of width n over 2. Row 2 is four boxes of n over 4. Row 3 is eight boxes of size 1. Each row's merge work adds up to n, and there are log n rows.">
+      <text x="20" y="41" class="t small">level 0</text>
+      <rect x="80" y="20" width="480" height="32" class="nd"/><text x="320" y="41" class="t mono" text-anchor="middle">n = 8</text>
+      <text x="575" y="41" class="t small">merge work: n</text>
+
+      <text x="20" y="91" class="t small">level 1</text>
+      <rect x="80" y="70" width="240" height="32" class="nd"/><text x="200" y="91" class="t mono" text-anchor="middle">n/2</text>
+      <rect x="320" y="70" width="240" height="32" class="nd"/><text x="440" y="91" class="t mono" text-anchor="middle">n/2</text>
+      <text x="575" y="91" class="t small">2 × n/2 = n</text>
+
+      <text x="20" y="141" class="t small">level 2</text>
+      <rect x="80" y="120" width="120" height="32" class="nd"/><text x="140" y="141" class="t mono" text-anchor="middle">n/4</text>
+      <rect x="200" y="120" width="120" height="32" class="nd"/><text x="260" y="141" class="t mono" text-anchor="middle">n/4</text>
+      <rect x="320" y="120" width="120" height="32" class="nd"/><text x="380" y="141" class="t mono" text-anchor="middle">n/4</text>
+      <rect x="440" y="120" width="120" height="32" class="nd"/><text x="500" y="141" class="t mono" text-anchor="middle">n/4</text>
+      <text x="575" y="141" class="t small">4 × n/4 = n</text>
+
+      <text x="20" y="191" class="t small">level 3</text>
+      <rect x="80" y="170" width="60" height="32" class="nd"/><text x="110" y="191" class="t mono" text-anchor="middle">1</text>
+      <rect x="140" y="170" width="60" height="32" class="nd"/><text x="170" y="191" class="t mono" text-anchor="middle">1</text>
+      <rect x="200" y="170" width="60" height="32" class="nd"/><text x="230" y="191" class="t mono" text-anchor="middle">1</text>
+      <rect x="260" y="170" width="60" height="32" class="nd"/><text x="290" y="191" class="t mono" text-anchor="middle">1</text>
+      <rect x="320" y="170" width="60" height="32" class="nd"/><text x="350" y="191" class="t mono" text-anchor="middle">1</text>
+      <rect x="380" y="170" width="60" height="32" class="nd"/><text x="410" y="191" class="t mono" text-anchor="middle">1</text>
+      <rect x="440" y="170" width="60" height="32" class="nd"/><text x="470" y="191" class="t mono" text-anchor="middle">1</text>
+      <rect x="500" y="170" width="60" height="32" class="nd"/><text x="530" y="191" class="t mono" text-anchor="middle">1</text>
+      <text x="575" y="191" class="t small">8 × 1 = n</text>
+    </svg>
+    <figcaption><b>log n rows, each costing n.</b> For n = 8 there are log<sub>2</sub> 8 = 3 halvings, so 4 rows. Every row has the same total width, n, because splitting never adds or removes elements; it only changes how many pieces there are. That is why the cost is n × log n and not n × n.</figcaption>
+  </figure>
+
+  <h3>Space: O(n)</h3>
+  <p>Two things use memory. The call stack is as deep as the tree is tall: log n frames. The temporary lists <code>L</code> and <code>R</code>: at any single moment the temp arrays in use add up to at most n elements. Total O(n + log n) = <strong>O(n)</strong>. It is a <em>sum</em>, not a product, because the temp arrays are not all allocated at the same time; each <code>merge()</code> frees its <code>L</code> and <code>R</code> when it returns.</p>
+
+  <h3>Stability</h3>
+  <p>Merge sort is <strong>stable</strong>. Look at the comparison: <code>if L[i] &lt;= R[j]</code>. On a tie we take the <em>left</em> element first. Everything in <code>L</code> came before everything in <code>R</code> in the original array, so equal elements keep their relative order. Change <code>&lt;=</code> to <code>&lt;</code> and the sort becomes unstable.</p>
+
+  <div class="callout">
+    <span class="lab">Merge vs insertion</span>
+    <p>Insertion sort is O(n²) in the worst case. Merge sort is O(n log n) in the worst, average, <em>and</em> best case, so merge sort is superior for general input. Insertion sort is preferred only when the array is small, or already or nearly sorted, because then it skips almost all the swapping and finishes in O(n). For n = 1,000,000: n² is 10<sup>12</sup>, n log n is about 2 × 10<sup>7</sup>. Fifty thousand times fewer steps.</p>
+  </div>
+</section>
+
+<!-- ============================ QUICK ============================ -->
+<section id="quick">
+  <h2><span class="num">3</span>Quick sort</h2>
+  <p>Another divide and conquer sort. Idea: pick one element and call it the <dfn>pivot</dfn>. <dfn>Partition</dfn> the array so that every value to the left of the pivot is less than or equal to it, and every value to the right is greater. Then recurse on the left part and on the right part.</p>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>Lining up students by height with no measuring tape. Pick one student (the pivot) and say "shorter than her, stand on the left; taller, stand on the right". She is now in her final spot. Repeat the same trick inside the left group and inside the right group. Nobody ever needs to be merged back together, because each group is already on the correct side.</p>
+  </div>
+
+  <h3>Picking a pivot</h3>
+  <p>Options: the first index; the last index; the median of the first, last and middle values; or a random index. Ideally the pivot divides the array into two roughly equal halves, because then the recursion is log n deep. This lesson picks the <strong>last element</strong>, which keeps the code short.</p>
+
+  <h3>Recursive partitioning</h3>
+  <p>Partition so that elements <code>&lt;= pivot</code> are on the left and the rest on the right, then recursively quick sort the left part and the right part until the base case (size 1). Unlike merge sort there is <strong>no merge step</strong>: partitioning alone sorts the array, because after each partition the pivot sits at its final index and nothing ever crosses it again. Quick sort is, in a sense, the opposite of merge sort. Merge sort has a simple recursive step and a complex <code>merge()</code>; quick sort puts the complexity into the partition and has trivial recursion.</p>
+
+  <p>Partition example: <code>[6,2,4,1,3]</code>, pivot = 3 (the last element). The result has all elements smaller than the pivot on the left and the rest on the right. Then run recursively until the base case. No new memory is allocated; only the <code>s</code> and <code>e</code> indexes change to work on a smaller part of the original array.</p>
+
+<pre><code><span class="c"># Implementation of QuickSort</span>
+<span class="k">def</span> quickSort(arr: list[int], s: int, e: int) -&gt; list[int]:
+    <span class="k">if</span> e - s + <span class="s">1</span> &lt;= <span class="s">1</span>:
+        <span class="k">return</span> arr
+
+    pivot = arr[e]
+    left = s <span class="c"># pointer for left side</span>
+
+    <span class="c"># Partition: elements smaller than pivot on left side</span>
+    <span class="k">for</span> i <span class="k">in</span> range(s, e):
+        <span class="k">if</span> arr[i] &lt; pivot:
+            tmp = arr[left]
+            arr[left] = arr[i]
+            arr[i] = tmp
+            left += <span class="s">1</span>
+
+    <span class="c"># Move pivot in-between left &amp; right sides</span>
+    arr[e] = arr[left]
+    arr[left] = pivot
+
+    <span class="c"># Quick sort left side</span>
+    quickSort(arr, s, left - <span class="s">1</span>)
+
+    <span class="c"># Quick sort right side</span>
+    quickSort(arr, left + <span class="s">1</span>, e)
+
+    <span class="k">return</span> arr</code></pre>
+
+  <p>Read <code>left</code> as "the first slot that is not yet known to be smaller than the pivot". Every time <code>i</code> finds a small value, it swaps that value into slot <code>left</code> and moves <code>left</code> one to the right. When the loop ends, slots <code>s..left-1</code> hold the small values, so <code>left</code> is exactly where the pivot belongs.</p>
+
+  <figure>
+    <svg viewBox="0 0 660 424" role="img" aria-label="Partition of 6 2 4 1 3 with pivot 3. i scans left to right; when arr at i is less than 3 it is swapped into the left slot and left moves right. Two swaps happen, at i equals 1 and i equals 3, then the pivot is swapped into index 2.">
+      <!-- row 0: initial -->
+      <text x="20" y="63" class="t mono">i=0</text>
+      <text x="174" y="18" class="t ptrlab" text-anchor="middle">left</text>
+      <text x="174" y="32" class="t mono" text-anchor="middle">i</text>
+      <text x="366" y="18" class="t ptrlab" text-anchor="middle">pivot</text>
+      <rect x="150" y="40" width="48" height="36" class="nd"/><text x="174" y="63" class="t" text-anchor="middle">6</text>
+      <rect x="198" y="40" width="48" height="36" class="nd"/><text x="222" y="63" class="t" text-anchor="middle">2</text>
+      <rect x="246" y="40" width="48" height="36" class="nd"/><text x="270" y="63" class="t" text-anchor="middle">4</text>
+      <rect x="294" y="40" width="48" height="36" class="nd"/><text x="318" y="63" class="t" text-anchor="middle">1</text>
+      <rect x="342" y="40" width="48" height="36" class="nd"/><text x="366" y="63" class="t" text-anchor="middle">3</text>
+      <text x="410" y="63" class="t small">6 &lt; 3? no. nothing moves</text>
+
+      <!-- row 1: i=1 swap -->
+      <text x="20" y="135" class="t mono">i=1</text>
+      <text x="222" y="90" class="t ptrlab" text-anchor="middle">left</text>
+      <text x="222" y="104" class="t mono" text-anchor="middle">i</text>
+      <rect x="150" y="112" width="48" height="36" class="nd newnd"/><text x="174" y="135" class="t" text-anchor="middle">2</text>
+      <rect x="198" y="112" width="48" height="36" class="nd newnd"/><text x="222" y="135" class="t" text-anchor="middle">6</text>
+      <rect x="246" y="112" width="48" height="36" class="nd"/><text x="270" y="135" class="t" text-anchor="middle">4</text>
+      <rect x="294" y="112" width="48" height="36" class="nd"/><text x="318" y="135" class="t" text-anchor="middle">1</text>
+      <rect x="342" y="112" width="48" height="36" class="nd"/><text x="366" y="135" class="t" text-anchor="middle">3</text>
+      <path d="M222,150 C 222,164 174,164 174,150" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="410" y="129" class="t small">2 &lt; 3 → swap arr[left=0], arr[i=1] ①</text>
+      <text x="410" y="145" class="t small">left → 1</text>
+
+      <!-- row 2: i=2 no swap -->
+      <text x="20" y="207" class="t mono">i=2</text>
+      <text x="222" y="162" class="t ptrlab" text-anchor="middle">left</text>
+      <text x="270" y="176" class="t mono" text-anchor="middle">i</text>
+      <rect x="150" y="184" width="48" height="36" class="nd"/><text x="174" y="207" class="t" text-anchor="middle">2</text>
+      <rect x="198" y="184" width="48" height="36" class="nd"/><text x="222" y="207" class="t" text-anchor="middle">6</text>
+      <rect x="246" y="184" width="48" height="36" class="nd"/><text x="270" y="207" class="t" text-anchor="middle">4</text>
+      <rect x="294" y="184" width="48" height="36" class="nd"/><text x="318" y="207" class="t" text-anchor="middle">1</text>
+      <rect x="342" y="184" width="48" height="36" class="nd"/><text x="366" y="207" class="t" text-anchor="middle">3</text>
+      <text x="410" y="207" class="t small">4 &lt; 3? no. nothing moves</text>
+
+      <!-- row 3: i=3 swap -->
+      <text x="20" y="279" class="t mono">i=3</text>
+      <text x="270" y="234" class="t ptrlab" text-anchor="middle">left</text>
+      <text x="318" y="248" class="t mono" text-anchor="middle">i</text>
+      <rect x="150" y="256" width="48" height="36" class="nd"/><text x="174" y="279" class="t" text-anchor="middle">2</text>
+      <rect x="198" y="256" width="48" height="36" class="nd newnd"/><text x="222" y="279" class="t" text-anchor="middle">1</text>
+      <rect x="246" y="256" width="48" height="36" class="nd"/><text x="270" y="279" class="t" text-anchor="middle">4</text>
+      <rect x="294" y="256" width="48" height="36" class="nd newnd"/><text x="318" y="279" class="t" text-anchor="middle">6</text>
+      <rect x="342" y="256" width="48" height="36" class="nd"/><text x="366" y="279" class="t" text-anchor="middle">3</text>
+      <path d="M318,294 C 318,310 222,310 222,294" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="410" y="273" class="t small">1 &lt; 3 → swap arr[left=1], arr[i=3] ②</text>
+      <text x="410" y="289" class="t small">left → 2</text>
+
+      <!-- row 4: pivot swap -->
+      <text x="20" y="351" class="t mono">done</text>
+      <text x="270" y="306" class="t ptrlab" text-anchor="middle">left</text>
+      <rect x="150" y="328" width="48" height="36" class="nd"/><text x="174" y="351" class="t" text-anchor="middle">2</text>
+      <rect x="198" y="328" width="48" height="36" class="nd"/><text x="222" y="351" class="t" text-anchor="middle">1</text>
+      <rect x="246" y="328" width="48" height="36" class="nd newnd"/><text x="270" y="351" class="t" text-anchor="middle">3</text>
+      <rect x="294" y="328" width="48" height="36" class="nd"/><text x="318" y="351" class="t" text-anchor="middle">6</text>
+      <rect x="342" y="328" width="48" height="36" class="nd newnd"/><text x="366" y="351" class="t" text-anchor="middle">4</text>
+      <path d="M366,366 C 366,382 270,382 270,366" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="410" y="345" class="t small">loop over: arr[e] = arr[left] ③</text>
+      <text x="410" y="361" class="t small">arr[left] = pivot. 3 is final.</text>
+      <text x="174" y="404" class="t small" text-anchor="middle">0</text>
+      <text x="222" y="404" class="t small" text-anchor="middle">1</text>
+      <text x="270" y="404" class="t small" text-anchor="middle">2</text>
+      <text x="318" y="404" class="t small" text-anchor="middle">3</text>
+      <text x="366" y="404" class="t small" text-anchor="middle">4</text>
+      <text x="410" y="404" class="t small">recurse on [2,1] and on [6,4]</text>
+    </svg>
+    <figcaption><b><code>left</code> only moves when a small value is found.</b> Between <code>left</code> and <code>i</code> sit the values already known to be bigger than the pivot (6, then 6 and 4). Each swap throws one small value over that group. The final swap ③ drops the pivot into slot <code>left</code>, exactly between the two groups. Note the pivot is <em>not</em> sorted with its neighbors yet: 3 is between <code>[2,1]</code> and <code>[6,4]</code>, both still unsorted.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th><code>i</code></th><th><code>arr[i]</code></th><th><code>arr[i] &lt; 3</code>?</th><th>Action</th><th><code>left</code> after</th><th>Array after</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td>6</td><td>no</td><td>none</td><td>0</td><td>[6, 2, 4, 1, 3]</td></tr>
+      <tr><td>1</td><td>2</td><td>yes</td><td>swap arr[0] and arr[1]</td><td>1</td><td>[2, 6, 4, 1, 3]</td></tr>
+      <tr><td>2</td><td>4</td><td>no</td><td>none</td><td>1</td><td>[2, 6, 4, 1, 3]</td></tr>
+      <tr><td>3</td><td>1</td><td>yes</td><td>swap arr[1] and arr[3]</td><td>2</td><td>[2, 1, 4, 6, 3]</td></tr>
+      <tr><td>-</td><td>-</td><td>loop ends</td><td>arr[4] = arr[2]; arr[2] = 3</td><td>2</td><td>[2, 1, 3, 6, 4]</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>The recursion then works on each side. Both are size 2, so one more partition each and the array is sorted.</p>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Call</th><th>Subarray</th><th>Pivot</th><th>Partition result</th><th>Next calls</th></tr></thead>
+    <tbody>
+      <tr><td>quickSort(arr, 0, 4)</td><td>[6, 2, 4, 1, 3]</td><td>3</td><td>[2, 1, <b>3</b>, 6, 4]</td><td>(0, 1) and (3, 4)</td></tr>
+      <tr><td>quickSort(arr, 0, 1)</td><td>[2, 1]</td><td>1</td><td>[<b>1</b>, 2]</td><td>(0, -1) and (1, 1): both base case</td></tr>
+      <tr><td>quickSort(arr, 3, 4)</td><td>[6, 4]</td><td>4</td><td>[<b>4</b>, 6]</td><td>(3, 2) and (4, 4): both base case</td></tr>
+      <tr><td>result</td><td colspan="4">[1, 2, 3, 4, 6]</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>The base case <code>e - s + 1 &lt;= 1</code> also catches <code>e &lt; s</code>, which happens when the pivot lands at the very start or end (empty side). <code>quickSort(arr, 0, -1)</code> above is such a call. Without the <code>&lt;=</code>, an empty side would read <code>arr[e]</code> with a bad index.</p>
+  </div>
+
+  <h3>Time and space</h3>
+  <p>The partition loop is O(n) per level: <code>i</code> visits every element once. How many levels? In the <strong>best case</strong> the pivot is the median and splits the array in the middle every time, so there are log n levels, and the total is <strong>O(n log n)</strong>, the same picture as merge sort's levels diagram. In the <strong>worst case</strong> the pivot is always the smallest or largest element. Then one side has n - 1 elements and the other has 0. The recursion tree is a chain of height n, each level still doing O(n) partition work: n + (n-1) + (n-2) + ... = <strong>O(n²)</strong>.</p>
+
+  <figure>
+    <svg viewBox="0 0 660 262" role="img" aria-label="Quick sort on the already sorted array 1 2 3 4 5 with last element pivot. Each partition peels off only the pivot; the left side keeps n minus 1 elements and the right side is empty. The recursion is a chain of height n.">
+      <!-- level 0 -->
+      <rect x="20" y="16" width="150" height="30" rx="6" class="nd"/><text x="95" y="36" class="t mono" text-anchor="middle">[1, 2, 3, 4, 5]</text>
+      <text x="184" y="36" class="t small">pivot 5 = max → left n-1, right 0</text>
+      <path d="M95,48 L 60,64" class="ptr" marker-end="url(#arr)"/>
+      <path d="M150,48 L 190,64" class="ptr" marker-end="url(#arr)"/>
+      <text x="200" y="80" class="t nulltxt" text-anchor="middle">∅</text>
+      <!-- level 1 -->
+      <rect x="20" y="66" width="130" height="30" rx="6" class="nd"/><text x="85" y="86" class="t mono" text-anchor="middle">[1, 2, 3, 4]</text>
+      <path d="M85,98 L 55,114" class="ptr" marker-end="url(#arr)"/>
+      <path d="M140,98 L 180,114" class="ptr" marker-end="url(#arr)"/>
+      <text x="190" y="130" class="t nulltxt" text-anchor="middle">∅</text>
+      <text x="224" y="86" class="t small">pivot 4 = max → left n-2, right 0</text>
+      <!-- level 2 -->
+      <rect x="20" y="116" width="110" height="30" rx="6" class="nd"/><text x="75" y="136" class="t mono" text-anchor="middle">[1, 2, 3]</text>
+      <path d="M75,148 L 50,164" class="ptr" marker-end="url(#arr)"/>
+      <path d="M120,148 L 160,164" class="ptr" marker-end="url(#arr)"/>
+      <text x="170" y="180" class="t nulltxt" text-anchor="middle">∅</text>
+      <text x="224" y="136" class="t small">pivot 3 = max → ...</text>
+      <!-- level 3 -->
+      <rect x="20" y="166" width="90" height="30" rx="6" class="nd"/><text x="65" y="186" class="t mono" text-anchor="middle">[1, 2]</text>
+      <path d="M65,198 L 45,214" class="ptr" marker-end="url(#arr)"/>
+      <path d="M100,198 L 140,214" class="ptr" marker-end="url(#arr)"/>
+      <text x="150" y="230" class="t nulltxt" text-anchor="middle">∅</text>
+      <!-- level 4 -->
+      <rect x="20" y="216" width="60" height="30" rx="6" class="nd"/><text x="50" y="236" class="t mono" text-anchor="middle">[1]</text>
+      <text x="90" y="236" class="t small">base case</text>
+      <!-- right side summary -->
+      <text x="400" y="130" class="t ptrlab">height = n, not log n</text>
+      <text x="400" y="150" class="t small">partition work per level:</text>
+      <text x="400" y="166" class="t small">n + (n-1) + (n-2) + ... + 1</text>
+      <text x="400" y="182" class="t small">= n(n+1)/2 → O(n²)</text>
+      <text x="400" y="210" class="t small">a sorted (or reverse sorted) input</text>
+      <text x="400" y="226" class="t small">is the worst case for last-index pivot</text>
+    </svg>
+    <figcaption><b>Sorted input is the worst case when the pivot is the last element.</b> Every partition finds nothing smaller than the pivot, so <code>left</code> never moves and the "left part" is the whole array minus one. The tree becomes a chain of height n instead of a bushy tree of height log n. Space follows the height: O(log n) stack frames in the best case, O(n) in the worst.</figcaption>
+  </figure>
+
+  <h3>Randomized quick sort</h3>
+  <p>The fix is to not let the input decide the pivot. Pick the pivot <em>randomly</em>, or shuffle the array first. A sorted array is then no worse than any other. This gives an <em>expected</em> O(n log n) instead of the typical worst case O(n²). The worst case is still possible, but only by bad luck, not by bad input. The code changes by two lines: swap a random element into the last slot, then partition exactly as before.</p>
+
+<pre><code><span class="k">import</span> random
+
+<span class="k">def</span> quick_sort_random(arr, s, e):
+    <span class="k">if</span> e - s + <span class="s">1</span> &lt;= <span class="s">1</span>:
+        <span class="k">return</span> arr
+    r = random.randint(s, e)           <span class="c"># any index in s..e</span>
+    arr[r], arr[e] = arr[e], arr[r]    <span class="c"># move it to the end, so the rest is unchanged</span>
+    pivot = arr[e]
+    left = s
+    <span class="k">for</span> i <span class="k">in</span> range(s, e):
+        <span class="k">if</span> arr[i] &lt; pivot:
+            arr[left], arr[i] = arr[i], arr[left]
+            left += <span class="s">1</span>
+    arr[e], arr[left] = arr[left], arr[e]
+    quick_sort_random(arr, s, left - <span class="s">1</span>)
+    quick_sort_random(arr, left + <span class="s">1</span>, e)
+    <span class="k">return</span> arr</code></pre>
+
+  <h3>Stability: quick sort is not stable</h3>
+  <p>Quick sort exchanges <em>non-adjacent</em> elements, so an element can jump over an equal element. The lesson's example is <code>[7,3,7,4,5]</code> with pivot 5 (the last index). Tag the 7s as 7<sub>a</sub> (index 0) and 7<sub>b</sub> (index 2) and watch the partition loop.</p>
+
+  <figure>
+    <svg viewBox="0 0 660 270" role="img" aria-label="Partition of 7a 3 7b 4 5 with pivot 5. At i equals 1, 3 swaps with 7a. At i equals 3, 4 swaps with 7a again, which jumps 7a to index 3, behind 7b. The order of the two 7s is reversed.">
+      <!-- row 0 -->
+      <text x="20" y="53" class="t mono">start</text>
+      <rect x="150" y="30" width="48" height="36" class="nd"/><text x="174" y="53" class="t" text-anchor="middle">7<tspan font-size="9">a</tspan></text>
+      <rect x="198" y="30" width="48" height="36" class="nd"/><text x="222" y="53" class="t" text-anchor="middle">3</text>
+      <rect x="246" y="30" width="48" height="36" class="nd"/><text x="270" y="53" class="t" text-anchor="middle">7<tspan font-size="9">b</tspan></text>
+      <rect x="294" y="30" width="48" height="36" class="nd"/><text x="318" y="53" class="t" text-anchor="middle">4</text>
+      <rect x="342" y="30" width="48" height="36" class="nd"/><text x="366" y="53" class="t" text-anchor="middle">5</text>
+      <text x="366" y="22" class="t ptrlab" text-anchor="middle">pivot</text>
+      <text x="410" y="53" class="t small">left = 0. i=0: 7<tspan font-size="9">a</tspan> &lt; 5? no</text>
+      <!-- row 1 -->
+      <text x="20" y="111" class="t mono">i=1</text>
+      <rect x="150" y="88" width="48" height="36" class="nd newnd"/><text x="174" y="111" class="t" text-anchor="middle">3</text>
+      <rect x="198" y="88" width="48" height="36" class="nd newnd"/><text x="222" y="111" class="t" text-anchor="middle">7<tspan font-size="9">a</tspan></text>
+      <rect x="246" y="88" width="48" height="36" class="nd"/><text x="270" y="111" class="t" text-anchor="middle">7<tspan font-size="9">b</tspan></text>
+      <rect x="294" y="88" width="48" height="36" class="nd"/><text x="318" y="111" class="t" text-anchor="middle">4</text>
+      <rect x="342" y="88" width="48" height="36" class="nd"/><text x="366" y="111" class="t" text-anchor="middle">5</text>
+      <path d="M222,126 C 222,140 174,140 174,126" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="410" y="105" class="t small">3 &lt; 5 → swap arr[0], arr[1]</text>
+      <text x="410" y="121" class="t small">left → 1.  i=2: 7<tspan font-size="9">b</tspan> &lt; 5? no</text>
+      <!-- row 2 -->
+      <text x="20" y="169" class="t mono">i=3</text>
+      <rect x="150" y="146" width="48" height="36" class="nd"/><text x="174" y="169" class="t" text-anchor="middle">3</text>
+      <rect x="198" y="146" width="48" height="36" class="nd newnd"/><text x="222" y="169" class="t" text-anchor="middle">4</text>
+      <rect x="246" y="146" width="48" height="36" class="nd"/><text x="270" y="169" class="t" text-anchor="middle">7<tspan font-size="9">b</tspan></text>
+      <rect x="294" y="146" width="48" height="36" class="nd newnd"/><text x="318" y="169" class="t" text-anchor="middle">7<tspan font-size="9">a</tspan></text>
+      <rect x="342" y="146" width="48" height="36" class="nd"/><text x="366" y="169" class="t" text-anchor="middle">5</text>
+      <path d="M318,184 C 318,198 222,198 222,184" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="410" y="163" class="t small">4 &lt; 5 → swap arr[1], arr[3]</text>
+      <text x="410" y="179" class="t nulltxt" font-size="12">7<tspan font-size="9">a</tspan> jumped over 7<tspan font-size="9">b</tspan>: reversed</text>
+      <!-- row 3 -->
+      <text x="20" y="227" class="t mono">final</text>
+      <rect x="150" y="204" width="48" height="36" class="nd"/><text x="174" y="227" class="t" text-anchor="middle">3</text>
+      <rect x="198" y="204" width="48" height="36" class="nd"/><text x="222" y="227" class="t" text-anchor="middle">4</text>
+      <rect x="246" y="204" width="48" height="36" class="nd newnd"/><text x="270" y="227" class="t" text-anchor="middle">5</text>
+      <rect x="294" y="204" width="48" height="36" class="nd"/><text x="318" y="227" class="t" text-anchor="middle">7<tspan font-size="9">a</tspan></text>
+      <rect x="342" y="204" width="48" height="36" class="nd newnd"/><text x="366" y="227" class="t" text-anchor="middle">7<tspan font-size="9">b</tspan></text>
+      <path d="M366,242 C 366,256 270,256 270,242" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="410" y="221" class="t small">pivot swap: arr[4] = arr[2], arr[2] = 5</text>
+      <text x="410" y="237" class="t small">left = 2, the pivot's final index</text>
+    </svg>
+    <figcaption><b>The swap at <code>i=3</code> is the unstable move.</b> It exchanges index 1 and index 3, which are not neighbors, so 7<sub>a</sub> leaps over 7<sub>b</sub>: the array is <code>[3,4,7<sub>b</sub>,7<sub>a</sub>,5]</code>, the two 7s reversed. In this small example the final pivot swap happens to throw 7<sub>b</sub> to the end and the order comes back, but the algorithm never <em>tries</em> to protect it. Run it on <code>[3,4,7<sub>a</sub>,7<sub>b</sub>]</code> with pivot 7<sub>b</sub>: the pivot swap exchanges index 2 and 3 and the output is <code>[3,4,7<sub>b</sub>,7<sub>a</sub>]</code>, unstable for good. The check script confirms both runs.</figcaption>
+  </figure>
+
+  <div class="callout">
+    <span class="lab">Why stability matters in practice</span>
+    <p>Sort a table of employees by department after it is already sorted by name. A stable sort gives you names in order inside each department for free. An unstable sort scrambles them. When an interviewer asks "is your sort stable?", the answer for insertion and merge is yes, for quick sort and the counting version of bucket sort it is no.</p>
+  </div>
+</section>
+
+<!-- ============================ BUCKET ============================ -->
+<section id="bucket">
+  <h2><span class="num">4</span>Bucket sort</h2>
+  <p>The last sort in the course. Not as widely used as the others, but important, because it is the one sort that beats O(n log n). It works when the values are within a specific, known range.</p>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>Sorting a bag of coins by value. You do not compare coins with each other. You put three cups on the table labeled 1, 2 and 5, drop each coin in its cup, then pour the cups out in order: all the 1s, then all the 2s, then all the 5s. The cups are the buckets. It only works because you knew in advance there are exactly three kinds of coin.</p>
+  </div>
+
+  <h3>The idea: count, then write back</h3>
+  <p>Take an array of size 6 with values in the inclusive range 0-2. Create a "bucket" for each possible value: 0, 1, 2. A <dfn>bucket</dfn> here is just a position in a small array that stores the <em>frequency</em> (count) of that value. After counting, overwrite the original array with each value repeated count times, in order.</p>
+
+<pre><code><span class="k">def</span> bucketSort(arr):
+    <span class="c"># Assuming arr only contains 0, 1 or 2</span>
+    counts = [<span class="s">0</span>, <span class="s">0</span>, <span class="s">0</span>]
+
+    <span class="c"># Count the quantity of each val in arr</span>
+    <span class="k">for</span> n <span class="k">in</span> arr:
+        counts[n] += <span class="s">1</span>
+
+    <span class="c"># Fill each bucket in the original array</span>
+    i = <span class="s">0</span>
+    <span class="k">for</span> n <span class="k">in</span> range(len(counts)):
+        <span class="k">for</span> j <span class="k">in</span> range(counts[n]):
+            arr[i] = n
+            i += <span class="s">1</span>
+    <span class="k">return</span> arr</code></pre>
+
+  <ul>
+    <li><code>i</code> tracks the next insertion position in <code>arr</code>.</li>
+    <li><code>n</code> tracks the current position in <code>counts</code>, which is also the value being written.</li>
+    <li><code>j</code> tracks how many times <code>counts[n]</code> has been written.</li>
+  </ul>
+  <p>Example: <code>arr = [2,1,2,0,0,2]</code>. Counting gives <code>counts = [2,1,3]</code>: two 0s, one 1, three 2s. Then <code>n=0</code>: the inner loop runs 2 times, writing <code>arr[0]</code> and <code>arr[1]</code> = 0. Continue for each number and the array becomes <code>[0,0,1,2,2,2]</code>.</p>
+
+  <figure>
+    <svg viewBox="0 0 660 232" role="img" aria-label="Bucket sort on 2 1 2 0 0 2. Counting gives counts 2 1 3. Then counts index 0 writes two zeros, index 1 writes one 1, index 2 writes three 2s, producing 0 0 1 2 2 2.">
+      <!-- input -->
+      <text x="100" y="43" class="t ptrlab" text-anchor="end">arr</text>
+      <rect x="120" y="20" width="44" height="36" class="nd"/><text x="142" y="43" class="t" text-anchor="middle">2</text>
+      <rect x="164" y="20" width="44" height="36" class="nd"/><text x="186" y="43" class="t" text-anchor="middle">1</text>
+      <rect x="208" y="20" width="44" height="36" class="nd"/><text x="230" y="43" class="t" text-anchor="middle">2</text>
+      <rect x="252" y="20" width="44" height="36" class="nd"/><text x="274" y="43" class="t" text-anchor="middle">0</text>
+      <rect x="296" y="20" width="44" height="36" class="nd"/><text x="318" y="43" class="t" text-anchor="middle">0</text>
+      <rect x="340" y="20" width="44" height="36" class="nd"/><text x="362" y="43" class="t" text-anchor="middle">2</text>
+      <text x="410" y="43" class="t small">① for n in arr: counts[n] += 1</text>
+      <path d="M252,60 L 252,84" class="ptr" marker-end="url(#arr)"/>
+      <!-- counts -->
+      <text x="100" y="117" class="t ptrlab" text-anchor="end">counts</text>
+      <text x="142" y="82" class="t small" text-anchor="middle">0</text>
+      <text x="186" y="82" class="t small" text-anchor="middle">1</text>
+      <text x="230" y="82" class="t small" text-anchor="middle">2</text>
+      <rect x="120" y="94" width="44" height="36" class="nd"/><text x="142" y="117" class="t" text-anchor="middle">2</text>
+      <rect x="164" y="94" width="44" height="36" class="nd"/><text x="186" y="117" class="t" text-anchor="middle">1</text>
+      <rect x="208" y="94" width="44" height="36" class="nd"/><text x="230" y="117" class="t" text-anchor="middle">3</text>
+      <text x="270" y="117" class="t small">index = value, cell = count</text>
+      <text x="440" y="105" class="t small">② for n in 0..2:</text>
+      <text x="440" y="121" class="t small">write n, counts[n] times</text>
+      <!-- write-back arrows -->
+      <path d="M134,132 L 128,168" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M150,132 L 176,168" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M186,132 L 226,168" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M222,132 L 270,168" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M230,132 L 312,168" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M238,132 L 354,168" class="ptr newp" marker-end="url(#arrNew)"/>
+      <!-- output -->
+      <text x="100" y="193" class="t ptrlab" text-anchor="end">arr</text>
+      <rect x="120" y="170" width="44" height="36" class="nd newnd"/><text x="142" y="193" class="t" text-anchor="middle">0</text>
+      <rect x="164" y="170" width="44" height="36" class="nd newnd"/><text x="186" y="193" class="t" text-anchor="middle">0</text>
+      <rect x="208" y="170" width="44" height="36" class="nd newnd"/><text x="230" y="193" class="t" text-anchor="middle">1</text>
+      <rect x="252" y="170" width="44" height="36" class="nd newnd"/><text x="274" y="193" class="t" text-anchor="middle">2</text>
+      <rect x="296" y="170" width="44" height="36" class="nd newnd"/><text x="318" y="193" class="t" text-anchor="middle">2</text>
+      <rect x="340" y="170" width="44" height="36" class="nd newnd"/><text x="362" y="193" class="t" text-anchor="middle">2</text>
+      <text x="142" y="224" class="t small" text-anchor="middle">0</text>
+      <text x="186" y="224" class="t small" text-anchor="middle">1</text>
+      <text x="230" y="224" class="t small" text-anchor="middle">2</text>
+      <text x="274" y="224" class="t small" text-anchor="middle">3</text>
+      <text x="318" y="224" class="t small" text-anchor="middle">4</text>
+      <text x="362" y="224" class="t small" text-anchor="middle">5</text>
+      <text x="410" y="193" class="t small">2 + 1 + 3 = 6 writes = n</text>
+    </svg>
+    <figcaption><b>No comparisons at all.</b> The value's own number is its index in <code>counts</code>, so "where does this go" is answered by arithmetic, not by comparing. The orange arrows are the write-back: <code>counts[0] = 2</code> sends two 0s, <code>counts[1] = 1</code> sends one 1, <code>counts[2] = 3</code> sends three 2s. The original values are overwritten, not moved.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th><code>n</code> (value)</th><th><code>counts[n]</code></th><th>Inner loop <code>j</code></th><th>Writes</th><th><code>i</code> after</th><th><code>arr</code> after</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td>2</td><td>0, 1</td><td>arr[0] = 0, arr[1] = 0</td><td>2</td><td>[0, 0, 2, 0, 0, 2]</td></tr>
+      <tr><td>1</td><td>1</td><td>0</td><td>arr[2] = 1</td><td>3</td><td>[0, 0, 1, 0, 0, 2]</td></tr>
+      <tr><td>2</td><td>3</td><td>0, 1, 2</td><td>arr[3] = 2, arr[4] = 2, arr[5] = 2</td><td>6</td><td>[0, 0, 1, 2, 2, 2]</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Time: a nested loop that is O(n), not O(n²)</h3>
+  <p>The first loop counts: n steps. The second part has a loop inside a loop, and the reflex is to say O(n²). Look closer. The outer loop runs once per bucket (3 times). The inner loop runs <code>counts[n]</code> times: 2, then 1, then 3. Add them: 2 + 1 + 3 = 6 = n. The total number of writes is exactly n, no matter how the values are distributed, because every element is counted once and written once. So the whole algorithm is <strong>O(n)</strong> (strictly O(n + k) where k is the number of buckets, and k is a small constant here).</p>
+
+  <div class="callout">
+    <span class="lab">Nested loops are not automatically O(n²)</span>
+    <p>Ask "how many times does the inner loop body run <em>in total</em>?", not "how many loops are there?". Here the inner body runs n times across all outer iterations. The same reasoning appears in sliding window and in BFS, where a nested loop over neighbors still totals O(V + E).</p>
+  </div>
+
+  <h3>Stability</h3>
+  <p>The counting version overwrites the original array. There is no swapping and no moving of the original elements; the output is built from the counts. So the relative order of equal elements <em>cannot</em> be preserved: the "two 2s" in the output are not the original 2s at all. For plain integers this does not matter, since a 2 is a 2. For records sorted by a key it does, and then you need the stable prefix-sum version of counting sort, which is outside this lesson.</p>
+
+  <h3>Closing: the course table</h3>
+  <p>Bucket sort is O(n) but only works if the data is within a specified range. The safest general bet is merge sort or quick sort.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Algorithm</th><th>Big-O</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>Insertion Sort</td><td class="big slow">O(n²)*</td><td>If fully or nearly sorted, O(n)</td></tr>
+      <tr><td>Merge Sort</td><td class="big fast">O(n log n)</td><td></td></tr>
+      <tr><td>Quick Sort</td><td class="big fast">O(n log n)*</td><td>Worst case O(n²)</td></tr>
+      <tr><td>Bucket Sort</td><td class="big fast">O(n)*</td><td>Assuming all values are in a specified range</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============================ PATTERNS ============================ -->
+<section id="patterns">
+  <h2><span class="num">5</span>Moves that solve most sorting problems</h2>
+  <p>In an interview you will rarely write merge sort from scratch. You will call Python's sort with the right <code>key</code>, and you will be asked to <em>explain</em> which algorithm you would use and why. This section covers both.</p>
+
+  <h3>Which sort to say, and why</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>The situation</th><th>Say</th><th>Because</th></tr></thead>
+    <tbody>
+      <tr><td>"Sort this" with no other constraint</td><td>Merge sort (or built-in sort)</td><td>Guaranteed O(n log n), stable. No surprises.</td></tr>
+      <tr><td>Memory is tight, must be in place</td><td>Quick sort, randomized pivot</td><td>O(1) extra space, O(n log n) expected, fast in practice. Mention the O(n²) worst case and the fix.</td></tr>
+      <tr><td>Input is small, or nearly sorted</td><td>Insertion sort</td><td>O(n) when nearly sorted, tiny constant factor. Real libraries switch to it for small pieces.</td></tr>
+      <tr><td>Values are integers in a small known range (0-2, 0-9, ages, grades)</td><td>Bucket / counting sort</td><td>O(n + k). Beats every comparison sort.</td></tr>
+      <tr><td>Data is a linked list</td><td>Merge sort</td><td>Needs no random access; splitting with slow/fast pointers and merging with dummy node is natural. LeetCode 148.</td></tr>
+      <tr><td>Only need the k-th largest, not a full sort</td><td>Quickselect (partition only one side) or a heap</td><td>O(n) average. Partition is the same code as quick sort, minus one recursive call. LeetCode 215.</td></tr>
+      <tr><td>Equal keys must keep their order</td><td>Merge sort or built-in sort</td><td>Both stable. Never quick sort.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Move 1: <code>sorted()</code> and <code>list.sort()</code> with <code>key</code> and <code>reverse</code></h3>
+  <p>Python's built-in sort is <dfn>Timsort</dfn>: a hybrid of merge sort and insertion sort. It is stable, O(n log n) worst case, and O(n) on already sorted input (it detects runs). <code>sorted(x)</code> returns a <em>new</em> list and works on any iterable. <code>x.sort()</code> sorts the list <em>in place</em> and returns <code>None</code>, a classic bug source.</p>
+
+<pre><code>a = [<span class="s">3</span>, <span class="s">1</span>, <span class="s">2</span>]
+b = sorted(a)                 <span class="c"># b = [1, 2, 3], a untouched</span>
+a.sort()                      <span class="c"># a is now [1, 2, 3]; a.sort() itself returns None</span>
+
+sorted([<span class="s">3</span>, <span class="s">1</span>, <span class="s">2</span>], reverse=<span class="k">True</span>)                      <span class="c"># [3, 2, 1]</span>
+sorted([<span class="s">"banana"</span>, <span class="s">"fig"</span>, <span class="s">"apple"</span>, <span class="s">"kiwi"</span>], key=len)  <span class="c"># ['fig', 'kiwi', 'apple', 'banana']</span>
+sorted([<span class="s">"peach"</span>, <span class="s">"fig"</span>, <span class="s">"grape"</span>], key=len)          <span class="c"># ['fig', 'peach', 'grape']  (stable: peach stays before grape)</span></code></pre>
+
+  <p><code>key</code> is a function called once per element; the sort compares the <em>results</em>, not the elements. Think of it as "sort by this". Stability means elements with equal keys keep their input order.</p>
+
+  <figure>
+    <svg viewBox="-30 0 670 176" role="img" aria-label="Three tuples 2 b, 1 z, 2 a are sorted by their first element. Keys 2, 1, 2 are computed, then the sort orders by key; the two tuples with key 2 keep their original order.">
+      <text x="30" y="46" class="t ptrlab" text-anchor="end">input</text>
+      <rect x="40" y="24" width="96" height="36" class="nd"/><text x="88" y="47" class="t mono" text-anchor="middle">(2, 'b')</text>
+      <rect x="146" y="24" width="96" height="36" class="nd"/><text x="194" y="47" class="t mono" text-anchor="middle">(1, 'z')</text>
+      <rect x="252" y="24" width="96" height="36" class="nd"/><text x="300" y="47" class="t mono" text-anchor="middle">(2, 'a')</text>
+      <text x="88" y="80" class="t ptrlab" text-anchor="middle">key = 2</text>
+      <text x="194" y="80" class="t ptrlab" text-anchor="middle">key = 1</text>
+      <text x="300" y="80" class="t ptrlab" text-anchor="middle">key = 2</text>
+      <path d="M194,88 L 88,120" class="ptr" marker-end="url(#arr)"/>
+      <path d="M88,88 L 194,120" class="ptr" marker-end="url(#arr)"/>
+      <path d="M300,88 L 300,120" class="ptr" marker-end="url(#arr)"/>
+      <text x="30" y="146" class="t ptrlab" text-anchor="end">output</text>
+      <rect x="40" y="124" width="96" height="36" class="nd newnd"/><text x="88" y="147" class="t mono" text-anchor="middle">(1, 'z')</text>
+      <rect x="146" y="124" width="96" height="36" class="nd newnd"/><text x="194" y="147" class="t mono" text-anchor="middle">(2, 'b')</text>
+      <rect x="252" y="124" width="96" height="36" class="nd newnd"/><text x="300" y="147" class="t mono" text-anchor="middle">(2, 'a')</text>
+      <text x="380" y="40" class="t small">sorted(pairs, key=lambda p: p[0])</text>
+      <text x="380" y="62" class="t small">key is computed once per item,</text>
+      <text x="380" y="78" class="t small">then only keys are compared</text>
+      <text x="380" y="110" class="t small">(2,'b') and (2,'a') tie on key,</text>
+      <text x="380" y="126" class="t small">so they keep input order: b before a.</text>
+      <text x="380" y="148" class="t small">Without key: sorted(pairs) compares</text>
+      <text x="380" y="164" class="t small">whole tuples → (2,'a') before (2,'b')</text>
+    </svg>
+    <figcaption><b>The key decides what "smaller" means; stability decides the ties.</b> With <code>key=lambda p: p[0]</code> the letters are never looked at. Without a key, Python compares tuples element by element (first by number, then by letter), so <code>(2,'a')</code> would come before <code>(2,'b')</code>.</figcaption>
+  </figure>
+
+  <h3>Move 2: sorting tuples and multi-key sorts</h3>
+  <p>Tuples compare position by position, so returning a tuple from <code>key</code> gives you "sort by A, then by B". To sort one field descending and another ascending, negate the numeric field. This is the whole trick behind Top K Frequent Elements and most "sort by frequency" questions.</p>
+
+<pre><code><span class="k">from</span> collections <span class="k">import</span> Counter
+
+pairs = [(<span class="s">2</span>, <span class="s">"b"</span>), (<span class="s">1</span>, <span class="s">"z"</span>), (<span class="s">2</span>, <span class="s">"a"</span>)]
+sorted(pairs)                               <span class="c"># [(1,'z'), (2,'a'), (2,'b')]   whole tuple</span>
+sorted(pairs, key=<span class="k">lambda</span> p: p[<span class="s">0</span>])          <span class="c"># [(1,'z'), (2,'b'), (2,'a')]   by number, stable</span>
+sorted(pairs, key=<span class="k">lambda</span> p: (-p[<span class="s">0</span>], p[<span class="s">1</span>]))  <span class="c"># [(2,'a'), (2,'b'), (1,'z')]   number desc, letter asc</span>
+
+<span class="k">def</span> sort_by_freq_then_value(nums):
+    <span class="c"># most frequent first; ties broken by the smaller value first</span>
+    cnt = Counter(nums)
+    <span class="k">return</span> sorted(cnt, key=<span class="k">lambda</span> x: (-cnt[x], x))
+
+<span class="k">def</span> top_k_frequent(nums, k):                 <span class="c"># LeetCode 347, the O(n log n) version</span>
+    cnt = Counter(nums)
+    <span class="k">return</span> sorted(cnt, key=<span class="k">lambda</span> x: -cnt[x])[:k]
+
+<span class="k">def</span> merge_intervals(intervals):              <span class="c"># LeetCode 56: sort by start, then sweep</span>
+    intervals.sort(key=<span class="k">lambda</span> iv: iv[<span class="s">0</span>])
+    out = []
+    <span class="k">for</span> start, end <span class="k">in</span> intervals:
+        <span class="k">if</span> out <span class="k">and</span> start &lt;= out[-<span class="s">1</span>][<span class="s">1</span>]:        <span class="c"># overlaps the last kept interval</span>
+            out[-<span class="s">1</span>][<span class="s">1</span>] = max(out[-<span class="s">1</span>][<span class="s">1</span>], end)
+        <span class="k">else</span>:
+            out.append([start, end])
+    <span class="k">return</span> out</code></pre>
+
+  <h3>Move 3: a custom comparator with <code>cmp_to_key</code></h3>
+  <p>Sometimes "which is smaller" cannot be expressed as a key per element; it depends on the <em>pair</em>. Largest Number is the classic: put <code>a</code> before <code>b</code> if the string <code>a + b</code> is bigger than <code>b + a</code>. Python 3 removed the <code>cmp</code> argument, so wrap a two-argument function with <code>functools.cmp_to_key</code>. Return negative for "a first", positive for "b first", 0 for tie.</p>
+
+<pre><code><span class="k">from</span> functools <span class="k">import</span> cmp_to_key
+
+<span class="k">def</span> largest_number(nums):                    <span class="c"># LeetCode 179</span>
+    <span class="k">def</span> compare(a, b):
+        <span class="k">if</span> a + b &gt; b + a:
+            <span class="k">return</span> -<span class="s">1</span>                       <span class="c"># a should come first</span>
+        <span class="k">if</span> a + b &lt; b + a:
+            <span class="k">return</span> <span class="s">1</span>
+        <span class="k">return</span> <span class="s">0</span>
+    strs = sorted(map(str, nums), key=cmp_to_key(compare))
+    <span class="k">return</span> <span class="s">"0"</span> <span class="k">if</span> strs[<span class="s">0</span>] == <span class="s">"0"</span> <span class="k">else</span> <span class="s">""</span>.join(strs)
+
+largest_number([<span class="s">3</span>, <span class="s">30</span>, <span class="s">34</span>, <span class="s">5</span>, <span class="s">9</span>])   <span class="c"># "9534330"</span></code></pre>
+
+  <h3>Move 4: counting sort when the range is small</h3>
+  <p>Whenever the problem says "values are between 0 and k" and k is small, say the phrase "counting sort, O(n + k)". It is the bucket sort from lesson 13 with the bucket count as a parameter. Sort Colors (values 0, 1, 2) is exactly <code>bucketSort</code>.</p>
+
+<pre><code><span class="k">def</span> counting_sort(arr, k):
+    <span class="c"># values are integers in 0..k inclusive</span>
+    counts = [<span class="s">0</span>] * (k + <span class="s">1</span>)
+    <span class="k">for</span> n <span class="k">in</span> arr:
+        counts[n] += <span class="s">1</span>
+    i = <span class="s">0</span>
+    <span class="k">for</span> v <span class="k">in</span> range(k + <span class="s">1</span>):
+        <span class="k">for</span> _ <span class="k">in</span> range(counts[v]):
+            arr[i] = v
+            i += <span class="s">1</span>
+    <span class="k">return</span> arr
+
+counting_sort([<span class="s">4</span>, <span class="s">1</span>, <span class="s">3</span>, <span class="s">1</span>, <span class="s">0</span>, <span class="s">4</span>], k=<span class="s">4</span>)   <span class="c"># [0, 1, 1, 3, 4, 4]</span></code></pre>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>If the values are negative or huge (say, up to 10<sup>9</sup>) counting sort needs a counts array of that size and stops being a good idea. Then use a dictionary <code>Counter</code> plus <code>sorted()</code> on the keys, or go back to a comparison sort.</p>
+  </div>
+</section>
+
+<!-- ============================ COMPLEXITY ============================ -->
+<section id="complexity">
+  <h2><span class="num">6</span>Big-O summary</h2>
+  <p>Say the best, average and worst cases separately. Interviewers listen for the difference between quick sort's average and worst.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Algorithm</th><th>Best</th><th>Average</th><th>Worst</th><th>Extra space</th><th>Stable</th></tr></thead>
+    <tbody>
+      <tr><td>Insertion sort</td><td class="big fast">O(n)</td><td class="big slow">O(n²)</td><td class="big slow">O(n²)</td><td class="big fast">O(1)</td><td>yes</td></tr>
+      <tr><td>Merge sort</td><td class="big fast">O(n log n)</td><td class="big fast">O(n log n)</td><td class="big fast">O(n log n)</td><td class="big slow">O(n)</td><td>yes</td></tr>
+      <tr><td>Quick sort</td><td class="big fast">O(n log n)</td><td class="big fast">O(n log n)</td><td class="big slow">O(n²)</td><td class="big fast">O(log n)* stack</td><td>no</td></tr>
+      <tr><td>Bucket / counting sort</td><td class="big fast">O(n + k)</td><td class="big fast">O(n + k)</td><td class="big fast">O(n + k)</td><td>O(k) counts</td><td>no (this version)</td></tr>
+      <tr><td>Python <code>sorted()</code> (Timsort)</td><td class="big fast">O(n)</td><td class="big fast">O(n log n)</td><td class="big fast">O(n log n)</td><td class="big slow">O(n)</td><td>yes</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><strong>Insertion best case O(n):</strong> already sorted input; the inner loop never runs. Worst case: reverse sorted input.</li>
+    <li><strong>Merge space O(n):</strong> temp arrays (n at any moment) plus the call stack (log n). Summed, not multiplied.</li>
+    <li><strong>Quick sort O(log n)* stack:</strong> O(log n) when the pivot splits evenly; O(n) in the worst case (sorted input, last-index pivot). Randomizing the pivot makes the worst case unlikely, not impossible.</li>
+    <li><strong>Bucket k:</strong> the number of possible values. With k = 3 it is a constant and the lesson simply writes O(n). With k = 10<sup>9</sup> it is useless.</li>
+  </ul>
+</section>
+
+<!-- ============================ MISTAKES ============================ -->
+<section id="mistakes">
+  <h2><span class="num">7</span>Mistakes to watch for</h2>
+  <div class="mistake">
+    <div>
+      <div class="bad">Insertion sort: comparing arr[i] instead of arr[j + 1]</div>
+      <p>After the first swap the element you are inserting is no longer at index <code>i</code>; it is at <code>j + 1</code>. Writing <code>while j &gt;= 0 and arr[i] &lt; arr[j]</code> compares the wrong value and produces a wrong order. Either use <code>arr[j + 1]</code> as NeetCode does, or save <code>cur = arr[i]</code> before the loop and shift instead of swap.</p>
+    </div>
+    <div>
+      <div class="bad">Forgetting j &gt;= 0 in the while condition</div>
+      <p>Without it, <code>j</code> reaches -1 and <code>arr[-1]</code> silently reads the <em>last</em> element (Python negative indexing). No crash, wrong answer. Put <code>j &gt;= 0</code> first so the <code>and</code> short-circuits before indexing.</p>
+    </div>
+    <div>
+      <div class="bad">Merge sort: dropping the leftover loops</div>
+      <p>When <code>L</code> or <code>R</code> runs out, the other one still has sorted elements to copy. Without the two tail loops the last slots of <code>arr</code> keep their old, unsorted values. The length looks right, the content is wrong.</p>
+    </div>
+    <div>
+      <div class="bad">Merge sort: wrong slice bounds</div>
+      <p><code>L = arr[s:m+1]</code> and <code>R = arr[m+1:e+1]</code>. Python slices exclude the end, and <code>m</code>, <code>e</code> are inclusive, so both need <code>+1</code>. <code>arr[s:m]</code> loses the middle element every time.</p>
+    </div>
+    <div>
+      <div class="bad">Merge sort: using &lt; instead of &lt;= on the tie</div>
+      <p>Still sorts correctly, but takes the right element first on ties, which breaks stability. Say "I use <code>&lt;=</code> so the merge is stable" out loud; it is a free point.</p>
+    </div>
+    <div>
+      <div class="bad">Quick sort: recursing on the pivot again</div>
+      <p>After partition the pivot is final. Recurse on <code>s..left-1</code> and <code>left+1..e</code>. Including the pivot (<code>s..left</code>) on an array of equal elements makes the size never shrink: infinite recursion.</p>
+    </div>
+    <div>
+      <div class="bad">Quick sort: base case only checks e == s</div>
+      <p>An empty side gives <code>e = s - 1</code>. With <code>if s == e: return</code> the code reads <code>arr[e]</code> out of range or loops forever. Use <code>if e - s + 1 &lt;= 1</code> (or <code>if s &gt;= e</code>).</p>
+    </div>
+    <div>
+      <div class="bad">Saying "quick sort is O(n log n)" with no qualifier</div>
+      <p>It is O(n log n) <em>on average</em>, O(n²) in the worst case. Name the worst case (sorted input, fixed pivot) and the fix (random pivot). Then say merge sort has no such case.</p>
+    </div>
+    <div>
+      <div class="bad">Using x.sort() as an expression</div>
+      <p><code>result = nums.sort()</code> makes <code>result</code> equal to <code>None</code>. <code>sort()</code> is in place. Use <code>sorted(nums)</code> when you need the value, and <code>nums.sort()</code> as a statement when you want in place.</p>
+    </div>
+  </div>
+
+  <div class="cheat">
+    <h3>Interview one-liners</h3>
+    <ul>
+      <li>"Insertion sort keeps a sorted prefix and slides each new element left; O(n²) worst, O(n) on nearly sorted input, stable, in place."</li>
+      <li>"Merge sort splits in halves, log n levels, n work per level to merge, so O(n log n) in every case; O(n) extra space; stable because I take from the left on ties."</li>
+      <li>"Quick sort partitions around a pivot and recurses on both sides; no merge needed. O(n log n) average, O(n²) if the pivot is always the max or min, which a random pivot makes unlikely. In place, not stable."</li>
+      <li>"Bucket sort counts how many of each value, then writes them back in order: O(n + k). It only works when values are in a small known range."</li>
+      <li>"A nested loop is not automatically O(n²); I count how many times the inner body runs in total. In bucket sort that total is n."</li>
+      <li>"In Python I call <code>sorted()</code> with a <code>key</code>; it is Timsort, stable, O(n log n), and I would say merge sort if asked what is underneath."</li>
+      <li>"To sort by two fields I return a tuple from <code>key</code>, negating a number to make it descending."</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================ PRACTICE ============================ -->
+<section id="practice">
+  <h2><span class="num">8</span>Practice, in this order</h2>
+  <p>Solve without the notes open. For 912, implement merge sort first, then quick sort, then compare the run time on the same input.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Problem</th><th>Move it trains</th><th>Level</th></tr></thead>
+    <tbody>
+      <tr><td>88</td><td>Merge Sorted Array</td><td>the <code>merge()</code> three-pointer step, in place from the back</td><td>Easy</td></tr>
+      <tr><td>1122</td><td>Relative Sort Array</td><td>counting sort with a small range, then custom order</td><td>Easy</td></tr>
+      <tr><td>242</td><td>Valid Anagram</td><td>sort both strings, or count (bucket idea)</td><td>Easy</td></tr>
+      <tr><td>1051</td><td>Height Checker</td><td>counting sort, compare with original</td><td>Easy</td></tr>
+      <tr><td>75</td><td>Sort Colors</td><td><code>bucketSort</code> for values 0/1/2; then the one-pass partition version</td><td>Medium</td></tr>
+      <tr><td>912</td><td>Sort an Array</td><td>write merge sort and quick sort from memory</td><td>Medium</td></tr>
+      <tr><td>147</td><td>Insertion Sort List</td><td>insertion sort on a linked list (dummy node + walk)</td><td>Medium</td></tr>
+      <tr><td>148</td><td>Sort List</td><td>merge sort on a linked list: slow/fast split, merge two lists</td><td>Medium</td></tr>
+      <tr><td>56</td><td>Merge Intervals</td><td>sort by start with <code>key</code>, then sweep</td><td>Medium</td></tr>
+      <tr><td>347</td><td>Top K Frequent Elements</td><td><code>Counter</code> + sort by frequency; then the bucket-by-count O(n) version</td><td>Medium</td></tr>
+      <tr><td>179</td><td>Largest Number</td><td>custom comparator with <code>cmp_to_key</code></td><td>Medium</td></tr>
+      <tr><td>215</td><td>Kth Largest Element in an Array</td><td>quick sort's partition reused as quickselect</td><td>Medium</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Your next step today:</strong> LeetCode 912. Write <code>mergeSort</code> and <code>merge</code> from memory, submit, then write <code>quickSort</code> and submit again. If quick sort times out on a test with many equal values, that is the O(n²) case; add the random pivot.</p>
+</section>
+
+<!-- ============================ QUIZ ============================ -->
+<section id="quiz">
+  <h2><span class="num">9</span>Self-check</h2>
+  <p>Answer out loud before opening. If you cannot answer in one breath, reread that section.</p>
+
+  <details><summary><span class="q">Q1</span>In insertion sort, what do <code>i</code> and <code>j</code> point to, and when does the inner loop stop?</summary><div><p><code>i</code> is the element being inserted into the sorted portion; <code>j</code> starts at <code>i - 1</code> and walks left. The inner loop stops when <code>j</code> becomes -1 or when the element being inserted (now at <code>j + 1</code>) is greater than or equal to <code>arr[j]</code>.</p></div></details>
+
+  <details><summary><span class="q">Q2</span>Trace it: insertion sort on <code>[2,3,4,1,6]</code>. What is the array after each pass <code>i = 1, 2, 3, 4</code>, and how many swaps in total?</summary><div><p>i=1: [2,3,4,1,6] (0 swaps). i=2: [2,3,4,1,6] (0). i=3: [1,2,3,4,6] (3 swaps: 1 passes 4, then 3, then 2). i=4: [1,2,3,4,6] (0). Total 3 swaps.</p></div></details>
+
+  <details><summary><span class="q">Q3</span>What does "stable" mean, and why is insertion sort stable on <code>[7,3,7]</code>?</summary><div><p>Equal elements keep their original relative order. On pass i=2 the second 7 is compared with the first 7: <code>7 &lt; 7</code> is false, so no swap happens and the first 7 stays first. The strict <code>&lt;</code> is what makes it stable.</p></div></details>
+
+  <details><summary><span class="q">Q4</span>Best case, worst case, and space of insertion sort? Name the worst-case input.</summary><div><p>Best O(n) on already sorted input (inner loop never runs). Worst O(n²) on reverse-sorted input (every element walks to the front). Average is also O(n²). Space O(1), in place.</p></div></details>
+
+  <details><summary><span class="q">Q5</span>In <code>mergeSort(arr, s, e)</code>, why must both recursive calls return before <code>merge()</code> runs? On <code>[3,2,4,1,6]</code>, which merge happens first?</summary><div><p><code>merge()</code> assumes both halves are already sorted; they only become sorted when their recursive calls finish. The first merge is <code>merge(arr, 0, 0, 1)</code>, turning <code>[3,2]</code> into <code>[2,3]</code>, before the code touches <code>[4]</code>.</p></div></details>
+
+  <details><summary><span class="q">Q6</span>Trace it: merge <code>L = [2,3,4]</code> and <code>R = [1,6]</code>. Give <code>i</code>, <code>j</code>, <code>k</code> after each step.</summary><div><p>Step 1: 2 ≤ 1 false, write 1: i=0, j=1, k=1. Step 2: 2 ≤ 6, write 2: i=1, j=1, k=2. Step 3: write 3: i=2, j=1, k=3. Step 4: write 4: i=3, j=1, k=4. First loop ends (i = len(L)). Leftover loop writes 6: j=2, k=5. Result [1,2,3,4,6].</p></div></details>
+
+  <details><summary><span class="q">Q7</span>Explain in two sentences why merge sort is O(n log n).</summary><div><p>Each level halves the subarray size, so it takes log n halvings to reach size 1: log n levels. Each level's merges together touch all n elements once, so n work per level, and n × log n total.</p></div></details>
+
+  <details><summary><span class="q">Q8</span>Why is merge sort's space O(n) and not O(n log n)?</summary><div><p>The call stack holds log n frames and the temp arrays in use at one moment total at most n. They add: O(n + log n) = O(n). The temp arrays of different levels are not all alive at the same time; each <code>merge()</code> releases its <code>L</code> and <code>R</code> when it returns.</p></div></details>
+
+  <details><summary><span class="q">Q9</span>Trace it: partition <code>[6,2,4,1,3]</code> with pivot 3. Give <code>left</code> and the array after each <code>i</code>, and the array after the pivot swap.</summary><div><p>i=0: 6 &lt; 3 no, left=0, [6,2,4,1,3]. i=1: 2 &lt; 3, swap arr[0] and arr[1], left=1, [2,6,4,1,3]. i=2: 4 &lt; 3 no, left=1. i=3: 1 &lt; 3, swap arr[1] and arr[3], left=2, [2,1,4,6,3]. Pivot swap arr[4] with arr[2]: [2,1,3,6,4]. Then recurse on [2,1] and [6,4].</p></div></details>
+
+  <details><summary><span class="q">Q10</span>What input makes quick sort O(n²) when the pivot is the last element, and what is the fix?</summary><div><p>An already sorted (or reverse sorted) array: the pivot is always the max (or min), so one side has n - 1 elements and the other 0, giving a recursion chain of height n with O(n) partition work per level. Fix: choose the pivot randomly (or shuffle first), giving expected O(n log n).</p></div></details>
+
+  <details><summary><span class="q">Q11</span>Why is quick sort not stable? Use <code>[7,3,7,4,5]</code>.</summary><div><p>Partition swaps non-adjacent elements. With pivot 5, at i=3 the value 4 swaps with the 7 at index 1 (originally index 0), moving that 7 to index 3, behind the other 7. An element jumped over its equal, so relative order is not protected.</p></div></details>
+
+  <details><summary><span class="q">Q12</span>Bucket sort has a loop inside a loop. Why is it O(n) and not O(n²)? Use <code>counts = [2,1,3]</code>.</summary><div><p>The inner loop runs <code>counts[n]</code> times for each bucket: 2 + 1 + 3 = 6 = n total writes. Every element is counted once and written once. Count the total inner-loop iterations, not the number of loops.</p></div></details>
+
+  <details><summary><span class="q">Q13</span>What is the difference between <code>sorted(a)</code> and <code>a.sort()</code>, and what algorithm do they use?</summary><div><p><code>sorted(a)</code> returns a new sorted list and leaves <code>a</code> alone; <code>a.sort()</code> sorts in place and returns <code>None</code>. Both are Timsort: a stable merge/insertion hybrid, O(n log n) worst case, O(n) on sorted input.</p></div></details>
+</section>
+
+<nav class="pager" aria-label="Previous and next topic">
+  <a class="prev" href="03-recursion.html"><small>Previous</small>Recursion</a>
+  <a class="next" href="05-binary-search.html"><small>Next</small>Binary Search</a>
+</nav>
+
+<footer>
+  Source: NeetCode "Algorithms and Data Structures for Beginners", lessons 10 (Insertion Sort), 11 (Merge Sort), 12 (Quick Sort), 13 (Bucket Sort). All Python in these notes was run and tested. Orange in every diagram marks what changed in that step.
+</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bit Manipulation · DSA Field Notes</title>
+<meta name="description" content="Bits, truth tables, shifts, counting 1 bits, masks, XOR tricks and bitmask sets - box diagrams, tested Python, Big-O, mistakes, practice, self-check.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arr"/></marker>
+    <marker id="arrNew" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrNew"/></marker>
+    <marker id="arrOld" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrOld"/></marker>
+    <marker id="arrCur" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrCur"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="site-head">
+  <a class="brand" href="../index.html">DSA <span>Field Notes</span></a>
+  <div class="crumbs"><a href="../index.html">Course map</a> <span>/</span> <span>12 Bit Manipulation</span></div>
+</header>
+<header class="top">
+  <div class="eyebrow">NeetCode · DSA for Beginners · Lesson 34</div>
+  <h1>Bit Manipulation Field Notes</h1>
+  <p class="lede">Bits, the five operators, shifting, and the tricks built on them: count the 1s, clear the lowest bit, cancel pairs with XOR, use an integer as a set. Every diagram shows the bits as boxes so you can see what moved.</p>
+</header>
+
+<nav class="sections" aria-label="Sections">
+  <a href="#why">Why</a>
+  <a href="#binary">Binary</a>
+  <a href="#ops">Operators</a>
+  <a href="#count">Count bits</a>
+  <a href="#python">Python ints</a>
+  <a href="#patterns">Patterns</a>
+  <a href="#complexity">Big-O</a>
+  <a href="#mistakes">Mistakes</a>
+  <a href="#practice">Practice</a>
+  <a href="#quiz">Self-check</a>
+</nav>
+
+<!-- ============================ WHY ============================ -->
+<section id="why">
+  <h2><span class="num">0</span>Why bits are worth one lesson</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>A row of eight light switches on a wall. Each switch is either up (1) or down (0). Nothing else. Every number, letter, and pixel in a computer is just a long row of these switches. Bit manipulation is the skill of reading and flipping the switches directly, instead of asking the computer to do arithmetic for you.</p>
+  </div>
+
+  <p>NeetCode puts this lesson last on purpose. It is not an algorithm and not a data structure. It is a <dfn>CS concept</dfn>: a set of tricks that make some algorithms simpler or faster. These questions are less common in interviews than arrays or trees, but they show up, and they are hard to solve if you do not know the trick. You either know it or you do not. So learn the five operators and the four patterns below, and you are covered.</p>
+
+  <p>Recall from the first chapter: a <dfn>bit</dfn> (binary digit) is the most fundamental unit a computer uses to represent data. It holds 0 or 1. Eight bits make a <dfn>byte</dfn>. An <code>int</code> in most languages is 32 or 64 bits.</p>
+
+  <figure>
+    <svg viewBox="0 0 640 175" role="img" aria-label="A byte drawn as 8 boxes with place values 128 down to 1 above them. The bits 0 0 0 1 0 1 1 1 spell 23 because 16 plus 4 plus 2 plus 1 is 23.">
+      <text x="70" y="34" class="t small" text-anchor="middle">128</text>
+      <text x="140" y="34" class="t small" text-anchor="middle">64</text>
+      <text x="210" y="34" class="t small" text-anchor="middle">32</text>
+      <text x="280" y="34" class="t ptrlab" text-anchor="middle">16</text>
+      <text x="350" y="34" class="t small" text-anchor="middle">8</text>
+      <text x="420" y="34" class="t ptrlab" text-anchor="middle">4</text>
+      <text x="490" y="34" class="t ptrlab" text-anchor="middle">2</text>
+      <text x="560" y="34" class="t ptrlab" text-anchor="middle">1</text>
+      <text x="14" y="34" class="t small">value</text>
+
+      <rect x="40" y="44" width="60" height="44" class="nd"/><text x="70" y="72" class="t" text-anchor="middle" font-size="16">0</text>
+      <rect x="110" y="44" width="60" height="44" class="nd"/><text x="140" y="72" class="t" text-anchor="middle" font-size="16">0</text>
+      <rect x="180" y="44" width="60" height="44" class="nd"/><text x="210" y="72" class="t" text-anchor="middle" font-size="16">0</text>
+      <rect x="250" y="44" width="60" height="44" class="nd"/><text x="280" y="72" class="t ptrlab" text-anchor="middle" font-size="16">1</text>
+      <rect x="320" y="44" width="60" height="44" class="nd"/><text x="350" y="72" class="t" text-anchor="middle" font-size="16">0</text>
+      <rect x="390" y="44" width="60" height="44" class="nd"/><text x="420" y="72" class="t ptrlab" text-anchor="middle" font-size="16">1</text>
+      <rect x="460" y="44" width="60" height="44" class="nd"/><text x="490" y="72" class="t ptrlab" text-anchor="middle" font-size="16">1</text>
+      <rect x="530" y="44" width="60" height="44" class="nd"/><text x="560" y="72" class="t ptrlab" text-anchor="middle" font-size="16">1</text>
+
+      <text x="70" y="106" class="t small" text-anchor="middle">bit 7</text>
+      <text x="140" y="106" class="t small" text-anchor="middle">bit 6</text>
+      <text x="210" y="106" class="t small" text-anchor="middle">bit 5</text>
+      <text x="280" y="106" class="t small" text-anchor="middle">bit 4</text>
+      <text x="350" y="106" class="t small" text-anchor="middle">bit 3</text>
+      <text x="420" y="106" class="t small" text-anchor="middle">bit 2</text>
+      <text x="490" y="106" class="t small" text-anchor="middle">bit 1</text>
+      <text x="560" y="106" class="t small" text-anchor="middle">bit 0</text>
+
+      <text x="320" y="142" class="t mono" text-anchor="middle" font-size="14">00010111  =  16 + 4 + 2 + 1  =  23</text>
+      <text x="320" y="164" class="t small" text-anchor="middle">add the place values of the boxes that hold a 1; ignore the zeros</text>
+    </svg>
+    <figcaption><b>A number is a row of boxes, each worth a power of 2.</b> The rightmost box is bit 0 and is worth 1. Each box to the left is worth twice as much. 23 has 1s in the 16, 4, 2 and 1 boxes. This picture is the whole topic: every trick below is "look at one box" or "slide the boxes".</figcaption>
+  </figure>
+</section>
+
+<!-- ============================ BINARY ============================ -->
+<section id="binary">
+  <h2><span class="num">1</span>Reading and writing binary</h2>
+
+  <h3>Binary to decimal and back</h3>
+  <p>In <dfn>decimal</dfn> (base 10) each position is a power of 10: ones, tens, hundreds. In <dfn>binary</dfn> (base 2) each position is a power of 2. Counting from the right: 1, 2, 4, 8, 16, 32, ... So <code>001</code> is 1, <code>010</code> is 2, <code>100</code> is 4, and <code>10111</code> is 16 + 4 + 2 + 1 = 23. This one rule converts any binary number to decimal.</p>
+  <p>Going the other way, keep dividing by 2 and write down the remainders from last to first. 23 → 11 r1 → 5 r1 → 2 r1 → 1 r0 → 0 r1. Reading the remainders backwards: <code>10111</code>. You will see this exact division in the <code>countBits</code> loop below, because <code>n &gt;&gt; 1</code> is <code>n // 2</code>.</p>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Binary</th><th>Place values that are on</th><th>Decimal</th></tr></thead>
+    <tbody>
+      <tr><td><code>001</code></td><td>1</td><td>1</td></tr>
+      <tr><td><code>010</code></td><td>2</td><td>2</td></tr>
+      <tr><td><code>100</code></td><td>4</td><td>4</td></tr>
+      <tr><td><code>0111</code></td><td>4 + 2 + 1</td><td>7</td></tr>
+      <tr><td><code>1000</code></td><td>8</td><td>8</td></tr>
+      <tr><td><code>10110</code></td><td>16 + 4 + 2</td><td>22</td></tr>
+      <tr><td><code>10111</code></td><td>16 + 4 + 2 + 1</td><td>23</td></tr>
+      <tr><td><code>11111111</code></td><td>128 + 64 + 32 + 16 + 8 + 4 + 2 + 1</td><td>255</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Python does the conversion for you</h3>
+  <p>Three tools. <code>bin()</code> turns an int into a string that starts with <code>0b</code>. <code>int(s, 2)</code> parses a binary string. <code>format</code> (or an f-string) gives you a padded string for printing traces. You can also type a binary literal directly with the <code>0b</code> prefix.</p>
+
+<pre><code>bin(<span class="s">23</span>)              <span class="c"># '0b10111'   (a string, prefix 0b)</span>
+bin(<span class="s">23</span>)[<span class="s">2</span>:]          <span class="c"># '10111'     (drop the prefix)</span>
+format(<span class="s">23</span>, <span class="s">"08b"</span>)     <span class="c"># '00010111'  (pad to 8 places: the byte in the picture)</span>
+<span class="s">f"{23:b}"</span>            <span class="c"># '10111'</span>
+
+int(<span class="s">"10111"</span>, <span class="s">2</span>)      <span class="c"># 23          (string in base 2 → int)</span>
+int(<span class="s">"00010111"</span>, <span class="s">2</span>)   <span class="c"># 23          (leading zeros are fine)</span>
+<span class="s">0b10111</span>              <span class="c"># 23          (binary literal, no quotes)</span></code></pre>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p><code>bin(n)</code> is for <em>looking</em> at a number. The number itself is always stored as bits; there is no "decimal int" and "binary int" in Python. <code>23</code> and <code>0b10111</code> are the same object.</p>
+  </div>
+</section>
+
+<!-- ============================ OPERATORS ============================ -->
+<section id="ops">
+  <h2><span class="num">2</span>The five operators and their truth tables</h2>
+
+  <p>A <dfn>truth table</dfn> lists every input combination and the output. For two bits there are only four combinations, so each table has four rows. The operators work on whole numbers by applying the table to each bit position separately: bit 0 with bit 0, bit 1 with bit 1, and so on.</p>
+
+  <ul>
+    <li><strong>AND</strong> <code>&amp;</code>: both bits must be 1 to get 1; otherwise 0.</li>
+    <li><strong>OR</strong> <code>|</code>: only one bit has to be 1 to get 1. Also 1 if both are 1. 0 only if both are 0.</li>
+    <li><strong>XOR</strong> <code>^</code> (exclusive or): 1 if only ONE of the bits is 1; otherwise 0. So <code>1 ^ 1 = 0</code>. Think "are they different?".</li>
+    <li><strong>NOT</strong> <code>~</code> (negation): flips the bit. <code>~0 = 1</code>, <code>~1 = 0</code>. It takes one input, not two.</li>
+    <li><strong>Shift</strong> <code>&lt;&lt;</code> left, <code>&gt;&gt;</code> right: slides every bit one position. Left shift multiplies by 2 (doubling). Right shift divides by 2 (halving).</li>
+  </ul>
+
+  <figure>
+    <svg viewBox="0 0 680 168" role="img" aria-label="Four small truth tables side by side: AND gives 1 only for 1 and 1; OR gives 1 unless both are 0; XOR gives 1 only when the bits differ; NOT flips a single bit.">
+      <!-- AND -->
+      <text x="20" y="22" class="t ptrlab">AND   a &amp; b</text>
+      <rect x="20" y="34" width="108" height="110" class="nd"/>
+      <line x1="20" y1="56" x2="128" y2="56" class="cell"/>
+      <line x1="56" y1="34" x2="56" y2="144" class="cell"/><line x1="92" y1="34" x2="92" y2="144" class="cell"/>
+      <text x="38" y="49" class="t small" text-anchor="middle">a</text><text x="74" y="49" class="t small" text-anchor="middle">b</text><text x="110" y="49" class="t small" text-anchor="middle">a&amp;b</text>
+      <text x="38" y="71" class="t mono" text-anchor="middle">0</text><text x="74" y="71" class="t mono" text-anchor="middle">0</text><text x="110" y="71" class="t mono" text-anchor="middle">0</text>
+      <text x="38" y="93" class="t mono" text-anchor="middle">0</text><text x="74" y="93" class="t mono" text-anchor="middle">1</text><text x="110" y="93" class="t mono" text-anchor="middle">0</text>
+      <text x="38" y="115" class="t mono" text-anchor="middle">1</text><text x="74" y="115" class="t mono" text-anchor="middle">0</text><text x="110" y="115" class="t mono" text-anchor="middle">0</text>
+      <text x="38" y="137" class="t mono" text-anchor="middle">1</text><text x="74" y="137" class="t mono" text-anchor="middle">1</text><text x="110" y="137" class="t ptrlab" text-anchor="middle">1</text>
+
+      <!-- OR -->
+      <text x="190" y="22" class="t ptrlab">OR   a | b</text>
+      <rect x="190" y="34" width="108" height="110" class="nd"/>
+      <line x1="190" y1="56" x2="298" y2="56" class="cell"/>
+      <line x1="226" y1="34" x2="226" y2="144" class="cell"/><line x1="262" y1="34" x2="262" y2="144" class="cell"/>
+      <text x="208" y="49" class="t small" text-anchor="middle">a</text><text x="244" y="49" class="t small" text-anchor="middle">b</text><text x="280" y="49" class="t small" text-anchor="middle">a|b</text>
+      <text x="208" y="71" class="t mono" text-anchor="middle">0</text><text x="244" y="71" class="t mono" text-anchor="middle">0</text><text x="280" y="71" class="t mono" text-anchor="middle">0</text>
+      <text x="208" y="93" class="t mono" text-anchor="middle">0</text><text x="244" y="93" class="t mono" text-anchor="middle">1</text><text x="280" y="93" class="t ptrlab" text-anchor="middle">1</text>
+      <text x="208" y="115" class="t mono" text-anchor="middle">1</text><text x="244" y="115" class="t mono" text-anchor="middle">0</text><text x="280" y="115" class="t ptrlab" text-anchor="middle">1</text>
+      <text x="208" y="137" class="t mono" text-anchor="middle">1</text><text x="244" y="137" class="t mono" text-anchor="middle">1</text><text x="280" y="137" class="t ptrlab" text-anchor="middle">1</text>
+
+      <!-- XOR -->
+      <text x="360" y="22" class="t ptrlab">XOR   a ^ b</text>
+      <rect x="360" y="34" width="108" height="110" class="nd"/>
+      <line x1="360" y1="56" x2="468" y2="56" class="cell"/>
+      <line x1="396" y1="34" x2="396" y2="144" class="cell"/><line x1="432" y1="34" x2="432" y2="144" class="cell"/>
+      <text x="378" y="49" class="t small" text-anchor="middle">a</text><text x="414" y="49" class="t small" text-anchor="middle">b</text><text x="450" y="49" class="t small" text-anchor="middle">a^b</text>
+      <text x="378" y="71" class="t mono" text-anchor="middle">0</text><text x="414" y="71" class="t mono" text-anchor="middle">0</text><text x="450" y="71" class="t mono" text-anchor="middle">0</text>
+      <text x="378" y="93" class="t mono" text-anchor="middle">0</text><text x="414" y="93" class="t mono" text-anchor="middle">1</text><text x="450" y="93" class="t ptrlab" text-anchor="middle">1</text>
+      <text x="378" y="115" class="t mono" text-anchor="middle">1</text><text x="414" y="115" class="t mono" text-anchor="middle">0</text><text x="450" y="115" class="t ptrlab" text-anchor="middle">1</text>
+      <text x="378" y="137" class="t mono" text-anchor="middle">1</text><text x="414" y="137" class="t mono" text-anchor="middle">1</text><text x="450" y="137" class="t mono" text-anchor="middle">0</text>
+
+      <!-- NOT -->
+      <text x="530" y="22" class="t ptrlab">NOT   ~a</text>
+      <rect x="530" y="34" width="72" height="66" class="nd"/>
+      <line x1="530" y1="56" x2="602" y2="56" class="cell"/>
+      <line x1="566" y1="34" x2="566" y2="100" class="cell"/>
+      <text x="548" y="49" class="t small" text-anchor="middle">a</text><text x="584" y="49" class="t small" text-anchor="middle">~a</text>
+      <text x="548" y="71" class="t mono" text-anchor="middle">0</text><text x="584" y="71" class="t ptrlab" text-anchor="middle">1</text>
+      <text x="548" y="93" class="t mono" text-anchor="middle">1</text><text x="584" y="93" class="t mono" text-anchor="middle">0</text>
+      <text x="566" y="122" class="t small" text-anchor="middle">one input</text>
+      <text x="566" y="137" class="t small" text-anchor="middle">just flips it</text>
+
+      <text x="340" y="162" class="t small" text-anchor="middle">teal 1 = the rows to memorize.  AND: only 1,1.   OR: anything but 0,0.   XOR: only when different.</text>
+    </svg>
+    <figcaption><b>Four tables, twelve rows total.</b> AND is strict (both), OR is generous (either), XOR is "different?". Notice XOR's last row: <code>1 ^ 1 = 0</code>. That single row is why XOR can cancel pairs, which is the trick in section 5.</figcaption>
+  </figure>
+
+  <h3>The same operators in Python</h3>
+  <p>This is the lesson's code, line for line. Every line here was run.</p>
+
+<pre><code><span class="c"># AND</span>
+n = <span class="s">1</span> &amp; <span class="s">1</span>       <span class="c"># 1</span>
+
+<span class="c"># OR</span>
+n = <span class="s">1</span> | <span class="s">0</span>       <span class="c"># 1</span>
+
+<span class="c"># XOR</span>
+n = <span class="s">0</span> ^ <span class="s">1</span>       <span class="c"># 1</span>
+
+<span class="c"># NOT (negation)</span>
+n = ~n          <span class="c"># -2  (why not 0? see section 4: ~n is -n - 1 in Python)</span>
+
+<span class="c"># Bit shifting</span>
+n = <span class="s">1</span>
+n = n &lt;&lt; <span class="s">1</span>      <span class="c"># 2   (001 → 010, doubled)</span>
+n = n &gt;&gt; <span class="s">1</span>      <span class="c"># 1   (010 → 001, halved)</span></code></pre>
+
+  <h3>Left shift: slide left, a 0 comes in, the top bit can fall off</h3>
+  <p>Start with <code>001</code> (decimal 1) in a 3-bit register and shift left three times. In the last step the 1 is <dfn>truncated</dfn>: it falls off the end and is replaced by 0. There is no room to keep it.</p>
+
+<pre><code><span class="s">001</span> &lt;&lt; <span class="s">1</span> = <span class="s">010</span>   <span class="c"># 1 → 2</span>
+<span class="s">010</span> &lt;&lt; <span class="s">1</span> = <span class="s">100</span>   <span class="c"># 2 → 4</span>
+<span class="s">100</span> &lt;&lt; <span class="s">1</span> = <span class="s">000</span>   <span class="c"># 4 → 0   the 1 fell off the left edge</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 640 240" role="img" aria-label="Left shifting 001 three times in a 3-bit register. The 1 moves from the rightmost box to the middle, then to the leftmost, then falls off and the register reads 000.">
+      <text x="250" y="10" class="t small" text-anchor="middle">4</text>
+      <text x="290" y="10" class="t small" text-anchor="middle">2</text>
+      <text x="330" y="10" class="t small" text-anchor="middle">1</text>
+
+      <!-- row 0: 001 -->
+      <text x="212" y="40" class="t mono" text-anchor="end">start</text>
+      <rect x="230" y="18" width="40" height="34" class="nd"/><text x="250" y="40" class="t" text-anchor="middle">0</text>
+      <rect x="270" y="18" width="40" height="34" class="nd"/><text x="290" y="40" class="t" text-anchor="middle">0</text>
+      <rect x="310" y="18" width="40" height="34" class="nd"/><text x="330" y="40" class="t" text-anchor="middle">1</text>
+      <text x="372" y="40" class="t mono">= 1</text>
+      <path d="M330,54 L292,70" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="330" y="66" class="t newlab" font-size="11">①</text>
+
+      <!-- row 1: 010 -->
+      <text x="212" y="94" class="t mono" text-anchor="end">001 &lt;&lt; 1</text>
+      <rect x="230" y="72" width="40" height="34" class="nd"/><text x="250" y="94" class="t" text-anchor="middle">0</text>
+      <rect x="270" y="72" width="40" height="34" class="nd newnd"/><text x="290" y="94" class="t" text-anchor="middle">1</text>
+      <rect x="310" y="72" width="40" height="34" class="nd"/><text x="330" y="94" class="t" text-anchor="middle">0</text>
+      <text x="372" y="94" class="t mono">= 2</text>
+      <path d="M290,108 L252,124" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="290" y="120" class="t newlab" font-size="11">②</text>
+
+      <!-- row 2: 100 -->
+      <text x="212" y="148" class="t mono" text-anchor="end">010 &lt;&lt; 1</text>
+      <rect x="230" y="126" width="40" height="34" class="nd newnd"/><text x="250" y="148" class="t" text-anchor="middle">1</text>
+      <rect x="270" y="126" width="40" height="34" class="nd"/><text x="290" y="148" class="t" text-anchor="middle">0</text>
+      <rect x="310" y="126" width="40" height="34" class="nd"/><text x="330" y="148" class="t" text-anchor="middle">0</text>
+      <text x="372" y="148" class="t mono">= 4</text>
+      <path d="M250,162 L178,200" class="ptr old" marker-end="url(#arrOld)"/>
+      <text x="250" y="176" class="t newlab" font-size="11">③</text>
+
+      <!-- row 3: 000 -->
+      <text x="212" y="202" class="t mono" text-anchor="end">100 &lt;&lt; 1</text>
+      <rect x="230" y="180" width="40" height="34" class="nd"/><text x="250" y="202" class="t" text-anchor="middle">0</text>
+      <rect x="270" y="180" width="40" height="34" class="nd"/><text x="290" y="202" class="t" text-anchor="middle">0</text>
+      <rect x="310" y="180" width="40" height="34" class="nd"/><text x="330" y="202" class="t" text-anchor="middle">0</text>
+      <text x="372" y="202" class="t mono">= 0</text>
+      <text x="168" y="214" class="t nulltxt" text-anchor="middle">1</text>
+      <text x="120" y="232" class="t small" text-anchor="middle">truncated: no box to land in</text>
+
+      <text x="372" y="230" class="t small">each step a 0 enters on the right</text>
+    </svg>
+    <figcaption><b>Orange = the bit that moved this step.</b> Steps ① and ② double the number: 1, 2, 4. Step ③ pushes the 1 past the left edge of the 3-bit register, so the result is 0, not 8. In a language with fixed-width ints this is <dfn>overflow</dfn>. Python does not do this (section 4), but hardware and most other languages do.</figcaption>
+  </figure>
+
+  <h3>Right shift: slide right, the lowest bit falls off, the value halves</h3>
+  <p>Right shift is the mirror. Every bit moves one box to the right, so every place value halves: the 16 becomes an 8, the 4 becomes a 2. The bit in the 1s box has nowhere to go and is dropped. That dropped bit is exactly the remainder of dividing by 2, which is why <code>n &gt;&gt; 1</code> equals <code>n // 2</code>.</p>
+
+  <figure>
+    <svg viewBox="-40 0 760 200" role="img" aria-label="Right shift of 10110, which is 22, into 01011, which is 11. Each bit slides one box to the right; the lowest 0 drops off. All place values halve.">
+      <text x="200" y="22" class="t small" text-anchor="middle">16</text>
+      <text x="250" y="22" class="t small" text-anchor="middle">8</text>
+      <text x="300" y="22" class="t small" text-anchor="middle">4</text>
+      <text x="350" y="22" class="t small" text-anchor="middle">2</text>
+      <text x="400" y="22" class="t small" text-anchor="middle">1</text>
+
+      <!-- row A: 22 = 10110 -->
+      <text x="160" y="58" class="t mono" text-anchor="end">22 =</text>
+      <rect x="178" y="34" width="44" height="38" class="nd"/><text x="200" y="58" class="t" text-anchor="middle">1</text>
+      <rect x="228" y="34" width="44" height="38" class="nd"/><text x="250" y="58" class="t" text-anchor="middle">0</text>
+      <rect x="278" y="34" width="44" height="38" class="nd"/><text x="300" y="58" class="t" text-anchor="middle">1</text>
+      <rect x="328" y="34" width="44" height="38" class="nd"/><text x="350" y="58" class="t" text-anchor="middle">1</text>
+      <rect x="378" y="34" width="44" height="38" class="nd"/><text x="400" y="58" class="t" text-anchor="middle">0</text>
+      <text x="440" y="58" class="t small">16 + 4 + 2</text>
+
+      <!-- arrows down-right -->
+      <path d="M200,74 L248,118" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M250,74 L298,118" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M300,74 L348,118" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M350,74 L398,118" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M400,74 L432,100" class="ptr old" marker-end="url(#arrOld)"/>
+      <text x="470" y="98" class="t small">lowest bit drops</text>
+      <text x="470" y="112" class="t small">(the remainder of ÷ 2)</text>
+
+      <!-- row B: 11 = 01011 -->
+      <text x="160" y="144" class="t mono" text-anchor="end">22 &gt;&gt; 1 =</text>
+      <rect x="178" y="120" width="44" height="38" class="nd"/><text x="200" y="144" class="t" text-anchor="middle">0</text>
+      <rect x="228" y="120" width="44" height="38" class="nd newnd"/><text x="250" y="144" class="t" text-anchor="middle">1</text>
+      <rect x="278" y="120" width="44" height="38" class="nd newnd"/><text x="300" y="144" class="t" text-anchor="middle">0</text>
+      <rect x="328" y="120" width="44" height="38" class="nd newnd"/><text x="350" y="144" class="t" text-anchor="middle">1</text>
+      <rect x="378" y="120" width="44" height="38" class="nd newnd"/><text x="400" y="144" class="t" text-anchor="middle">1</text>
+      <text x="440" y="144" class="t small">8 + 2 + 1 = 11</text>
+
+      <text x="320" y="186" class="t small" text-anchor="middle">every place value halves: 16 → 8, 4 → 2, 2 → 1.   23 &gt;&gt; 1 is also 11: its dropped bit is a 1, the remainder of 23 // 2.</text>
+    </svg>
+    <figcaption><b>Shift right once = divide by 2 and throw away the remainder.</b> 22 becomes 11. A 0 enters on the left. Shifting by <code>k</code> divides by <code>2**k</code>; <code>n &gt;&gt; 3</code> is <code>n // 8</code>. Likewise <code>n &lt;&lt; k</code> is <code>n * 2**k</code>.</figcaption>
+  </figure>
+
+  <div class="callout">
+    <span class="lab">Shifts bind loosely</span>
+    <p>In Python, <code>+</code> and <code>-</code> are evaluated <em>before</em> <code>&lt;&lt;</code> and <code>&gt;&gt;</code>. So <code>1 &lt;&lt; k + 1</code> means <code>1 &lt;&lt; (k + 1)</code>, not <code>(1 &lt;&lt; k) + 1</code>. Put parentheses around every shift that sits next to arithmetic.</p>
+  </div>
+</section>
+
+<!-- ============================ COUNT BITS ============================ -->
+<section id="count">
+  <h2><span class="num">3</span>Demonstration: count the 1 bits in 23</h2>
+
+  <p>The lesson's worked example. 23 in binary is <code>10111</code>. The plan: look at the lowest bit, then shift right so the next bit becomes the lowest, and repeat until all bits are 0.</p>
+  <p>How do we look at the lowest bit? With AND. Because <code>1 &amp; 1 = 1</code> and <code>0 &amp; 1 = 0</code>, the expression <code>n &amp; 1</code> keeps only bit 0 and zeroes everything else. If <code>n &amp; 1 == 1</code>, the lowest bit is on and we increment <code>count</code>. Then <code>n = n &gt;&gt; 1</code> throws that bit away.</p>
+
+<pre><code><span class="c"># Counting Bits</span>
+<span class="k">def</span> countBits(n):
+    count = <span class="s">0</span>
+    <span class="k">while</span> n &gt; <span class="s">0</span>:
+        <span class="k">if</span> n &amp; <span class="s">1</span> == <span class="s">1</span>:      <span class="c"># is the lowest bit a 1?</span>
+            count += <span class="s">1</span>
+        n = n &gt;&gt; <span class="s">1</span>          <span class="c"># same as n // 2: drop the lowest bit</span>
+    <span class="k">return</span> count
+
+countBits(<span class="s">23</span>)   <span class="c"># 4</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 760 252" role="img" aria-label="Five turns of countBits on 23. Each row shows n as five bit boxes with the lowest box highlighted, the value of n AND 1, the running count, and n after shifting right. Count ends at 4.">
+      <text x="40" y="22" class="t small" text-anchor="middle">turn</text>
+      <text x="136" y="22" class="t small" text-anchor="middle">16</text>
+      <text x="168" y="22" class="t small" text-anchor="middle">8</text>
+      <text x="200" y="22" class="t small" text-anchor="middle">4</text>
+      <text x="232" y="22" class="t small" text-anchor="middle">2</text>
+      <text x="264" y="22" class="t small" text-anchor="middle">1</text>
+      <text x="330" y="22" class="t small" text-anchor="middle">n &amp; 1</text>
+      <text x="420" y="22" class="t small" text-anchor="middle">count</text>
+      <text x="560" y="22" class="t small" text-anchor="middle">n &gt;&gt; 1</text>
+
+      <!-- turn 1: 10111 -->
+      <text x="40" y="53" class="t mono" text-anchor="middle">①</text>
+      <rect x="120" y="34" width="32" height="28" class="nd"/><text x="136" y="53" class="t" text-anchor="middle">1</text>
+      <rect x="152" y="34" width="32" height="28" class="nd"/><text x="168" y="53" class="t" text-anchor="middle">0</text>
+      <rect x="184" y="34" width="32" height="28" class="nd"/><text x="200" y="53" class="t" text-anchor="middle">1</text>
+      <rect x="216" y="34" width="32" height="28" class="nd"/><text x="232" y="53" class="t" text-anchor="middle">1</text>
+      <rect x="248" y="34" width="32" height="28" class="nd newnd"/><text x="264" y="53" class="t" text-anchor="middle">1</text>
+      <text x="330" y="53" class="t newlab" text-anchor="middle">1</text>
+      <text x="420" y="53" class="t ptrlab" text-anchor="middle">1</text>
+      <text x="560" y="53" class="t mono" text-anchor="middle">01011</text>
+
+      <!-- turn 2: 01011 -->
+      <text x="40" y="93" class="t mono" text-anchor="middle">②</text>
+      <rect x="120" y="74" width="32" height="28" class="nd"/><text x="136" y="93" class="t" text-anchor="middle">0</text>
+      <rect x="152" y="74" width="32" height="28" class="nd"/><text x="168" y="93" class="t" text-anchor="middle">1</text>
+      <rect x="184" y="74" width="32" height="28" class="nd"/><text x="200" y="93" class="t" text-anchor="middle">0</text>
+      <rect x="216" y="74" width="32" height="28" class="nd"/><text x="232" y="93" class="t" text-anchor="middle">1</text>
+      <rect x="248" y="74" width="32" height="28" class="nd newnd"/><text x="264" y="93" class="t" text-anchor="middle">1</text>
+      <text x="330" y="93" class="t newlab" text-anchor="middle">1</text>
+      <text x="420" y="93" class="t ptrlab" text-anchor="middle">2</text>
+      <text x="560" y="93" class="t mono" text-anchor="middle">00101</text>
+
+      <!-- turn 3: 00101 -->
+      <text x="40" y="133" class="t mono" text-anchor="middle">③</text>
+      <rect x="120" y="114" width="32" height="28" class="nd"/><text x="136" y="133" class="t" text-anchor="middle">0</text>
+      <rect x="152" y="114" width="32" height="28" class="nd"/><text x="168" y="133" class="t" text-anchor="middle">0</text>
+      <rect x="184" y="114" width="32" height="28" class="nd"/><text x="200" y="133" class="t" text-anchor="middle">1</text>
+      <rect x="216" y="114" width="32" height="28" class="nd"/><text x="232" y="133" class="t" text-anchor="middle">0</text>
+      <rect x="248" y="114" width="32" height="28" class="nd newnd"/><text x="264" y="133" class="t" text-anchor="middle">1</text>
+      <text x="330" y="133" class="t newlab" text-anchor="middle">1</text>
+      <text x="420" y="133" class="t ptrlab" text-anchor="middle">3</text>
+      <text x="560" y="133" class="t mono" text-anchor="middle">00010</text>
+
+      <!-- turn 4: 00010 -->
+      <text x="40" y="173" class="t mono" text-anchor="middle">④</text>
+      <rect x="120" y="154" width="32" height="28" class="nd"/><text x="136" y="173" class="t" text-anchor="middle">0</text>
+      <rect x="152" y="154" width="32" height="28" class="nd"/><text x="168" y="173" class="t" text-anchor="middle">0</text>
+      <rect x="184" y="154" width="32" height="28" class="nd"/><text x="200" y="173" class="t" text-anchor="middle">0</text>
+      <rect x="216" y="154" width="32" height="28" class="nd"/><text x="232" y="173" class="t" text-anchor="middle">1</text>
+      <rect x="248" y="154" width="32" height="28" class="nd newnd"/><text x="264" y="173" class="t" text-anchor="middle">0</text>
+      <text x="330" y="173" class="t mono" text-anchor="middle">0</text>
+      <text x="420" y="173" class="t small" text-anchor="middle">3 (no change)</text>
+      <text x="560" y="173" class="t mono" text-anchor="middle">00001</text>
+
+      <!-- turn 5: 00001 -->
+      <text x="40" y="213" class="t mono" text-anchor="middle">⑤</text>
+      <rect x="120" y="194" width="32" height="28" class="nd"/><text x="136" y="213" class="t" text-anchor="middle">0</text>
+      <rect x="152" y="194" width="32" height="28" class="nd"/><text x="168" y="213" class="t" text-anchor="middle">0</text>
+      <rect x="184" y="194" width="32" height="28" class="nd"/><text x="200" y="213" class="t" text-anchor="middle">0</text>
+      <rect x="216" y="194" width="32" height="28" class="nd"/><text x="232" y="213" class="t" text-anchor="middle">0</text>
+      <rect x="248" y="194" width="32" height="28" class="nd newnd"/><text x="264" y="213" class="t" text-anchor="middle">1</text>
+      <text x="330" y="213" class="t newlab" text-anchor="middle">1</text>
+      <text x="420" y="213" class="t ptrlab" text-anchor="middle">4</text>
+      <text x="560" y="213" class="t mono" text-anchor="middle">00000 → stop</text>
+
+      <text x="330" y="244" class="t small" text-anchor="middle">orange box = the bit that n &amp; 1 reads this turn. n &gt;&gt; 1 then throws it away and the next bit slides into that box.</text>
+    </svg>
+    <figcaption><b>Five turns, four 1s.</b> Each turn reads bit 0 and then shifts. Turn ④ reads a 0, so count stays at 3. After turn ⑤ the number is 0 and <code>while n &gt; 0</code> stops. The loop runs once per bit in the number, about log<sub>2</sub>(n) times, not n times.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Turn</th><th><code>n</code></th><th><code>n &amp; 00001</code></th><th>Lowest bit</th><th><code>count</code></th><th><code>n &gt;&gt; 1</code> →</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><code>10111</code> (23)</td><td><code>00001</code></td><td>1</td><td>1</td><td><code>01011</code> (11)</td></tr>
+      <tr><td>2</td><td><code>01011</code> (11)</td><td><code>00001</code></td><td>1</td><td>2</td><td><code>00101</code> (5)</td></tr>
+      <tr><td>3</td><td><code>00101</code> (5)</td><td><code>00001</code></td><td>1</td><td>3</td><td><code>00010</code> (2)</td></tr>
+      <tr><td>4</td><td><code>00010</code> (2)</td><td><code>00000</code></td><td>0</td><td>3 (just shift)</td><td><code>00001</code> (1)</td></tr>
+      <tr><td>5</td><td><code>00001</code> (1)</td><td><code>00001</code></td><td>1</td><td>4</td><td><code>00000</code> (0), loop ends</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>Count = 4. Check it against the byte picture in section 0: 23 has 1s in the 16, 4, 2 and 1 boxes. Four boxes.</p>
+
+  <h3>The one-liners Python gives you</h3>
+  <p>In real code use the built-ins. In an interview, write the loop first, then mention these.</p>
+
+<pre><code>bin(<span class="s">23</span>).count(<span class="s">"1"</span>)   <span class="c"># 4   works on every Python version</span>
+(<span class="s">23</span>).bit_count()      <span class="c"># 4   Python 3.10+, fastest; note the parentheses around the literal</span>
+(<span class="s">23</span>).bit_length()     <span class="c"># 5   how many bits it takes to write 23 (10111)</span></code></pre>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>The number of 1 bits has a name: the <dfn>popcount</dfn> or <dfn>Hamming weight</dfn>. LeetCode 191 asks for exactly this. Section 5 shows a second way to count that skips the 0 bits entirely.</p>
+  </div>
+</section>
+
+<!-- ============================ PYTHON INTS ============================ -->
+<section id="python">
+  <h2><span class="num">4</span>Python ints, negatives, and masks</h2>
+
+  <h3>Python ints do not overflow</h3>
+  <p>In C, Java, or on the CPU, an int has a fixed width (32 or 64 bits). Shift a 1 past the top and it is gone, as in the 3-bit register above. Python ints are <dfn>arbitrary precision</dfn>: they grow as many bits as the value needs. <code>1 &lt;&lt; 100</code> is simply 2<sup>100</sup>, a 31-digit number. Nothing falls off on the left. The only bits Python ever drops are the ones you push off the right with <code>&gt;&gt;</code>.</p>
+
+<pre><code><span class="s">1</span> &lt;&lt; <span class="s">3</span>        <span class="c"># 8, not 0: Python has no 3-bit register</span>
+<span class="s">1</span> &lt;&lt; <span class="s">100</span>      <span class="c"># 1267650600228229401496703205376</span>
+(<span class="s">1</span> &lt;&lt; <span class="s">100</span>) &gt; <span class="s">0</span>  <span class="c"># True, no wrap-around to negative</span>
+
+<span class="c"># when a problem says "32-bit", cut to 32 bits yourself:</span>
+MASK = <span class="s">0xFFFFFFFF</span>        <span class="c"># 32 ones</span>
+(<span class="s">1</span> &lt;&lt; <span class="s">35</span>) &amp; MASK          <span class="c"># 0: bits above 31 removed</span></code></pre>
+
+  <h3>Why <code>~n</code> is <code>-n - 1</code></h3>
+  <p>Hardware stores negative numbers in <dfn>two's complement</dfn>: to get <code>-x</code> in a fixed width, flip every bit of <code>x</code> and add 1. The top bit then acts as the sign. In 8 bits, 5 is <code>00000101</code>, flipping gives <code>11111010</code>, adding 1 gives <code>11111011</code>, which is -5. Python behaves as if the number had infinitely many sign bits on the left, so <code>~n</code> (flip every bit) is always <code>-n - 1</code>: <code>~0 == -1</code>, <code>~1 == -2</code>, <code>~23 == -24</code>. That is why the lesson's <code>n = ~n</code> on <code>1</code> gives -2, not 0.</p>
+
+<pre><code>~<span class="s">0</span>              <span class="c"># -1</span>
+~<span class="s">1</span>              <span class="c"># -2</span>
+~<span class="s">23</span>             <span class="c"># -24</span>
+bin(-<span class="s">5</span>)         <span class="c"># '-0b101'  Python prints sign + magnitude, not the bit pattern</span>
+(-<span class="s">5</span>) &amp; <span class="s">0xFF</span>     <span class="c"># 251 = 0b11111011  the 8-bit two's complement pattern</span>
+-<span class="s">8</span> &gt;&gt; <span class="s">1</span>         <span class="c"># -4  right shift keeps the sign (arithmetic shift)</span>
+-<span class="s">7</span> &gt;&gt; <span class="s">1</span>         <span class="c"># -4  rounds toward minus infinity, exactly like -7 // 2</span></code></pre>
+
+  <div class="callout">
+    <span class="lab">Negative numbers never shift to zero</span>
+    <p><code>-1 &gt;&gt; 1</code> is still <code>-1</code>, because the sign bit is copied in from the left. A loop like <code>while n:</code> with <code>n &gt;&gt;= 1</code> runs forever on a negative input. NeetCode's <code>while n &gt; 0</code> avoids this. If a problem hands you a negative and says "treat it as 32-bit unsigned", first do <code>n &amp;= 0xFFFFFFFF</code>.</p>
+  </div>
+
+  <h3>Masks: 1 &lt;&lt; k selects bit k</h3>
+  <p>A <dfn>mask</dfn> is a number whose bits are chosen so that an operator touches only the positions you want. The most useful mask is <code>1 &lt;&lt; k</code>: a single 1 in box k, zeros everywhere else. OR with it to turn bit k on. AND with its NOT to turn bit k off. AND with it to ask whether bit k is on. XOR with it to flip bit k.</p>
+
+<pre><code><span class="k">def</span> get_bit(n, k):            <span class="c"># 1 or 0: is bit k on?</span>
+    <span class="k">return</span> (n &gt;&gt; k) &amp; <span class="s">1</span>
+
+<span class="k">def</span> set_bit(n, k):            <span class="c"># turn bit k on   (OR with the mask)</span>
+    <span class="k">return</span> n | (<span class="s">1</span> &lt;&lt; k)
+
+<span class="k">def</span> clear_bit(n, k):          <span class="c"># turn bit k off  (AND with the flipped mask)</span>
+    <span class="k">return</span> n &amp; ~(<span class="s">1</span> &lt;&lt; k)
+
+<span class="k">def</span> toggle_bit(n, k):         <span class="c"># flip bit k      (XOR with the mask)</span>
+    <span class="k">return</span> n ^ (<span class="s">1</span> &lt;&lt; k)
+
+get_bit(<span class="s">23</span>, <span class="s">3</span>)     <span class="c"># 0    10111: bit 3 is the 8s box, it is off</span>
+set_bit(<span class="s">23</span>, <span class="s">3</span>)     <span class="c"># 31   11111</span>
+clear_bit(<span class="s">23</span>, <span class="s">0</span>)   <span class="c"># 22   10110</span>
+toggle_bit(<span class="s">31</span>, <span class="s">3</span>)  <span class="c"># 23   back to 10111</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 640 170" role="img" aria-label="Setting bit 3 of 23. Row one is 23 as 10111. Row two is the mask 1 shifted left by 3, which is 01000. Row three is the OR of the two, 11111, which is 31. Only the 8s box changed.">
+      <text x="200" y="20" class="t small" text-anchor="middle">16</text>
+      <text x="250" y="20" class="t small" text-anchor="middle">8</text>
+      <text x="300" y="20" class="t small" text-anchor="middle">4</text>
+      <text x="350" y="20" class="t small" text-anchor="middle">2</text>
+      <text x="400" y="20" class="t small" text-anchor="middle">1</text>
+
+      <text x="164" y="53" class="t mono" text-anchor="end">n = 23</text>
+      <rect x="178" y="30" width="44" height="36" class="nd"/><text x="200" y="53" class="t" text-anchor="middle">1</text>
+      <rect x="228" y="30" width="44" height="36" class="nd"/><text x="250" y="53" class="t" text-anchor="middle">0</text>
+      <rect x="278" y="30" width="44" height="36" class="nd"/><text x="300" y="53" class="t" text-anchor="middle">1</text>
+      <rect x="328" y="30" width="44" height="36" class="nd"/><text x="350" y="53" class="t" text-anchor="middle">1</text>
+      <rect x="378" y="30" width="44" height="36" class="nd"/><text x="400" y="53" class="t" text-anchor="middle">1</text>
+
+      <text x="164" y="98" class="t mono" text-anchor="end">1 &lt;&lt; 3</text>
+      <rect x="178" y="75" width="44" height="36" class="nd"/><text x="200" y="98" class="t" text-anchor="middle">0</text>
+      <rect x="228" y="75" width="44" height="36" class="nd newnd"/><text x="250" y="98" class="t" text-anchor="middle">1</text>
+      <rect x="278" y="75" width="44" height="36" class="nd"/><text x="300" y="98" class="t" text-anchor="middle">0</text>
+      <rect x="328" y="75" width="44" height="36" class="nd"/><text x="350" y="98" class="t" text-anchor="middle">0</text>
+      <rect x="378" y="75" width="44" height="36" class="nd"/><text x="400" y="98" class="t" text-anchor="middle">0</text>
+      <text x="440" y="98" class="t small">the mask: one 1, in box 3</text>
+
+      <line x1="178" y1="118" x2="422" y2="118" class="cell"/>
+      <text x="164" y="123" class="t mono" text-anchor="end">OR</text>
+
+      <text x="164" y="150" class="t mono" text-anchor="end">n | mask = 31</text>
+      <rect x="178" y="127" width="44" height="36" class="nd"/><text x="200" y="150" class="t" text-anchor="middle">1</text>
+      <rect x="228" y="127" width="44" height="36" class="nd newnd"/><text x="250" y="150" class="t newlab" text-anchor="middle">1</text>
+      <rect x="278" y="127" width="44" height="36" class="nd"/><text x="300" y="150" class="t" text-anchor="middle">1</text>
+      <rect x="328" y="127" width="44" height="36" class="nd"/><text x="350" y="150" class="t" text-anchor="middle">1</text>
+      <rect x="378" y="127" width="44" height="36" class="nd"/><text x="400" y="150" class="t" text-anchor="middle">1</text>
+      <text x="440" y="150" class="t small">only box 3 changed</text>
+    </svg>
+    <figcaption><b>A mask lets one operator touch one box.</b> OR with <code>1 &lt;&lt; 3</code> turns the 8s box on and leaves every other box exactly as it was, because <code>x | 0 = x</code>. The same idea with AND and <code>~mask</code> clears the box, because <code>x &amp; 1 = x</code> everywhere except the one 0.</figcaption>
+  </figure>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p><code>n &amp; 1</code> is the mask <code>1 &lt;&lt; 0</code>. It answers "is n odd?" in one operation, because odd numbers always have their 1s box on. <code>23 &amp; 1</code> is 1 (odd); <code>22 &amp; 1</code> is 0 (even).</p>
+  </div>
+</section>
+
+<!-- ============================ PATTERNS ============================ -->
+<section id="patterns">
+  <h2><span class="num">5</span>Four moves that solve most bit problems</h2>
+  <p>The lesson gives you the operators. Interviews ask for these four moves built from them. Each one is short enough to write from memory.</p>
+
+  <h3>Move 1: Count the set bits</h3>
+  <p>Two versions. The first is the lesson's <code>n &amp; 1</code> loop: it visits every bit. The second is <dfn>Kernighan's trick</dfn>: <code>n &amp; (n - 1)</code> clears the lowest set bit, so the loop runs once per 1 bit and skips the 0s. Both are fine; the second is what you say when the interviewer asks "can you do better?".</p>
+
+<pre><code><span class="k">def</span> countBits(n):                 <span class="c"># visit every bit: O(number of bits)</span>
+    count = <span class="s">0</span>
+    <span class="k">while</span> n &gt; <span class="s">0</span>:
+        count += n &amp; <span class="s">1</span>            <span class="c"># adds 1 or 0, same as the if in section 3</span>
+        n &gt;&gt;= <span class="s">1</span>
+    <span class="k">return</span> count
+
+<span class="k">def</span> countBitsKernighan(n):        <span class="c"># visit only the 1 bits: O(number of 1s)</span>
+    count = <span class="s">0</span>
+    <span class="k">while</span> n:
+        n &amp;= n - <span class="s">1</span>                <span class="c"># erase the lowest 1</span>
+        count += <span class="s">1</span>
+    <span class="k">return</span> count
+
+countBitsKernighan(<span class="s">23</span>)   <span class="c"># 4: 10111 → 10110 → 10100 → 10000 → 00000</span></code></pre>
+
+  <p>Why does <code>n - 1</code> do that? Subtracting 1 borrows from the lowest 1: that 1 becomes 0 and every 0 to its right becomes 1. Everything to the left is untouched. AND-ing the two numbers keeps the untouched left part and zeroes the rest.</p>
+
+  <figure>
+    <svg viewBox="-40 0 760 190" role="img" aria-label="n AND n minus 1 on 22. Row one: 22 is 10110 with its lowest 1 in the 2s box. Row two: 21 is 10101, the 2s box became 0 and the 1s box became 1. Row three: the AND is 10100, which is 20. The lowest set bit is gone.">
+      <text x="200" y="20" class="t small" text-anchor="middle">16</text>
+      <text x="250" y="20" class="t small" text-anchor="middle">8</text>
+      <text x="300" y="20" class="t small" text-anchor="middle">4</text>
+      <text x="350" y="20" class="t small" text-anchor="middle">2</text>
+      <text x="400" y="20" class="t small" text-anchor="middle">1</text>
+
+      <text x="164" y="53" class="t mono" text-anchor="end">n = 22</text>
+      <rect x="178" y="30" width="44" height="36" class="nd"/><text x="200" y="53" class="t" text-anchor="middle">1</text>
+      <rect x="228" y="30" width="44" height="36" class="nd"/><text x="250" y="53" class="t" text-anchor="middle">0</text>
+      <rect x="278" y="30" width="44" height="36" class="nd"/><text x="300" y="53" class="t" text-anchor="middle">1</text>
+      <rect x="328" y="30" width="44" height="36" class="nd newnd"/><text x="350" y="53" class="t" text-anchor="middle">1</text>
+      <rect x="378" y="30" width="44" height="36" class="nd"/><text x="400" y="53" class="t" text-anchor="middle">0</text>
+      <text x="440" y="53" class="t small">lowest 1 is in the 2s box</text>
+
+      <text x="164" y="98" class="t mono" text-anchor="end">n - 1 = 21</text>
+      <rect x="178" y="75" width="44" height="36" class="nd"/><text x="200" y="98" class="t" text-anchor="middle">1</text>
+      <rect x="228" y="75" width="44" height="36" class="nd"/><text x="250" y="98" class="t" text-anchor="middle">0</text>
+      <rect x="278" y="75" width="44" height="36" class="nd"/><text x="300" y="98" class="t" text-anchor="middle">1</text>
+      <rect x="328" y="75" width="44" height="36" class="nd newnd"/><text x="350" y="98" class="t newlab" text-anchor="middle">0</text>
+      <rect x="378" y="75" width="44" height="36" class="nd newnd"/><text x="400" y="98" class="t newlab" text-anchor="middle">1</text>
+      <text x="440" y="98" class="t small">that 1 and everything right of it flipped</text>
+
+      <line x1="178" y1="118" x2="422" y2="118" class="cell"/>
+      <text x="164" y="123" class="t mono" text-anchor="end">AND</text>
+
+      <text x="164" y="150" class="t mono" text-anchor="end">n &amp; (n-1) = 20</text>
+      <rect x="178" y="127" width="44" height="36" class="nd"/><text x="200" y="150" class="t" text-anchor="middle">1</text>
+      <rect x="228" y="127" width="44" height="36" class="nd"/><text x="250" y="150" class="t" text-anchor="middle">0</text>
+      <rect x="278" y="127" width="44" height="36" class="nd"/><text x="300" y="150" class="t" text-anchor="middle">1</text>
+      <rect x="328" y="127" width="44" height="36" class="nd newnd"/><text x="350" y="150" class="t newlab" text-anchor="middle">0</text>
+      <rect x="378" y="127" width="44" height="36" class="nd"/><text x="400" y="150" class="t" text-anchor="middle">0</text>
+      <text x="440" y="150" class="t small">10110 → 10100: one 1 erased</text>
+
+      <text x="320" y="182" class="t small" text-anchor="middle">the 16 and 4 boxes agree in both rows, so AND keeps them; the flipped tail is 1 in one row and 0 in the other, so AND zeroes it</text>
+    </svg>
+    <figcaption><b><code>n &amp; (n - 1)</code> erases exactly one 1: the lowest one.</b> Repeat until n is 0 and the number of repeats is the popcount. For 22 that is 3 turns: 10110 → 10100 → 10000 → 00000. If it takes exactly one turn, n had one 1 bit, which is Move 4.</figcaption>
+  </figure>
+
+  <h3>Move 2: XOR cancels pairs</h3>
+  <p>Two facts from the truth table: <code>x ^ x = 0</code> (a number XOR itself is nothing) and <code>x ^ 0 = x</code> (XOR with nothing changes nothing). XOR is also commutative, so order does not matter. XOR a whole array together and every value that appears twice cancels itself out. Whatever appears once is left over. That solves "Single Number" with no hash map and O(1) extra space.</p>
+
+<pre><code><span class="k">def</span> singleNumber(nums):
+    result = <span class="s">0</span>
+    <span class="k">for</span> x <span class="k">in</span> nums:
+        result ^= x        <span class="c"># pairs cancel to 0, the loner survives</span>
+    <span class="k">return</span> result
+
+singleNumber([<span class="s">4</span>, <span class="s">1</span>, <span class="s">2</span>, <span class="s">1</span>, <span class="s">2</span>])   <span class="c"># 4</span>
+
+<span class="k">def</span> missingNumber(nums):     <span class="c"># nums holds 0..n with one missing</span>
+    result = len(nums)       <span class="c"># start with n, the index that has no slot</span>
+    <span class="k">for</span> i, x <span class="k">in</span> enumerate(nums):
+        result ^= i ^ x      <span class="c"># every present number meets its own index and cancels</span>
+    <span class="k">return</span> result
+
+missingNumber([<span class="s">3</span>, <span class="s">0</span>, <span class="s">1</span>])   <span class="c"># 2</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 640 215" role="img" aria-label="The array 4 1 2 1 2. Dashed arcs join the two 1s and the two 2s, which cancel to 0. The 4 has no partner and survives. The running XOR beneath reads 4, 5, 7, 6, 4.">
+      <path d="M220,68 C 220,18 400,18 400,68" class="ptr old"/>
+      <text x="310" y="22" class="t small" text-anchor="middle">1 ^ 1 = 0</text>
+      <text x="130" y="52" class="t newlab" text-anchor="middle">no partner</text>
+
+      <rect x="100" y="70" width="60" height="44" class="nd newnd"/><text x="130" y="98" class="t" text-anchor="middle" font-size="16">4</text>
+      <rect x="190" y="70" width="60" height="44" class="nd"/><text x="220" y="98" class="t" text-anchor="middle" font-size="16">1</text>
+      <rect x="280" y="70" width="60" height="44" class="nd"/><text x="310" y="98" class="t" text-anchor="middle" font-size="16">2</text>
+      <rect x="370" y="70" width="60" height="44" class="nd"/><text x="400" y="98" class="t" text-anchor="middle" font-size="16">1</text>
+      <rect x="460" y="70" width="60" height="44" class="nd"/><text x="490" y="98" class="t" text-anchor="middle" font-size="16">2</text>
+
+      <path d="M310,116 C 310,170 490,170 490,116" class="ptr old"/>
+      <text x="400" y="176" class="t small" text-anchor="middle">2 ^ 2 = 0</text>
+
+      <text x="60" y="203" class="t small" text-anchor="end">running ^</text>
+      <text x="130" y="203" class="t mono" text-anchor="middle">4</text>
+      <text x="220" y="203" class="t mono" text-anchor="middle">5</text>
+      <text x="310" y="203" class="t mono" text-anchor="middle">7</text>
+      <text x="400" y="203" class="t mono" text-anchor="middle">6</text>
+      <text x="490" y="203" class="t newlab" text-anchor="middle">4</text>
+      <text x="580" y="203" class="t small" text-anchor="middle">= answer</text>
+    </svg>
+    <figcaption><b>Pairs vanish, the loner remains.</b> The running value wanders (4, 5, 7, 6) but the second 1 undoes the first 1 and the second 2 undoes the first 2, so only 4 is left at the end. This needs every other value to appear an even number of times. Three copies do not cancel; that is LeetCode 137 and needs a different trick.</figcaption>
+  </figure>
+
+  <h3>Move 3: An integer is a set (bitmask)</h3>
+  <p>If you have at most 20 or so items, one int can be the whole set: bit i on means "item i is in". Then set union is <code>|</code>, intersection is <code>&amp;</code>, membership is <code>(mask &gt;&gt; i) &amp; 1</code>, and the numbers 0 to 2<sup>n</sup> - 1 are <em>all</em> the subsets. This replaces the backtracking subsets generator with a plain for loop, and it is how DP over subsets stores its state.</p>
+
+<pre><code><span class="k">def</span> subsets_by_mask(items):
+    n = len(items)
+    out = []
+    <span class="k">for</span> mask <span class="k">in</span> range(<span class="s">1</span> &lt;&lt; n):                        <span class="c"># 0 .. 2**n - 1, every subset once</span>
+        sub = [items[i] <span class="k">for</span> i <span class="k">in</span> range(n) <span class="k">if</span> mask &gt;&gt; i &amp; <span class="s">1</span>]  <span class="c"># bit i on → items[i] is in</span>
+        out.append(sub)
+    <span class="k">return</span> out
+
+subsets_by_mask([<span class="s">"a"</span>, <span class="s">"b"</span>, <span class="s">"c"</span>])   <span class="c"># 8 subsets, mask 0b101 → ['a', 'c']</span>
+
+A = <span class="s">0b0110</span>          <span class="c"># {1, 2}</span>
+B = <span class="s">0b0011</span>          <span class="c"># {0, 1}</span>
+A | B               <span class="c"># 0b0111  union {0, 1, 2}</span>
+A &amp; B               <span class="c"># 0b0010  intersection {1}</span>
+A &amp; ~B              <span class="c"># 0b0100  difference {2}</span>
+(A &gt;&gt; <span class="s">2</span>) &amp; <span class="s">1</span>        <span class="c"># 1       is 2 in A? yes</span></code></pre>
+
+  <div class="tbl"><table>
+    <thead><tr><th>mask</th><th>c b a (bit 2, bit 1, bit 0)</th><th>Subset of ["a", "b", "c"]</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td><code>000</code></td><td>[]</td></tr>
+      <tr><td>1</td><td><code>001</code></td><td>["a"]</td></tr>
+      <tr><td>2</td><td><code>010</code></td><td>["b"]</td></tr>
+      <tr><td>3</td><td><code>011</code></td><td>["a", "b"]</td></tr>
+      <tr><td>4</td><td><code>100</code></td><td>["c"]</td></tr>
+      <tr><td>5</td><td><code>101</code></td><td>["a", "c"]</td></tr>
+      <tr><td>6</td><td><code>110</code></td><td>["b", "c"]</td></tr>
+      <tr><td>7</td><td><code>111</code></td><td>["a", "b", "c"]</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Move 4: Power of two in one line</h3>
+  <p>A power of two has exactly one 1 bit: 1, 10, 100, 1000. Move 1 said <code>n &amp; (n - 1)</code> erases the lowest 1. If erasing one 1 leaves zero, there was only one. Guard against <code>n = 0</code>, which also gives 0 but is not a power of two, and against negatives.</p>
+
+<pre><code><span class="k">def</span> isPowerOfTwo(n):
+    <span class="k">return</span> n &gt; <span class="s">0</span> <span class="k">and</span> n &amp; (n - <span class="s">1</span>) == <span class="s">0</span>
+
+isPowerOfTwo(<span class="s">16</span>)   <span class="c"># True   10000 &amp; 01111 = 00000</span>
+isPowerOfTwo(<span class="s">12</span>)   <span class="c"># False  01100 &amp; 01011 = 01000</span>
+isPowerOfTwo(<span class="s">0</span>)    <span class="c"># False  the n &gt; 0 guard</span></code></pre>
+</section>
+
+<!-- ============================ COMPLEXITY ============================ -->
+<section id="complexity">
+  <h2><span class="num">6</span>Big-O summary</h2>
+  <p>Bit operations are the fastest thing a CPU does: one instruction each on a fixed-width int. The loops cost as many turns as there are bits, and a number n has about log<sub>2</sub>(n) bits, so "per bit" is O(log n), not O(n).</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Operation</th><th>Time</th><th>Extra space</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td><code>&amp;  |  ^  ~  &lt;&lt;  &gt;&gt;</code> on one int</td><td class="big fast">O(1)*</td><td class="big fast">O(1)</td><td>* on a 32/64-bit int; Python big ints cost O(number of bits)</td></tr>
+      <tr><td><code>countBits</code> with <code>n &amp; 1</code> and <code>&gt;&gt;</code></td><td class="big fast">O(log n)</td><td class="big fast">O(1)</td><td>one turn per bit; 32 turns for a 32-bit int</td></tr>
+      <tr><td>Kernighan <code>n &amp;= n - 1</code></td><td class="big fast">O(k)</td><td class="big fast">O(1)</td><td>k = number of 1 bits; never worse than the loop above</td></tr>
+      <tr><td><code>n.bit_count()</code></td><td class="big fast">O(1)*</td><td class="big fast">O(1)</td><td>one CPU popcount instruction on fixed-width ints</td></tr>
+      <tr><td>XOR over an array (single number)</td><td class="big fast">O(n)</td><td class="big fast">O(1)</td><td>the hash-set version is O(n) space</td></tr>
+      <tr><td>Test / set / clear one bit with a mask</td><td class="big fast">O(1)</td><td class="big fast">O(1)</td><td></td></tr>
+      <tr><td>Enumerate all subsets by mask</td><td class="big slow">O(2<sup>n</sup> · n)</td><td class="big fast">O(1) per mask</td><td>same count as backtracking, but no recursion</td></tr>
+      <tr><td>Power-of-two check</td><td class="big fast">O(1)</td><td class="big fast">O(1)</td><td>vs. O(log n) for a divide-by-2 loop</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============================ MISTAKES ============================ -->
+<section id="mistakes">
+  <h2><span class="num">7</span>Mistakes to watch for</h2>
+  <div class="mistake">
+    <div>
+      <div class="bad">Using ^ for power</div>
+      <p><code>2 ^ 3</code> is 1 (XOR of 010 and 011), not 8. Power in Python is <code>2 ** 3</code>. This is the most common bit bug in code written by people who never use bits.</p>
+    </div>
+    <div>
+      <div class="bad">Shift next to plus without parentheses</div>
+      <p><code>1 &lt;&lt; k + 1</code> is <code>1 &lt;&lt; (k + 1)</code>, because <code>+</code> binds tighter than <code>&lt;&lt;</code>. Write <code>(1 &lt;&lt; k) + 1</code>. Same for <code>-</code>: <code>n &amp; n - 1</code> works only because <code>-</code> also binds tighter than <code>&amp;</code>; write <code>n &amp; (n - 1)</code> anyway so the reader does not have to think.</p>
+    </div>
+    <div>
+      <div class="bad">Right-shifting a negative and waiting for zero</div>
+      <p><code>-1 &gt;&gt; 1</code> is <code>-1</code> forever, so <code>while n: n &gt;&gt;= 1</code> never ends. Use <code>while n &gt; 0</code> as the lesson does, or mask to 32 bits first with <code>n &amp;= 0xFFFFFFFF</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Expecting ~n to give a small positive number</div>
+      <p><code>~1</code> is -2, not 0. Python has no fixed width, so NOT flips infinitely many bits and the result is <code>-n - 1</code>. To "flip the low 8 bits only" write <code>n ^ 0xFF</code> (or <code>~n &amp; 0xFF</code>).</p>
+    </div>
+    <div>
+      <div class="bad">Counting bits from the wrong end</div>
+      <p>Bit 0 is the <em>rightmost</em> box, worth 1. "The 3rd bit" is ambiguous; say "bit 3" and mean <code>1 &lt;&lt; 3 = 8</code>. In <code>format(n, "08b")</code> the string index 0 is bit 7, the opposite direction.</p>
+    </div>
+    <div>
+      <div class="bad">XOR trick on the wrong input</div>
+      <p><code>singleNumber</code> works only if every other value appears an even number of times. With three copies (LeetCode 137) or two singles (LeetCode 260) the plain XOR gives garbage. Check the problem statement before you reach for it.</p>
+    </div>
+    <div>
+      <div class="bad">Power of two without the n &gt; 0 guard</div>
+      <p><code>0 &amp; -1 == 0</code>, so <code>n &amp; (n - 1) == 0</code> says 0 is a power of two. It is not. Always <code>n &gt; 0 and ...</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Forgetting the 32-bit mask when the problem says 32-bit</div>
+      <p>Reverse Bits and Sum of Two Integers assume a 32-bit int. In Python a carry can climb past bit 31 forever. Mask with <code>0xFFFFFFFF</code> after every step, and convert back to a signed value at the end if the top bit is set.</p>
+    </div>
+    <div>
+      <div class="bad">Only knowing the built-in</div>
+      <p><code>bin(n).count("1")</code> is fine in production. In an interview, write the loop first, then say "in Python I would use <code>bit_count()</code>". The loop is what they are testing.</p>
+    </div>
+  </div>
+
+  <div class="cheat">
+    <h3>Interview one-liners</h3>
+    <ul>
+      <li>"Each bit position is a power of two, so <code>n &gt;&gt; 1</code> is <code>n // 2</code> and <code>n &lt;&lt; 1</code> is <code>n * 2</code>."</li>
+      <li>"<code>n &amp; 1</code> reads the lowest bit; it tells me odd or even in O(1)."</li>
+      <li>"<code>n &amp; (n - 1)</code> clears the lowest set bit, so I can count 1s in O(number of 1s) or test for a power of two in one line."</li>
+      <li>"XOR is its own inverse: <code>x ^ x = 0</code> and <code>x ^ 0 = x</code>, so XOR-ing an array cancels every pair and leaves the single number, O(n) time, O(1) space."</li>
+      <li>"<code>1 &lt;&lt; k</code> is a mask for bit k: OR sets it, AND with the NOT clears it, AND tests it."</li>
+      <li>"An int can be a set of up to 63 items; <code>range(1 &lt;&lt; n)</code> enumerates every subset."</li>
+      <li>"Python ints never overflow, so for 32-bit problems I mask with <code>0xFFFFFFFF</code>; and <code>~n</code> is <code>-n - 1</code>."</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================ PRACTICE ============================ -->
+<section id="practice">
+  <h2><span class="num">8</span>Practice, in this order</h2>
+  <p>Each of these is a five-line function once you see the trick. The point is to see the trick fast. Do them with no notes open, then compare with the moves above.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Problem</th><th>Move it trains</th><th>Level</th></tr></thead>
+    <tbody>
+      <tr><td>191</td><td>Number of 1 Bits</td><td>n &amp; 1 loop, then Kernighan</td><td>Easy</td></tr>
+      <tr><td>231</td><td>Power of Two</td><td>n &amp; (n - 1) == 0 with the n &gt; 0 guard</td><td>Easy</td></tr>
+      <tr><td>136</td><td>Single Number</td><td>XOR cancels pairs</td><td>Easy</td></tr>
+      <tr><td>268</td><td>Missing Number</td><td>XOR values against indexes</td><td>Easy</td></tr>
+      <tr><td>461</td><td>Hamming Distance</td><td>XOR then count bits</td><td>Easy</td></tr>
+      <tr><td>338</td><td>Counting Bits</td><td>dp[i] = dp[i &gt;&gt; 1] + (i &amp; 1), DP meets bits</td><td>Easy</td></tr>
+      <tr><td>190</td><td>Reverse Bits</td><td>read bit i with a mask, write bit 31 - i, 32 turns</td><td>Easy</td></tr>
+      <tr><td>78</td><td>Subsets</td><td>bitmask enumeration instead of backtracking</td><td>Medium</td></tr>
+      <tr><td>371</td><td>Sum of Two Integers</td><td>XOR is add-without-carry, AND &lt;&lt; 1 is the carry, 32-bit mask</td><td>Medium</td></tr>
+      <tr><td>137</td><td>Single Number II</td><td>count each bit position mod 3 (XOR alone is not enough)</td><td>Medium</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Your next step today:</strong> LeetCode 191. Write the <code>n &amp; 1</code> loop from memory, run it on 23 and check you get 4, then rewrite it with <code>n &amp;= n - 1</code> and check again.</p>
+</section>
+
+<!-- ============================ QUIZ ============================ -->
+<section id="quiz">
+  <h2><span class="num">9</span>Self-check</h2>
+  <p>Answer out loud before opening. If you cannot answer in one breath, reread that section.</p>
+
+  <details><summary><span class="q">Q1</span>What is 10111 in decimal, and how did you get it?</summary><div><p>23. Read the place values of the 1s from the right: 1 + 2 + 4 + 16 = 23. The 8s box is 0, so skip it.</p></div></details>
+
+  <details><summary><span class="q">Q2</span>Give the one row of each truth table that makes it different from the others.</summary><div><p>AND: only <code>1 &amp; 1</code> gives 1. OR: only <code>0 | 0</code> gives 0. XOR: <code>1 ^ 1</code> gives 0 (same inputs cancel). NOT has one input and flips it.</p></div></details>
+
+  <details><summary><span class="q">Q3</span>What does <code>n &gt;&gt; 1</code> compute, and what happens to the lowest bit?</summary><div><p><code>n // 2</code>. Every bit slides one box to the right, so every place value halves. The bit in the 1s box falls off; it was the remainder of the division.</p></div></details>
+
+  <details><summary><span class="q">Q4</span>Shift <code>001</code> left three times in a 3-bit register. What are the three results and why is the last one surprising?</summary><div><p><code>010</code>, <code>100</code>, <code>000</code>. The 1 falls off the left edge in the last step, so 4 doubled becomes 0 instead of 8. Python ints would give 8 because they have no fixed width.</p></div></details>
+
+  <details><summary><span class="q">Q5</span>Why does <code>n &amp; 1</code> tell you whether the lowest bit is on?</summary><div><p>1 is <code>...0001</code>: only bit 0 is set. AND gives 1 only where both inputs are 1, so every other position becomes 0 and bit 0 keeps its value. The result is 1 if bit 0 was 1, else 0. Same test tells you odd or even.</p></div></details>
+
+  <details><summary><span class="q">Q6</span>Trace it: run <code>countBits(10)</code>. Give <code>n</code>, <code>n &amp; 1</code> and <code>count</code> after each turn.</summary><div><p>10 is <code>1010</code>. Turn 1: n=1010, n&amp;1=0, count=0, shift → 101. Turn 2: n=101, n&amp;1=1, count=1, shift → 10. Turn 3: n=10, n&amp;1=0, count=1, shift → 1. Turn 4: n=1, n&amp;1=1, count=2, shift → 0. Loop ends. Answer 2.</p></div></details>
+
+  <details><summary><span class="q">Q7</span>What does <code>n &amp; (n - 1)</code> do, and why?</summary><div><p>It clears the lowest set bit. Subtracting 1 turns the lowest 1 into 0 and all 0s to its right into 1s, leaving higher bits alone. AND keeps the untouched higher bits and zeroes the flipped tail. 22 (<code>10110</code>) becomes 20 (<code>10100</code>).</p></div></details>
+
+  <details><summary><span class="q">Q8</span>Trace it: count the 1s in 12 using Kernighan's loop. Show <code>n</code> after each <code>n &amp;= n - 1</code>.</summary><div><p>12 is <code>1100</code>. Turn 1: 1100 &amp; 1011 = 1000 (8), count 1. Turn 2: 1000 &amp; 0111 = 0000, count 2. n is 0, stop. Answer 2, in 2 turns instead of 4.</p></div></details>
+
+  <details><summary><span class="q">Q9</span>Why does XOR-ing <code>[4, 1, 2, 1, 2]</code> give 4?</summary><div><p><code>x ^ x = 0</code> and <code>x ^ 0 = x</code>, and order does not matter. So the two 1s cancel, the two 2s cancel, and <code>4 ^ 0 ^ 0 = 4</code>. Running values: 4, 5, 7, 6, 4.</p></div></details>
+
+  <details><summary><span class="q">Q10</span>Write the expressions to set, clear and test bit k of n.</summary><div><p>Set: <code>n | (1 &lt;&lt; k)</code>. Clear: <code>n &amp; ~(1 &lt;&lt; k)</code>. Test: <code>(n &gt;&gt; k) &amp; 1</code> (or <code>n &amp; (1 &lt;&lt; k) != 0</code>). Toggle: <code>n ^ (1 &lt;&lt; k)</code>.</p></div></details>
+
+  <details><summary><span class="q">Q11</span>Why is <code>~1</code> equal to -2 in Python and not 0?</summary><div><p>Python ints have no fixed width. NOT flips every bit including infinitely many leading zeros, which in two's complement is the number <code>-n - 1</code>. To flip only the low 8 bits use <code>n ^ 0xFF</code>.</p></div></details>
+
+  <details><summary><span class="q">Q12</span>How do you check "is n a power of two" in O(1), and which input needs a guard?</summary><div><p><code>n &gt; 0 and n &amp; (n - 1) == 0</code>. A power of two has exactly one 1 bit, so clearing the lowest 1 leaves 0. The guard is for n = 0, where <code>0 &amp; -1</code> is also 0 but 0 is not a power of two.</p></div></details>
+</section>
+
+<nav class="pager" aria-label="Previous and next topic">
+  <a class="prev" href="11-dynamic-programming.html"><small>Previous</small>Dynamic Programming</a>
+  <a class="next" href="../index.html"><small>Next</small>Course map</a>
+</nav>
+
+<footer>
+  Source: NeetCode "Algorithms and Data Structures for Beginners", lesson 34 (Bit Manipulation). All Python in these notes was run and tested. Orange in every diagram marks the bit that changed.
+</footer>
+</div>
+</body>
+</html>

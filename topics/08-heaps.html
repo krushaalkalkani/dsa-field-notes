@@ -1,0 +1,1065 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heap / Priority Queue · DSA Field Notes</title>
+<meta name="description" content="Binary heaps and priority queues - the two heap properties, the 1-indexed array trick, push and pop by percolation, O(n) heapify, Python's heapq, patterns, mistakes, practice, self-check.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arr"/></marker>
+    <marker id="arrNew" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrNew"/></marker>
+    <marker id="arrOld" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrOld"/></marker>
+    <marker id="arrCur" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrCur"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="site-head">
+  <a class="brand" href="../index.html">DSA <span>Field Notes</span></a>
+  <div class="crumbs"><a href="../index.html">Course map</a> <span>/</span> <span>08 Heap / Priority Queue</span></div>
+</header>
+<header class="top">
+  <div class="eyebrow">NeetCode · DSA for Beginners · Lessons 23-25</div>
+  <h1>Heap / Priority Queue Field Notes</h1>
+  <p class="lede">A tree that lives inside an array and always keeps the smallest (or largest) item at the front. After this page you can draw a heap as a tree and as an array, push and pop by hand, build one in O(n), and use Python's <code>heapq</code> without looking anything up.</p>
+</header>
+
+<nav class="sections" aria-label="Sections">
+  <a href="#why">Why</a>
+  <a href="#properties">Properties</a>
+  <a href="#pushpop">Push / Pop</a>
+  <a href="#heapify">Heapify</a>
+  <a href="#heapq">heapq</a>
+  <a href="#patterns">Patterns</a>
+  <a href="#complexity">Big-O</a>
+  <a href="#mistakes">Mistakes</a>
+  <a href="#practice">Practice</a>
+  <a href="#quiz">Self-check</a>
+</nav>
+
+<!-- ============================ WHY ============================ -->
+<section id="why">
+  <h2><span class="num">0</span>Why heaps exist</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>A hospital emergency room. People arrive in some order, but the doctor does not take them in that order. The doctor takes the <em>most urgent</em> patient next, every time. Nobody re-sorts the whole waiting room when a new patient walks in; the room only needs to know who is most urgent right now.</p>
+  </div>
+
+  <p>A normal queue is <dfn>FIFO</dfn>: first in, first out. A <dfn>priority queue</dfn> removes items by priority instead: the item with the highest priority comes out first, no matter when it was inserted. A <dfn>heap</dfn> is the data structure that implements a priority queue, and the two words are often used as if they mean the same thing. It is a special tree-based structure, and its trick is that it can give you the minimum (or maximum) in O(1) and add or remove an item in O(log n), without ever fully sorting.</p>
+
+  <figure>
+    <svg viewBox="0 0 640 190" role="img" aria-label="Four values 26, 14, 19, 16 inserted in that order. A queue removes 26 first because it came first. A min priority queue removes 14 first because it is the smallest.">
+      <text x="20" y="24" class="t ptrlab">QUEUE (FIFO)</text>
+      <text x="150" y="24" class="t small">inserted in this order: 26, 14, 19, 16</text>
+      <g>
+        <rect x="150" y="36" width="60" height="40" class="nd"/><text x="180" y="61" class="t" text-anchor="middle">26</text>
+        <rect x="220" y="36" width="60" height="40" class="nd"/><text x="250" y="61" class="t" text-anchor="middle">14</text>
+        <rect x="290" y="36" width="60" height="40" class="nd"/><text x="320" y="61" class="t" text-anchor="middle">19</text>
+        <rect x="360" y="36" width="60" height="40" class="nd"/><text x="390" y="61" class="t" text-anchor="middle">16</text>
+      </g>
+      <path d="M146,56 L100,56" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="80" y="60" class="t newlab" text-anchor="end">26 out</text>
+      <text x="440" y="60" class="t small">first in, first out</text>
+
+      <text x="20" y="118" class="t ptrlab">PRIORITY QUEUE (min)</text>
+      <text x="200" y="118" class="t small">same four values, same insertion order</text>
+      <g>
+        <rect x="150" y="130" width="60" height="40" class="nd"/><text x="180" y="155" class="t" text-anchor="middle">26</text>
+        <rect x="220" y="130" width="60" height="40" class="nd newnd"/><text x="250" y="155" class="t" text-anchor="middle">14</text>
+        <rect x="290" y="130" width="60" height="40" class="nd"/><text x="320" y="155" class="t" text-anchor="middle">19</text>
+        <rect x="360" y="130" width="60" height="40" class="nd"/><text x="390" y="155" class="t" text-anchor="middle">16</text>
+      </g>
+      <path d="M250,170 C 250,196 120,196 100,156" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="80" y="154" class="t newlab" text-anchor="end">14 out</text>
+      <text x="440" y="154" class="t small">smallest out, then 16, 19, 26</text>
+    </svg>
+    <figcaption><b>Same input, different rule.</b> A queue cares about arrival time. A min priority queue cares only about value: 14 leaves first even though 26 arrived before it. "Highest priority" means "smallest value" in a min heap and "largest value" in a max heap.</figcaption>
+  </figure>
+
+  <p>Two types. A <dfn>min heap</dfn> keeps the smallest value at the root, so the smallest has the highest priority to be removed. A <dfn>max heap</dfn> keeps the largest at the root. The lessons focus on min heaps; a max heap is the same code with the comparisons flipped.</p>
+</section>
+
+<!-- ============================ PROPERTIES (lesson 23) ============================ -->
+<section id="properties">
+  <h2><span class="num">1</span>Heap properties</h2>
+
+  <h3>Two rules a binary tree must satisfy to be a heap</h3>
+  <p>A <dfn>binary heap</dfn> is a binary tree with two extra rules. Both must hold at all times.</p>
+  <ol>
+    <li><strong>Structure property.</strong> The tree is a <dfn>complete binary tree</dfn>: every level is completely filled except possibly the lowest level, and the lowest level is filled <em>contiguously from left to right</em> (no gaps).</li>
+    <li><strong>Order property</strong> (min heap). Every descendant is greater than or equal to its ancestors. If the root has value <code>y</code>, every node in the left subtree and the right subtree has a value <code>&gt;= y</code>. This is recursive, like the BST property: it holds again at every subtree. In a max heap every node in the subtrees is <code>&lt;= y</code>.</li>
+  </ol>
+  <p>Unlike a BST, a heap <strong>may contain duplicate values</strong>. The lesson heap below has 19 twice.</p>
+
+  <figure>
+    <svg viewBox="0 0 640 270" role="img" aria-label="Left: a complete binary tree of six nodes whose last level is filled from the left, and its gap-free array. Right: a tree whose last level has two empty slots on the left, so it is not complete and its array has holes.">
+      <text x="20" y="20" class="t ptrlab">COMPLETE  ✓</text>
+      <line x1="150" y1="42" x2="90" y2="100" class="ptr"/>
+      <line x1="150" y1="42" x2="210" y2="100" class="ptr"/>
+      <line x1="90" y1="100" x2="60" y2="158" class="ptr"/>
+      <line x1="90" y1="100" x2="120" y2="158" class="ptr"/>
+      <line x1="210" y1="100" x2="180" y2="158" class="ptr"/>
+      <circle cx="150" cy="42" r="15" class="nd"/><text x="150" y="47" class="t" text-anchor="middle" font-size="12">14</text>
+      <circle cx="90" cy="100" r="15" class="nd"/><text x="90" y="105" class="t" text-anchor="middle" font-size="12">19</text>
+      <circle cx="210" cy="100" r="15" class="nd"/><text x="210" y="105" class="t" text-anchor="middle" font-size="12">16</text>
+      <circle cx="60" cy="158" r="15" class="nd"/><text x="60" y="163" class="t" text-anchor="middle" font-size="12">21</text>
+      <circle cx="120" cy="158" r="15" class="nd"/><text x="120" y="163" class="t" text-anchor="middle" font-size="12">26</text>
+      <circle cx="180" cy="158" r="15" class="nd"/><text x="180" y="163" class="t" text-anchor="middle" font-size="12">19</text>
+      <circle cx="240" cy="158" r="15" class="mem"/>
+      <text x="240" y="186" class="t small" text-anchor="middle">next slot</text>
+      <!-- array -->
+      <g>
+        <rect x="45" y="205" width="35" height="30" class="nd"/><text x="62" y="225" class="t" text-anchor="middle" font-size="12">14</text>
+        <rect x="80" y="205" width="35" height="30" class="nd"/><text x="97" y="225" class="t" text-anchor="middle" font-size="12">19</text>
+        <rect x="115" y="205" width="35" height="30" class="nd"/><text x="132" y="225" class="t" text-anchor="middle" font-size="12">16</text>
+        <rect x="150" y="205" width="35" height="30" class="nd"/><text x="167" y="225" class="t" text-anchor="middle" font-size="12">21</text>
+        <rect x="185" y="205" width="35" height="30" class="nd"/><text x="202" y="225" class="t" text-anchor="middle" font-size="12">26</text>
+        <rect x="220" y="205" width="35" height="30" class="nd"/><text x="237" y="225" class="t" text-anchor="middle" font-size="12">19</text>
+      </g>
+      <text x="150" y="256" class="t small" text-anchor="middle">array has no gaps → index formulas work</text>
+
+      <text x="360" y="20" class="t nulltxt">NOT COMPLETE  ✗</text>
+      <line x1="490" y1="42" x2="430" y2="100" class="ptr"/>
+      <line x1="490" y1="42" x2="550" y2="100" class="ptr"/>
+      <line x1="430" y1="100" x2="400" y2="158" class="ptr old"/>
+      <line x1="430" y1="100" x2="460" y2="158" class="ptr old"/>
+      <line x1="550" y1="100" x2="520" y2="158" class="ptr"/>
+      <line x1="550" y1="100" x2="580" y2="158" class="ptr"/>
+      <circle cx="490" cy="42" r="15" class="nd"/><text x="490" y="47" class="t" text-anchor="middle" font-size="12">14</text>
+      <circle cx="430" cy="100" r="15" class="nd"/><text x="430" y="105" class="t" text-anchor="middle" font-size="12">19</text>
+      <circle cx="550" cy="100" r="15" class="nd"/><text x="550" y="105" class="t" text-anchor="middle" font-size="12">16</text>
+      <circle cx="400" cy="158" r="15" class="mem"/><text x="400" y="163" class="t nulltxt" text-anchor="middle" font-size="12">?</text>
+      <circle cx="460" cy="158" r="15" class="mem"/><text x="460" y="163" class="t nulltxt" text-anchor="middle" font-size="12">?</text>
+      <circle cx="520" cy="158" r="15" class="nd"/><text x="520" y="163" class="t" text-anchor="middle" font-size="12">19</text>
+      <circle cx="580" cy="158" r="15" class="nd"/><text x="580" y="163" class="t" text-anchor="middle" font-size="12">68</text>
+      <text x="430" y="186" class="t small" text-anchor="middle">gaps on the left</text>
+      <g>
+        <rect x="367" y="205" width="35" height="30" class="nd"/><text x="384" y="225" class="t" text-anchor="middle" font-size="12">14</text>
+        <rect x="402" y="205" width="35" height="30" class="nd"/><text x="419" y="225" class="t" text-anchor="middle" font-size="12">19</text>
+        <rect x="437" y="205" width="35" height="30" class="nd"/><text x="454" y="225" class="t" text-anchor="middle" font-size="12">16</text>
+        <rect x="472" y="205" width="35" height="30" class="nd dim"/><text x="489" y="225" class="t nulltxt" text-anchor="middle" font-size="12">?</text>
+        <rect x="507" y="205" width="35" height="30" class="nd dim"/><text x="524" y="225" class="t nulltxt" text-anchor="middle" font-size="12">?</text>
+        <rect x="542" y="205" width="35" height="30" class="nd"/><text x="559" y="225" class="t" text-anchor="middle" font-size="12">19</text>
+        <rect x="577" y="205" width="35" height="30" class="nd"/><text x="594" y="225" class="t" text-anchor="middle" font-size="12">68</text>
+      </g>
+      <text x="490" y="256" class="t small" text-anchor="middle">holes in the array → formulas break</text>
+    </svg>
+    <figcaption><b>Complete means "no holes when you read level by level, left to right".</b> The left tree is complete even though its last level is not full: the filled part is on the left and the next slot is on the right. The right tree has values on the right of the last level but empty slots on the left. That is not complete, and you can see why it matters: its array would have holes.</figcaption>
+  </figure>
+
+  <h3>Implementation: arrays under the hood</h3>
+  <p>Heaps are <em>drawn</em> as trees but <em>stored</em> as arrays. No node objects, no <code>left</code> or <code>right</code> pointers. The lesson's example heap is the tree below: root 14; children 19 and 16; 19's children 21 and 26; 16's children 19 and 68; 21's children 65 and 30. In NeetCode's drawing the array is <code>[14,19,16,21,26,19,68,65,30,null,null,null,null,null,null]</code>, with unused slots shown as <code>null</code>.</p>
+  <p>How to fill the array: take an array of size <code>n + 1</code> where <code>n</code> is the number of nodes. Visit the nodes in <dfn>BFS order</dfn> (level by level, left to right) and write them one after another, but <strong>start at index 1, not index 0</strong>.</p>
+
+  <figure>
+    <svg viewBox="0 0 760 440" role="img" aria-label="The lesson heap drawn as a tree with index labels 1 to 9, and the same heap as a 1-indexed array underneath. Node 19 at index 2 is highlighted; arrows show its left child at 2 times 2 equals 4, right child at 2 times 2 plus 1 equals 5, and parent at 2 integer-divided by 2 equals 1.">
+      <line x1="320" y1="40" x2="180" y2="110" class="ptr"/>
+      <line x1="320" y1="40" x2="460" y2="110" class="ptr"/>
+      <line x1="180" y1="110" x2="110" y2="180" class="ptr newp"/>
+      <line x1="180" y1="110" x2="250" y2="180" class="ptr newp"/>
+      <line x1="460" y1="110" x2="390" y2="180" class="ptr"/>
+      <line x1="460" y1="110" x2="530" y2="180" class="ptr"/>
+      <line x1="110" y1="180" x2="65" y2="250" class="ptr"/>
+      <line x1="110" y1="180" x2="155" y2="250" class="ptr"/>
+      <circle cx="320" cy="40" r="18" class="nd"/><text x="320" y="45" class="t" text-anchor="middle">14</text>
+      <text x="320" y="71" class="t small" text-anchor="middle">[1]</text>
+      <circle cx="180" cy="110" r="18" class="nd newnd"/><text x="180" y="115" class="t" text-anchor="middle">19</text>
+      <text x="180" y="141" class="t small" text-anchor="middle">[2]</text>
+      <circle cx="460" cy="110" r="18" class="nd"/><text x="460" y="115" class="t" text-anchor="middle">16</text>
+      <text x="460" y="141" class="t small" text-anchor="middle">[3]</text>
+      <circle cx="110" cy="180" r="18" class="nd"/><text x="110" y="185" class="t" text-anchor="middle">21</text>
+      <text x="110" y="211" class="t small" text-anchor="middle">[4]</text>
+      <circle cx="250" cy="180" r="18" class="nd"/><text x="250" y="185" class="t" text-anchor="middle">26</text>
+      <text x="250" y="211" class="t small" text-anchor="middle">[5]</text>
+      <circle cx="390" cy="180" r="18" class="nd"/><text x="390" y="185" class="t" text-anchor="middle">19</text>
+      <text x="390" y="211" class="t small" text-anchor="middle">[6]</text>
+      <circle cx="530" cy="180" r="18" class="nd"/><text x="530" y="185" class="t" text-anchor="middle">68</text>
+      <text x="530" y="211" class="t small" text-anchor="middle">[7]</text>
+      <circle cx="65" cy="250" r="18" class="nd"/><text x="65" y="255" class="t" text-anchor="middle">65</text>
+      <text x="65" y="281" class="t small" text-anchor="middle">[8]</text>
+      <circle cx="155" cy="250" r="18" class="nd"/><text x="155" y="255" class="t" text-anchor="middle">30</text>
+      <text x="155" y="281" class="t small" text-anchor="middle">[9]</text>
+      <!-- tree labels for node 2 -->
+      <text x="238" y="68" class="t newlab" text-anchor="end" font-size="11">i//2 = 1</text>
+      <text x="118" y="140" class="t newlab" text-anchor="end" font-size="11">2i = 4</text>
+      <text x="236" y="140" class="t newlab" font-size="11">2i+1 = 5</text>
+      <text x="560" y="45" class="t small">BFS order:</text>
+      <text x="560" y="60" class="t small">level by level,</text>
+      <text x="560" y="75" class="t small">left to right</text>
+
+      <!-- 1-indexed array -->
+      <text x="70" y="304" class="t small" text-anchor="middle">0</text>
+      <text x="120" y="304" class="t small" text-anchor="middle">1</text>
+      <text x="170" y="304" class="t small" text-anchor="middle">2</text>
+      <text x="220" y="304" class="t small" text-anchor="middle">3</text>
+      <text x="270" y="304" class="t small" text-anchor="middle">4</text>
+      <text x="320" y="304" class="t small" text-anchor="middle">5</text>
+      <text x="370" y="304" class="t small" text-anchor="middle">6</text>
+      <text x="420" y="304" class="t small" text-anchor="middle">7</text>
+      <text x="470" y="304" class="t small" text-anchor="middle">8</text>
+      <text x="520" y="304" class="t small" text-anchor="middle">9</text>
+      <rect x="45" y="310" width="50" height="40" class="nd dim"/><text x="70" y="335" class="t small" text-anchor="middle">dummy</text>
+      <rect x="95" y="310" width="50" height="40" class="nd"/><text x="120" y="335" class="t" text-anchor="middle">14</text>
+      <rect x="145" y="310" width="50" height="40" class="nd newnd"/><text x="170" y="335" class="t" text-anchor="middle">19</text>
+      <rect x="195" y="310" width="50" height="40" class="nd"/><text x="220" y="335" class="t" text-anchor="middle">16</text>
+      <rect x="245" y="310" width="50" height="40" class="nd"/><text x="270" y="335" class="t" text-anchor="middle">21</text>
+      <rect x="295" y="310" width="50" height="40" class="nd"/><text x="320" y="335" class="t" text-anchor="middle">26</text>
+      <rect x="345" y="310" width="50" height="40" class="nd"/><text x="370" y="335" class="t" text-anchor="middle">19</text>
+      <rect x="395" y="310" width="50" height="40" class="nd"/><text x="420" y="335" class="t" text-anchor="middle">68</text>
+      <rect x="445" y="310" width="50" height="40" class="nd"/><text x="470" y="335" class="t" text-anchor="middle">65</text>
+      <rect x="495" y="310" width="50" height="40" class="nd"/><text x="520" y="335" class="t" text-anchor="middle">30</text>
+      <text x="560" y="335" class="t small">index 10+ unused</text>
+      <!-- bus arrows from index 2 -->
+      <path d="M170,352 L170,372 L120,372 L120,354" class="ptr" marker-end="url(#arr)"/>
+      <text x="145" y="386" class="t ptrlab" text-anchor="middle" font-size="11">i//2 = 1</text>
+      <path d="M170,352 L170,392 L270,392 L270,354" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="220" y="406" class="t newlab" text-anchor="middle" font-size="11">2i = 4</text>
+      <path d="M170,352 L170,412 L320,412 L320,354" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="245" y="428" class="t newlab" text-anchor="middle" font-size="11">2i+1 = 5</text>
+    </svg>
+    <figcaption><b>One heap, two pictures.</b> Read the tree level by level and you get the array: 14, 19, 16, 21, 26, 19, 68, 65, 30 at indices 1 to 9. Index 0 holds a dummy value. Node 19 at index 2 finds its left child at index 4 (21), its right child at index 5 (26), and its parent at index 1 (14) using arithmetic only.</figcaption>
+  </figure>
+
+  <h3>One-based indexing: the three formulas</h3>
+  <p>Starting at index 1 lets us compute where a node's children and parent live. Because a binary heap is a complete tree, the array has no gaps, so no pointers are needed. For a node at index <code>i</code>:</p>
+<pre><code>leftChild  = 2 * i
+rightChild = 2 * i + 1
+parent     = i // 2        <span class="c"># integer division</span>
+
+<span class="c"># example: node 19 sits at index 2</span>
+<span class="c">#   left child  = 4  → 21</span>
+<span class="c">#   right child = 5  → 26</span>
+<span class="c">#   parent      = 1  → 14</span></code></pre>
+  <p>These formulas only work when the tree is complete and the array is filled contiguously from left to right. That is exactly why the structure property exists.</p>
+
+  <div class="callout">
+    <span class="lab">Why not index 0?</span>
+    <p>If 14 were stored at index 0, the formula <code>2 * 0 = 0</code> would say its left child is also at index 0. That is wrong. Starting at index 1 makes all three formulas clean. (Python's <code>heapq</code> uses index 0 with slightly different formulas; section 4 shows them.)</p>
+  </div>
+
+<pre><code><span class="k">class</span> Heap:
+    <span class="k">def</span> __init__(self):
+        self.heap = [<span class="s">0</span>]      <span class="c"># index 0 holds a dummy value; real data starts at index 1</span></code></pre>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>The number of real elements is <code>len(self.heap) - 1</code>. The last real element is <code>self.heap[-1]</code>, which is also the right-most node of the lowest level. Push and pop both use that fact.</p>
+  </div>
+</section>
+
+<!-- ============================ PUSH / POP (lesson 24) ============================ -->
+<section id="pushpop">
+  <h2><span class="num">2</span>Push and pop</h2>
+
+  <p>Reading the min (or max) is O(1): return <code>self.heap[1]</code>. Push and pop are more work, because they must keep both properties true, but each is still O(log n). Both use the same idea: put the value in the only place the <em>structure</em> property allows, then swap it up or down until the <em>order</em> property is true again. That swapping is called <dfn>percolating</dfn> (or bubbling).</p>
+
+  <h3>Push: append, then percolate up</h3>
+  <p>Same heap as before; push 17. The structure property says a complete tree is filled contiguously, so 17 must go at index 10 (the next free slot, which is the left child of 26 at index 5). That may break the order property, because 17 is smaller than 26. Fix it by percolating 17 <strong>up</strong> until its parent is smaller:</p>
+  <ol>
+    <li>Compare 17 with its parent 26 (index 5). Since 17 &lt; 26, swap.</li>
+    <li>Compare 17 with its new parent 19 (index 2). 17 &lt; 19, swap.</li>
+    <li>Compare 17 with its new parent 14 (index 1). 17 &gt; 14, stop.</li>
+  </ol>
+
+  <figure>
+    <svg viewBox="0 0 780 220" role="img" aria-label="Three snapshots of pushing 17. First: 17 appended as the left child of 26, the pair 17 and 26 highlighted. Second: after swapping, 17 is a child of 19, that pair highlighted. Third: after swapping again, 17 is a child of 14; 17 is greater than 14 so it stops.">
+      <text x="115" y="12" class="t newlab" text-anchor="middle" font-size="11">① 17 &lt; 26 → swap</text>
+      <line x1="120" y1="28" x2="64" y2="76" class="ptr"/>
+      <line x1="120" y1="28" x2="176" y2="76" class="ptr"/>
+      <line x1="64" y1="76" x2="34" y2="124" class="ptr"/>
+      <line x1="64" y1="76" x2="94" y2="124" class="ptr"/>
+      <line x1="176" y1="76" x2="146" y2="124" class="ptr"/>
+      <line x1="176" y1="76" x2="206" y2="124" class="ptr"/>
+      <line x1="34" y1="124" x2="18" y2="172" class="ptr"/>
+      <line x1="34" y1="124" x2="50" y2="172" class="ptr"/>
+      <line x1="94" y1="124" x2="82" y2="172" class="ptr newp"/>
+      <circle cx="120" cy="28" r="13" class="nd"/><text x="120" y="33" class="t" text-anchor="middle" font-size="11">14</text>
+      <circle cx="64" cy="76" r="13" class="nd"/><text x="64" y="81" class="t" text-anchor="middle" font-size="11">19</text>
+      <circle cx="176" cy="76" r="13" class="nd"/><text x="176" y="81" class="t" text-anchor="middle" font-size="11">16</text>
+      <circle cx="34" cy="124" r="13" class="nd"/><text x="34" y="129" class="t" text-anchor="middle" font-size="11">21</text>
+      <circle cx="94" cy="124" r="13" class="nd newnd"/><text x="94" y="129" class="t" text-anchor="middle" font-size="11">26</text>
+      <circle cx="146" cy="124" r="13" class="nd"/><text x="146" y="129" class="t" text-anchor="middle" font-size="11">19</text>
+      <circle cx="206" cy="124" r="13" class="nd"/><text x="206" y="129" class="t" text-anchor="middle" font-size="11">68</text>
+      <circle cx="18" cy="172" r="13" class="nd"/><text x="18" y="177" class="t" text-anchor="middle" font-size="11">65</text>
+      <circle cx="50" cy="172" r="13" class="nd"/><text x="50" y="177" class="t" text-anchor="middle" font-size="11">30</text>
+      <circle cx="82" cy="172" r="13" class="nd newnd"/><text x="82" y="177" class="t" text-anchor="middle" font-size="11">17</text>
+      <text x="115" y="206" class="t small" text-anchor="middle">17 appended at index 10</text>
+
+      <text x="350" y="12" class="t newlab" text-anchor="middle" font-size="11">② 17 &lt; 19 → swap</text>
+      <line x1="355" y1="28" x2="299" y2="76" class="ptr"/>
+      <line x1="355" y1="28" x2="411" y2="76" class="ptr"/>
+      <line x1="299" y1="76" x2="269" y2="124" class="ptr"/>
+      <line x1="299" y1="76" x2="329" y2="124" class="ptr newp"/>
+      <line x1="411" y1="76" x2="381" y2="124" class="ptr"/>
+      <line x1="411" y1="76" x2="441" y2="124" class="ptr"/>
+      <line x1="269" y1="124" x2="253" y2="172" class="ptr"/>
+      <line x1="269" y1="124" x2="285" y2="172" class="ptr"/>
+      <line x1="329" y1="124" x2="317" y2="172" class="ptr"/>
+      <circle cx="355" cy="28" r="13" class="nd"/><text x="355" y="33" class="t" text-anchor="middle" font-size="11">14</text>
+      <circle cx="299" cy="76" r="13" class="nd newnd"/><text x="299" y="81" class="t" text-anchor="middle" font-size="11">19</text>
+      <circle cx="411" cy="76" r="13" class="nd"/><text x="411" y="81" class="t" text-anchor="middle" font-size="11">16</text>
+      <circle cx="269" cy="124" r="13" class="nd"/><text x="269" y="129" class="t" text-anchor="middle" font-size="11">21</text>
+      <circle cx="329" cy="124" r="13" class="nd newnd"/><text x="329" y="129" class="t" text-anchor="middle" font-size="11">17</text>
+      <circle cx="381" cy="124" r="13" class="nd"/><text x="381" y="129" class="t" text-anchor="middle" font-size="11">19</text>
+      <circle cx="441" cy="124" r="13" class="nd"/><text x="441" y="129" class="t" text-anchor="middle" font-size="11">68</text>
+      <circle cx="253" cy="172" r="13" class="nd"/><text x="253" y="177" class="t" text-anchor="middle" font-size="11">65</text>
+      <circle cx="285" cy="172" r="13" class="nd"/><text x="285" y="177" class="t" text-anchor="middle" font-size="11">30</text>
+      <circle cx="317" cy="172" r="13" class="nd"/><text x="317" y="177" class="t" text-anchor="middle" font-size="11">26</text>
+      <text x="350" y="206" class="t small" text-anchor="middle">17 now at index 5, 26 at 10</text>
+
+      <text x="585" y="12" class="t ptrlab" text-anchor="middle" font-size="11">③ 17 &gt; 14 → stop</text>
+      <line x1="590" y1="28" x2="534" y2="76" class="ptr old"/>
+      <line x1="590" y1="28" x2="646" y2="76" class="ptr"/>
+      <line x1="534" y1="76" x2="504" y2="124" class="ptr"/>
+      <line x1="534" y1="76" x2="564" y2="124" class="ptr"/>
+      <line x1="646" y1="76" x2="616" y2="124" class="ptr"/>
+      <line x1="646" y1="76" x2="676" y2="124" class="ptr"/>
+      <line x1="504" y1="124" x2="488" y2="172" class="ptr"/>
+      <line x1="504" y1="124" x2="520" y2="172" class="ptr"/>
+      <line x1="564" y1="124" x2="552" y2="172" class="ptr"/>
+      <circle cx="590" cy="28" r="13" class="nd"/><text x="590" y="33" class="t" text-anchor="middle" font-size="11">14</text>
+      <circle cx="534" cy="76" r="13" class="nd newnd"/><text x="534" y="81" class="t" text-anchor="middle" font-size="11">17</text>
+      <circle cx="646" cy="76" r="13" class="nd"/><text x="646" y="81" class="t" text-anchor="middle" font-size="11">16</text>
+      <circle cx="504" cy="124" r="13" class="nd"/><text x="504" y="129" class="t" text-anchor="middle" font-size="11">21</text>
+      <circle cx="564" cy="124" r="13" class="nd"/><text x="564" y="129" class="t" text-anchor="middle" font-size="11">19</text>
+      <circle cx="616" cy="124" r="13" class="nd"/><text x="616" y="129" class="t" text-anchor="middle" font-size="11">19</text>
+      <circle cx="676" cy="124" r="13" class="nd"/><text x="676" y="129" class="t" text-anchor="middle" font-size="11">68</text>
+      <circle cx="488" cy="172" r="13" class="nd"/><text x="488" y="177" class="t" text-anchor="middle" font-size="11">65</text>
+      <circle cx="520" cy="172" r="13" class="nd"/><text x="520" y="177" class="t" text-anchor="middle" font-size="11">30</text>
+      <circle cx="552" cy="172" r="13" class="nd"/><text x="552" y="177" class="t" text-anchor="middle" font-size="11">26</text>
+      <text x="585" y="206" class="t small" text-anchor="middle">17 at index 2; dashed edge = no swap</text>
+    </svg>
+    <figcaption><b>Orange = the pair being swapped in that step.</b> 17 climbs one level per swap. It can climb at most the height of the tree, and a complete tree with n nodes has height about log n, so push is O(log n). Notice that 17 always swaps with its <em>parent</em> only; it never looks at siblings.</figcaption>
+  </figure>
+
+<pre><code><span class="k">def</span> push(self, val):
+    self.heap.append(val)
+    i = len(self.heap) - <span class="s">1</span>
+
+    <span class="c"># Percolate up</span>
+    <span class="k">while</span> i &gt; <span class="s">1</span> <span class="k">and</span> self.heap[i] &lt; self.heap[i // <span class="s">2</span>]:
+        tmp = self.heap[i]
+        self.heap[i] = self.heap[i // <span class="s">2</span>]
+        self.heap[i // <span class="s">2</span>] = tmp
+        i = i // <span class="s">2</span></code></pre>
+
+  <p><code>//</code> is <dfn>floor division</dfn>: it rounds down (5.5 becomes 5), which we need because indices must be whole numbers. The loop condition <code>i &gt; 1</code> stops at the root, which has no parent. The three-line <code>tmp</code> swap is NeetCode's version; in Python you can write it as <code>self.heap[i], self.heap[i // 2] = self.heap[i // 2], self.heap[i]</code>. For a max heap, flip the comparison to <code>&gt;</code>.</p>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Step</th><th><code>i</code></th><th>Compare</th><th>Action</th><th>Array after (index 0 is the dummy)</th></tr></thead>
+    <tbody>
+      <tr><td>append</td><td>10</td><td>-</td><td>17 goes to the next free slot</td><td><code>[0, 14, 19, 16, 21, 26, 19, 68, 65, 30, 17]</code></td></tr>
+      <tr><td>1</td><td>10</td><td>17 vs parent 26 at 5</td><td>17 &lt; 26 → swap, <code>i = 5</code></td><td><code>[0, 14, 19, 16, 21, 17, 19, 68, 65, 30, 26]</code></td></tr>
+      <tr><td>2</td><td>5</td><td>17 vs parent 19 at 2</td><td>17 &lt; 19 → swap, <code>i = 2</code></td><td><code>[0, 14, 17, 16, 21, 19, 19, 68, 65, 30, 26]</code></td></tr>
+      <tr><td>3</td><td>2</td><td>17 vs parent 14 at 1</td><td>17 &gt; 14 → loop ends</td><td>unchanged</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Pop: the obvious way is wrong</h3>
+  <p>Pop removes the highest-priority value, which is the root. The tempting way: remove the root, pull up the smaller child to fill the gap, then fill <em>that</em> gap with the smaller of its children, and so on. The order property stays fine. But look at the structure: after popping 14 and pulling up 16, then pulling 19 up to replace 16, node 19 at index 3 is missing its left child. The tree is no longer complete, the array has a hole, and every index formula breaks.</p>
+
+  <h3>Pop: the right way</h3>
+  <ol>
+    <li>Read the root element. That is the value to return.</li>
+    <li>Take the right-most node of the last level (the last array element) and move it into the root. Now the structure property is maintained, because you removed a node from the only place a complete tree can lose one. The order property is violated instead.</li>
+    <li>Percolate the new root <strong>down</strong>: swap it with <code>min(left_child, right_child)</code> again and again, until both children are <code>&gt;=</code> it or it has no children. Here: 30 goes to the root, swaps with 16, then swaps with 19.</li>
+  </ol>
+
+  <figure>
+    <svg viewBox="0 0 700 220" role="img" aria-label="Left: the wrong pop pulls 16 and then 19 upward and leaves a hole where 19 used to be, so the tree is not complete. Middle: the right pop moves the last element 30 into the root and removes the last slot. Right: 30 percolates down, swapping with 16 and then with 19, giving a valid heap.">
+      <text x="115" y="12" class="t nulltxt" text-anchor="middle" font-size="11">WRONG: pull children up</text>
+      <line x1="120" y1="28" x2="64" y2="76" class="ptr"/>
+      <line x1="120" y1="28" x2="176" y2="76" class="ptr newp"/>
+      <line x1="64" y1="76" x2="34" y2="124" class="ptr"/>
+      <line x1="64" y1="76" x2="94" y2="124" class="ptr"/>
+      <line x1="176" y1="76" x2="146" y2="124" class="ptr" opacity=".35"/>
+      <line x1="176" y1="76" x2="206" y2="124" class="ptr"/>
+      <line x1="34" y1="124" x2="18" y2="172" class="ptr"/>
+      <line x1="34" y1="124" x2="50" y2="172" class="ptr"/>
+      <circle cx="120" cy="28" r="13" class="nd newnd"/><text x="120" y="33" class="t" text-anchor="middle" font-size="11">16</text>
+      <circle cx="64" cy="76" r="13" class="nd"/><text x="64" y="81" class="t" text-anchor="middle" font-size="11">19</text>
+      <circle cx="176" cy="76" r="13" class="nd newnd"/><text x="176" y="81" class="t" text-anchor="middle" font-size="11">19</text>
+      <circle cx="34" cy="124" r="13" class="nd"/><text x="34" y="129" class="t" text-anchor="middle" font-size="11">21</text>
+      <circle cx="94" cy="124" r="13" class="nd"/><text x="94" y="129" class="t" text-anchor="middle" font-size="11">26</text>
+      <circle cx="206" cy="124" r="13" class="nd"/><text x="206" y="129" class="t" text-anchor="middle" font-size="11">68</text>
+      <circle cx="18" cy="172" r="13" class="nd"/><text x="18" y="177" class="t" text-anchor="middle" font-size="11">65</text>
+      <circle cx="50" cy="172" r="13" class="nd"/><text x="50" y="177" class="t" text-anchor="middle" font-size="11">30</text>
+      <circle cx="146" cy="124" r="13" class="mem"/><text x="146" y="129" class="t nulltxt" text-anchor="middle" font-size="11">?</text>
+      <text x="146" y="152" class="t nulltxt" text-anchor="middle" font-size="10">hole at 6</text>
+      <text x="115" y="206" class="t small" text-anchor="middle">order OK, structure broken</text>
+
+      <text x="350" y="12" class="t newlab" text-anchor="middle" font-size="11">RIGHT ①: last (30) → root</text>
+      <line x1="355" y1="28" x2="299" y2="76" class="ptr"/>
+      <line x1="355" y1="28" x2="411" y2="76" class="ptr"/>
+      <line x1="299" y1="76" x2="269" y2="124" class="ptr"/>
+      <line x1="299" y1="76" x2="329" y2="124" class="ptr"/>
+      <line x1="411" y1="76" x2="381" y2="124" class="ptr"/>
+      <line x1="411" y1="76" x2="441" y2="124" class="ptr"/>
+      <line x1="269" y1="124" x2="253" y2="172" class="ptr"/>
+      <line x1="269" y1="124" x2="285" y2="172" class="ptr" opacity=".35"/>
+      <circle cx="355" cy="28" r="13" class="nd newnd"/><text x="355" y="33" class="t" text-anchor="middle" font-size="11">30</text>
+      <circle cx="299" cy="76" r="13" class="nd"/><text x="299" y="81" class="t" text-anchor="middle" font-size="11">19</text>
+      <circle cx="411" cy="76" r="13" class="nd"/><text x="411" y="81" class="t" text-anchor="middle" font-size="11">16</text>
+      <circle cx="269" cy="124" r="13" class="nd"/><text x="269" y="129" class="t" text-anchor="middle" font-size="11">21</text>
+      <circle cx="329" cy="124" r="13" class="nd"/><text x="329" y="129" class="t" text-anchor="middle" font-size="11">26</text>
+      <circle cx="381" cy="124" r="13" class="nd"/><text x="381" y="129" class="t" text-anchor="middle" font-size="11">19</text>
+      <circle cx="441" cy="124" r="13" class="nd"/><text x="441" y="129" class="t" text-anchor="middle" font-size="11">68</text>
+      <circle cx="253" cy="172" r="13" class="nd"/><text x="253" y="177" class="t" text-anchor="middle" font-size="11">65</text>
+      <circle cx="285" cy="172" r="13" class="mem"/>
+      <text x="300" y="200" class="t small" text-anchor="middle">slot 9 freed</text>
+      <text x="380" y="52" class="t small">14 returned</text>
+      <text x="350" y="216" class="t small" text-anchor="middle">structure OK, order broken</text>
+
+      <text x="585" y="12" class="t newlab" text-anchor="middle" font-size="11">RIGHT ②③: 30 sinks</text>
+      <line x1="590" y1="28" x2="534" y2="76" class="ptr"/>
+      <line x1="590" y1="28" x2="646" y2="76" class="ptr newp"/>
+      <line x1="534" y1="76" x2="504" y2="124" class="ptr"/>
+      <line x1="534" y1="76" x2="564" y2="124" class="ptr"/>
+      <line x1="646" y1="76" x2="616" y2="124" class="ptr newp"/>
+      <line x1="646" y1="76" x2="676" y2="124" class="ptr"/>
+      <line x1="504" y1="124" x2="488" y2="172" class="ptr"/>
+      <circle cx="590" cy="28" r="13" class="nd newnd"/><text x="590" y="33" class="t" text-anchor="middle" font-size="11">16</text>
+      <circle cx="534" cy="76" r="13" class="nd"/><text x="534" y="81" class="t" text-anchor="middle" font-size="11">19</text>
+      <circle cx="646" cy="76" r="13" class="nd newnd"/><text x="646" y="81" class="t" text-anchor="middle" font-size="11">19</text>
+      <circle cx="504" cy="124" r="13" class="nd"/><text x="504" y="129" class="t" text-anchor="middle" font-size="11">21</text>
+      <circle cx="564" cy="124" r="13" class="nd"/><text x="564" y="129" class="t" text-anchor="middle" font-size="11">26</text>
+      <circle cx="616" cy="124" r="13" class="nd newnd"/><text x="616" y="129" class="t" text-anchor="middle" font-size="11">30</text>
+      <circle cx="676" cy="124" r="13" class="nd"/><text x="676" y="129" class="t" text-anchor="middle" font-size="11">68</text>
+      <circle cx="488" cy="172" r="13" class="nd"/><text x="488" y="177" class="t" text-anchor="middle" font-size="11">65</text>
+      <text x="628" y="46" class="t newlab" font-size="11">②</text>
+      <text x="618" y="94" class="t newlab" font-size="11">③</text>
+      <text x="585" y="206" class="t small" text-anchor="middle">both properties OK</text>
+    </svg>
+    <figcaption><b>Move the last element to the root, then sink it.</b> The wrong method keeps the order property but punches a hole at index 6. The right method first fixes structure (remove from the end, which is always safe in a complete tree), then fixes order by percolating down. At each step 30 swaps with the <em>smaller</em> child: 16 rather than 19 in step ②, 19 rather than 68 in step ③.</figcaption>
+  </figure>
+
+<pre><code><span class="k">def</span> pop(self):
+    <span class="k">if</span> len(self.heap) == <span class="s">1</span>:
+        <span class="k">return None</span>
+    <span class="k">if</span> len(self.heap) == <span class="s">2</span>:
+        <span class="k">return</span> self.heap.pop()
+
+    res = self.heap[<span class="s">1</span>]
+    <span class="c"># Move last value to root</span>
+    self.heap[<span class="s">1</span>] = self.heap.pop()
+    i = <span class="s">1</span>
+    <span class="c"># Percolate down</span>
+    <span class="k">while</span> <span class="s">2</span> * i &lt; len(self.heap):
+        <span class="k">if</span> (<span class="s">2</span> * i + <span class="s">1</span> &lt; len(self.heap) <span class="k">and</span>
+            self.heap[<span class="s">2</span> * i + <span class="s">1</span>] &lt; self.heap[<span class="s">2</span> * i] <span class="k">and</span>
+            self.heap[i] &gt; self.heap[<span class="s">2</span> * i + <span class="s">1</span>]):
+            <span class="c"># Swap right child</span>
+            tmp = self.heap[i]
+            self.heap[i] = self.heap[<span class="s">2</span> * i + <span class="s">1</span>]
+            self.heap[<span class="s">2</span> * i + <span class="s">1</span>] = tmp
+            i = <span class="s">2</span> * i + <span class="s">1</span>
+        <span class="k">elif</span> self.heap[i] &gt; self.heap[<span class="s">2</span> * i]:
+            <span class="c"># Swap left child</span>
+            tmp = self.heap[i]
+            self.heap[i] = self.heap[<span class="s">2</span> * i]
+            self.heap[<span class="s">2</span> * i] = tmp
+            i = <span class="s">2</span> * i
+        <span class="k">else</span>:
+            <span class="k">break</span>
+    <span class="k">return</span> res</code></pre>
+
+  <h3>Walking through pop() line by line</h3>
+  <ul>
+    <li>Heap is empty (length 1, only the dummy): return <code>None</code>.</li>
+    <li>One node (length 2): <code>self.heap.pop()</code> removes and returns it. No adjustment needed.</li>
+    <li>Otherwise store the root in <code>res</code>, then move the last value into the root with <code>self.heap[1] = self.heap.pop()</code>. Python's <code>list.pop()</code> with no argument removes the last element and returns it, which is exactly "take the right-most node of the last level".</li>
+    <li>The <code>while</code> loop runs as long as a <em>left</em> child exists: <code>2 * i &lt; len(self.heap)</code>. There are three cases for a node: no children, only a left child, two children. A heap can never have only a right child, because that would not be complete.</li>
+    <li>Inside the loop a left child is guaranteed. So first check whether a right child exists (<code>2 * i + 1</code> in bounds), whether it is smaller than the left child, AND whether it is smaller than the current node. If all three: swap with the right child.</li>
+    <li>Else, if the current node is greater than its left child: swap with the left child. (This also handles the case where the right child exists but the left one is smaller or equal.)</li>
+    <li>Else the node is already in the right position: <code>break</code>.</li>
+  </ul>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Step</th><th><code>i</code></th><th>Children</th><th>Action</th><th>Array after</th></tr></thead>
+    <tbody>
+      <tr><td>start</td><td>-</td><td>-</td><td><code>res = 14</code>; last element 30 moves to index 1</td><td><code>[0, 30, 19, 16, 21, 26, 19, 68, 65]</code></td></tr>
+      <tr><td>1</td><td>1</td><td>left 19 at 2, right 16 at 3</td><td>right &lt; left and 30 &gt; 16 → swap right, <code>i = 3</code></td><td><code>[0, 16, 19, 30, 21, 26, 19, 68, 65]</code></td></tr>
+      <tr><td>2</td><td>3</td><td>left 19 at 6, right 68 at 7</td><td>right is not smaller; 30 &gt; 19 → swap left, <code>i = 6</code></td><td><code>[0, 16, 19, 19, 21, 26, 30, 68, 65]</code></td></tr>
+      <tr><td>3</td><td>6</td><td><code>2 * 6 = 12 &gt;= 9</code>: none</td><td>loop ends; return 14</td><td>unchanged</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout">
+    <span class="lab">Ties go left</span>
+    <p>The right child is chosen only when it is <em>strictly</em> smaller than the left child. If both children are 19, the code swaps with the left one. Either choice gives a valid heap, but if you trace by hand you must follow the code's rule or your array will not match.</p>
+  </div>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Operation</th><th>Big-O</th></tr></thead>
+    <tbody>
+      <tr><td>Get min / max</td><td class="big fast">O(1)</td></tr>
+      <tr><td>Push</td><td class="big fast">O(log n)</td></tr>
+      <tr><td>Pop</td><td class="big fast">O(log n)</td></tr>
+    </tbody>
+  </table></div>
+  <p>Push and pop are O(log n) because a complete tree is always balanced: its height is about log n, and each percolation moves at most one level per swap.</p>
+</section>
+
+<!-- ============================ HEAPIFY (lesson 25) ============================ -->
+<section id="heapify">
+  <h2><span class="num">3</span>Heapify: build a heap in O(n)</h2>
+
+  <p>Building a BST with n elements costs O(n log n): n insertions, each O(log n). Building a heap by pushing the elements one at a time also costs O(n log n). But there is a faster way. <dfn>Heapify</dfn> takes any array and turns it into a valid heap in O(n).</p>
+
+  <h3>The idea</h3>
+  <p>The structure property is free: an array with no gaps <em>is</em> a complete tree. Only the order property (parent <code>&lt;=</code> children) needs work. We get it by percolating each element <strong>down</strong> until it is in the correct position, exactly like the second half of <code>pop()</code>. Leaf nodes cannot move lower, so we skip the whole last level and start from the last non-leaf node, working backwards to the root.</p>
+
+<pre><code><span class="k">def</span> heapify(self, arr):
+    <span class="c"># 0-th position is moved to the end</span>
+    arr.append(arr[<span class="s">0</span>])
+
+    self.heap = arr
+    cur = (len(self.heap) - <span class="s">1</span>) // <span class="s">2</span>
+    <span class="k">while</span> cur &gt; <span class="s">0</span>:
+        <span class="c"># Percolate down</span>
+        i = cur
+        <span class="k">while</span> <span class="s">2</span> * i &lt; len(self.heap):
+            <span class="k">if</span> (<span class="s">2</span> * i + <span class="s">1</span> &lt; len(self.heap) <span class="k">and</span>
+                self.heap[<span class="s">2</span> * i + <span class="s">1</span>] &lt; self.heap[<span class="s">2</span> * i] <span class="k">and</span>
+                self.heap[i] &gt; self.heap[<span class="s">2</span> * i + <span class="s">1</span>]):
+                <span class="c"># Swap right child</span>
+                tmp = self.heap[i]
+                self.heap[i] = self.heap[<span class="s">2</span> * i + <span class="s">1</span>]
+                self.heap[<span class="s">2</span> * i + <span class="s">1</span>] = tmp
+                i = <span class="s">2</span> * i + <span class="s">1</span>
+            <span class="k">elif</span> self.heap[i] &gt; self.heap[<span class="s">2</span> * i]:
+                <span class="c"># Swap left child</span>
+                tmp = self.heap[i]
+                self.heap[i] = self.heap[<span class="s">2</span> * i]
+                self.heap[<span class="s">2</span> * i] = tmp
+                i = <span class="s">2</span> * i
+            <span class="k">else</span>:
+                <span class="k">break</span>
+        cur -= <span class="s">1</span></code></pre>
+
+  <ol>
+    <li>Move the element at index 0 to the end, so index 0 becomes the dummy slot and the real data starts at index 1. (The old value is still sitting at index 0, but nothing ever reads it.)</li>
+    <li>Compute the index of the first non-leaf node: <code>n // 2</code>, where <code>n</code> is the number of elements. In the code that is <code>(len(self.heap) - 1) // 2</code>.</li>
+    <li>Starting from that node, percolate down exactly as in <code>pop()</code>.</li>
+    <li>Decrement the index by 1 and repeat for the next non-leaf node, until the root is done.</li>
+  </ol>
+
+  <p>Take the unsorted array <code>[68, 30, 65, 21, 19, 14, 26, 16, 19]</code>. After step 1 the heap array is <code>[68, 30, 65, 21, 19, 14, 26, 16, 19, 68]</code>; the real tree is indices 1 to 9. With <code>n = 9</code> the first non-leaf is index 4, so indices 5 to 9 are leaves and are skipped. The lesson's own visual does the same: heapify runs on the nodes from index 4 down to 1.</p>
+
+  <figure>
+    <svg viewBox="0 0 740 410" role="img" aria-label="The unsorted array as a tree. Leaves at indices 5 to 9 are faded and skipped. Non-leaf nodes are numbered in the order heapify processes them: index 4 first, then 3, then 2, then the root last. The 1-indexed array underneath is split into non-leaves at 1 to 4 and leaves at 5 to 9.">
+      <line x1="320" y1="40" x2="180" y2="110" class="ptr"/>
+      <line x1="320" y1="40" x2="460" y2="110" class="ptr"/>
+      <line x1="180" y1="110" x2="110" y2="180" class="ptr"/>
+      <line x1="180" y1="110" x2="250" y2="180" class="ptr" opacity=".35"/>
+      <line x1="460" y1="110" x2="390" y2="180" class="ptr" opacity=".35"/>
+      <line x1="460" y1="110" x2="530" y2="180" class="ptr" opacity=".35"/>
+      <line x1="110" y1="180" x2="65" y2="250" class="ptr" opacity=".35"/>
+      <line x1="110" y1="180" x2="155" y2="250" class="ptr" opacity=".35"/>
+      <circle cx="320" cy="40" r="18" class="nd"/><text x="320" y="45" class="t" text-anchor="middle">30</text>
+      <text x="320" y="71" class="t small" text-anchor="middle">[1]</text>
+      <circle cx="180" cy="110" r="18" class="nd"/><text x="180" y="115" class="t" text-anchor="middle">65</text>
+      <text x="180" y="141" class="t small" text-anchor="middle">[2]</text>
+      <circle cx="460" cy="110" r="18" class="nd"/><text x="460" y="115" class="t" text-anchor="middle">21</text>
+      <text x="460" y="141" class="t small" text-anchor="middle">[3]</text>
+      <circle cx="110" cy="180" r="18" class="nd"/><text x="110" y="185" class="t" text-anchor="middle">19</text>
+      <text x="110" y="211" class="t small" text-anchor="middle">[4]</text>
+      <circle cx="250" cy="180" r="18" class="nd dim"/><text x="250" y="185" class="t" text-anchor="middle" opacity=".45">14</text>
+      <text x="250" y="211" class="t small" text-anchor="middle">[5]</text>
+      <circle cx="390" cy="180" r="18" class="nd dim"/><text x="390" y="185" class="t" text-anchor="middle" opacity=".45">26</text>
+      <text x="390" y="211" class="t small" text-anchor="middle">[6]</text>
+      <circle cx="530" cy="180" r="18" class="nd dim"/><text x="530" y="185" class="t" text-anchor="middle" opacity=".45">16</text>
+      <text x="530" y="211" class="t small" text-anchor="middle">[7]</text>
+      <circle cx="65" cy="250" r="18" class="nd dim"/><text x="65" y="255" class="t" text-anchor="middle" opacity=".45">19</text>
+      <text x="65" y="281" class="t small" text-anchor="middle">[8]</text>
+      <circle cx="155" cy="250" r="18" class="nd dim"/><text x="155" y="255" class="t" text-anchor="middle" opacity=".45">68</text>
+      <text x="155" y="281" class="t small" text-anchor="middle">[9]</text>
+      <!-- processing order -->
+      <text x="80" y="174" class="t newlab" text-anchor="end">① cur = 4</text>
+      <text x="490" y="104" class="t newlab">② cur = 3</text>
+      <text x="150" y="104" class="t newlab" text-anchor="end">③ cur = 2</text>
+      <text x="290" y="34" class="t newlab" text-anchor="end">④ cur = 1</text>
+      <text x="560" y="45" class="t small">faded = leaf,</text>
+      <text x="560" y="60" class="t small">never percolated</text>
+      <text x="390" y="238" class="t small" text-anchor="middle">leaves: nothing below them to swap with</text>
+
+      <!-- array -->
+      <text x="70" y="304" class="t small" text-anchor="middle">0</text>
+      <text x="120" y="304" class="t small" text-anchor="middle">1</text>
+      <text x="170" y="304" class="t small" text-anchor="middle">2</text>
+      <text x="220" y="304" class="t small" text-anchor="middle">3</text>
+      <text x="270" y="304" class="t small" text-anchor="middle">4</text>
+      <text x="320" y="304" class="t small" text-anchor="middle">5</text>
+      <text x="370" y="304" class="t small" text-anchor="middle">6</text>
+      <text x="420" y="304" class="t small" text-anchor="middle">7</text>
+      <text x="470" y="304" class="t small" text-anchor="middle">8</text>
+      <text x="520" y="304" class="t small" text-anchor="middle">9</text>
+      <rect x="45" y="310" width="50" height="40" class="nd dim"/><text x="70" y="335" class="t" text-anchor="middle" opacity=".45">68</text>
+      <rect x="95" y="310" width="50" height="40" class="nd"/><text x="120" y="335" class="t" text-anchor="middle">30</text>
+      <rect x="145" y="310" width="50" height="40" class="nd"/><text x="170" y="335" class="t" text-anchor="middle">65</text>
+      <rect x="195" y="310" width="50" height="40" class="nd"/><text x="220" y="335" class="t" text-anchor="middle">21</text>
+      <rect x="245" y="310" width="50" height="40" class="nd"/><text x="270" y="335" class="t" text-anchor="middle">19</text>
+      <rect x="295" y="310" width="50" height="40" class="nd dim"/><text x="320" y="335" class="t" text-anchor="middle" opacity=".45">14</text>
+      <rect x="345" y="310" width="50" height="40" class="nd dim"/><text x="370" y="335" class="t" text-anchor="middle" opacity=".45">26</text>
+      <rect x="395" y="310" width="50" height="40" class="nd dim"/><text x="420" y="335" class="t" text-anchor="middle" opacity=".45">16</text>
+      <rect x="445" y="310" width="50" height="40" class="nd dim"/><text x="470" y="335" class="t" text-anchor="middle" opacity=".45">19</text>
+      <rect x="495" y="310" width="50" height="40" class="nd dim"/><text x="520" y="335" class="t" text-anchor="middle" opacity=".45">68</text>
+      <text x="70" y="366" class="t small" text-anchor="middle">stale copy</text>
+      <!-- brackets -->
+      <path d="M97,362 L97,370 L293,370 L293,362" class="ptr newp"/>
+      <text x="195" y="386" class="t newlab" text-anchor="middle" font-size="11">non-leaves 1..4 = n//2 → percolate down, right to left</text>
+      <path d="M297,362 L297,370 L543,370 L543,362" class="ptr old"/>
+      <text x="420" y="402" class="t small" text-anchor="middle">leaves 5..9: skipped</text>
+    </svg>
+    <figcaption><b>Half the nodes never move.</b> Heapify visits only indices 4, 3, 2, 1 in that order (right to left, bottom to top). The order matters: when the root's turn comes, both of its subtrees are already valid heaps, so one percolate-down from the root fixes everything.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th><code>cur</code></th><th>Node</th><th>Children</th><th>What happens</th><th>Indices 1..9 after</th></tr></thead>
+    <tbody>
+      <tr><td>4</td><td>19</td><td>19 at 8, 68 at 9</td><td>19 is not greater than either child → no swap</td><td><code>[30, 65, 21, 19, 14, 26, 16, 19, 68]</code></td></tr>
+      <tr><td>3</td><td>21</td><td>26 at 6, 16 at 7</td><td>right 16 is smaller and 21 &gt; 16 → swap right; 21 lands on a leaf</td><td><code>[30, 65, 16, 19, 14, 26, 21, 19, 68]</code></td></tr>
+      <tr><td>2</td><td>65</td><td>19 at 4, 14 at 5</td><td>right 14 is smaller and 65 &gt; 14 → swap right; 65 lands on a leaf</td><td><code>[30, 14, 16, 19, 65, 26, 21, 19, 68]</code></td></tr>
+      <tr><td>1</td><td>30</td><td>14 at 2, 16 at 3</td><td>swap left (14); at 2: children 19, 65 → swap left (19); at 4: children 19, 68 → swap left (19); at 8: leaf, stop</td><td><code>[14, 19, 16, 19, 65, 26, 21, 30, 68]</code></td></tr>
+    </tbody>
+  </table></div>
+  <p>The result is a valid min heap: 14 at the top, and every parent is <code>&lt;=</code> its children. Note that the root did 3 swaps while index 4 did none. That imbalance is the whole reason heapify is O(n).</p>
+
+  <h3>Why O(n) and not O(n log n)</h3>
+  <p>With n nodes, roughly n/2 are leaves and n/2 are non-leaves. Only the non-leaves percolate down. Nodes on the second-lowest level can percolate at most 1 level. The level above that can percolate at most 2. And so on: the root can percolate all the way down. But the number of nodes <em>halves</em> each level you go up, while the distance they can travel only grows by one. The sum of all that work simplifies to O(n).</p>
+
+  <figure>
+    <svg viewBox="0 0 640 230" role="img" aria-label="A perfect tree of 15 nodes drawn as four rows of boxes. The bottom row has 8 leaves that do 0 work, then 4 nodes that move at most 1 level, 2 nodes that move at most 2, and 1 root that moves at most 3. The total, 11, is less than n equals 15.">
+      <text x="20" y="20" class="t ptrlab">LEVEL</text>
+      <text x="330" y="20" class="t ptrlab">NODES × MAX LEVELS TO SINK</text>
+      <!-- root -->
+      <rect x="176" y="34" width="24" height="22" class="nd"/>
+      <text x="20" y="50" class="t small">root</text>
+      <text x="330" y="50" class="t mono">1 × 3  =  3</text>
+      <!-- level 1 -->
+      <rect x="128" y="76" width="24" height="22" class="nd"/><rect x="224" y="76" width="24" height="22" class="nd"/>
+      <text x="20" y="92" class="t small">level 1</text>
+      <text x="330" y="92" class="t mono">2 × 2  =  4</text>
+      <!-- level 2 -->
+      <rect x="104" y="118" width="24" height="22" class="nd"/><rect x="152" y="118" width="24" height="22" class="nd"/>
+      <rect x="200" y="118" width="24" height="22" class="nd"/><rect x="248" y="118" width="24" height="22" class="nd"/>
+      <text x="20" y="134" class="t small">level 2</text>
+      <text x="330" y="134" class="t mono">4 × 1  =  4</text>
+      <!-- leaves -->
+      <rect x="92" y="160" width="24" height="22" class="nd dim"/><rect x="116" y="160" width="24" height="22" class="nd dim"/>
+      <rect x="140" y="160" width="24" height="22" class="nd dim"/><rect x="164" y="160" width="24" height="22" class="nd dim"/>
+      <rect x="188" y="160" width="24" height="22" class="nd dim"/><rect x="212" y="160" width="24" height="22" class="nd dim"/>
+      <rect x="236" y="160" width="24" height="22" class="nd dim"/><rect x="260" y="160" width="24" height="22" class="nd dim"/>
+      <text x="20" y="176" class="t small">leaves</text>
+      <text x="330" y="176" class="t mono">8 × 0  =  0   (n/2 leaves, skipped)</text>
+      <line x1="330" y1="188" x2="600" y2="188" class="cell"/>
+      <text x="330" y="208" class="t mono">total 11  &lt;  n = 15</text>
+      <text x="330" y="224" class="t small">n/2·0 + n/4·1 + n/8·2 + n/16·3 + …  ≤  n</text>
+    </svg>
+    <figcaption><b>Many nodes do little work; few nodes do much work.</b> The only node that can sink 3 levels is the root, and there is one of it. The 8 leaves, half the tree, do nothing. The series n/4·1 + n/8·2 + n/16·3 + ... adds up to less than n, so heapify is O(n). The full proof is mathematical and is not asked in interviews; the lesson points to Virginia Tech's slides for why about n/2 of the nodes are leaves.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Operation</th><th>Big-O</th></tr></thead>
+    <tbody>
+      <tr><td>Get min / max</td><td class="big fast">O(1)</td></tr>
+      <tr><td>Push</td><td class="big fast">O(log n)</td></tr>
+      <tr><td>Pop</td><td class="big fast">O(log n)</td></tr>
+      <tr><td>Heapify</td><td class="big fast">O(n)</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>Heapify is O(n), but <em>popping everything out</em> afterwards is n pops of O(log n) each, so "heapify then pop all" is O(n log n). That is heap sort. Heapify only wins when you need the heap itself, not a fully sorted list.</p>
+  </div>
+</section>
+
+<!-- ============================ HEAPQ ============================ -->
+<section id="heapq">
+  <h2><span class="num">4</span>heapq: the heap you actually use in Python</h2>
+
+  <p>The lesson code is for understanding. In interviews and real code you use the <code>heapq</code> module from the standard library. It is a <strong>min heap</strong> built on a plain Python <code>list</code>. Three things to know before anything else: it is <strong>0-indexed</strong> (no dummy slot), it is a set of <em>functions</em> that operate on your list (not a class), and it only does min heaps directly.</p>
+
+  <figure>
+    <svg viewBox="0 0 760 150" role="img" aria-label="A 0-indexed heapq list with nine cells. Cell 1 holding 19 is highlighted. Arrows show its parent at index 0 via (i-1) integer-divided by 2, and its children at indices 3 and 4 via 2i+1 and 2i+2.">
+      <path d="M145,28 L145,14 L95,14 L95,28" class="ptr" marker-end="url(#arr)"/>
+      <text x="175" y="18" class="t ptrlab" font-size="11">parent = (i-1)//2 = 0</text>
+      <g>
+        <rect x="70" y="30" width="50" height="48" class="nd"/><text x="95" y="42" class="t small" text-anchor="middle">0</text><text x="95" y="66" class="t" text-anchor="middle">14</text>
+        <rect x="120" y="30" width="50" height="48" class="nd newnd"/><text x="145" y="42" class="t small" text-anchor="middle">1</text><text x="145" y="66" class="t" text-anchor="middle">19</text>
+        <rect x="170" y="30" width="50" height="48" class="nd"/><text x="195" y="42" class="t small" text-anchor="middle">2</text><text x="195" y="66" class="t" text-anchor="middle">16</text>
+        <rect x="220" y="30" width="50" height="48" class="nd"/><text x="245" y="42" class="t small" text-anchor="middle">3</text><text x="245" y="66" class="t" text-anchor="middle">21</text>
+        <rect x="270" y="30" width="50" height="48" class="nd"/><text x="295" y="42" class="t small" text-anchor="middle">4</text><text x="295" y="66" class="t" text-anchor="middle">26</text>
+        <rect x="320" y="30" width="50" height="48" class="nd"/><text x="345" y="42" class="t small" text-anchor="middle">5</text><text x="345" y="66" class="t" text-anchor="middle">19</text>
+        <rect x="370" y="30" width="50" height="48" class="nd"/><text x="395" y="42" class="t small" text-anchor="middle">6</text><text x="395" y="66" class="t" text-anchor="middle">68</text>
+        <rect x="420" y="30" width="50" height="48" class="nd"/><text x="445" y="42" class="t small" text-anchor="middle">7</text><text x="445" y="66" class="t" text-anchor="middle">65</text>
+        <rect x="470" y="30" width="50" height="48" class="nd"/><text x="495" y="42" class="t small" text-anchor="middle">8</text><text x="495" y="66" class="t" text-anchor="middle">30</text>
+      </g>
+      <text x="540" y="58" class="t small">heap[0] is the min</text>
+      <text x="540" y="72" class="t small">no dummy slot</text>
+      <path d="M145,80 L145,98 L245,98 L245,80" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="195" y="112" class="t newlab" text-anchor="middle" font-size="11">2i+1 = 3</text>
+      <path d="M145,80 L145,118 L295,118 L295,80" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="220" y="134" class="t newlab" text-anchor="middle" font-size="11">2i+2 = 4</text>
+    </svg>
+    <figcaption><b>Same heap, shifted one slot left.</b> With 0-indexing the formulas become <code>2i+1</code>, <code>2i+2</code> and <code>(i-1)//2</code>. The minimum is always <code>heap[0]</code>. You rarely write these formulas yourself with <code>heapq</code>, but you must know that <code>heap[0]</code> is the min and that the rest of the list is <em>not</em> sorted.</figcaption>
+  </figure>
+
+  <h3>The API</h3>
+<pre><code><span class="k">import</span> heapq
+
+heap = []
+heapq.heappush(heap, <span class="s">19</span>)        <span class="c"># O(log n), percolate up</span>
+heapq.heappush(heap, <span class="s">14</span>)
+heapq.heappush(heap, <span class="s">16</span>)
+heap[<span class="s">0</span>]                         <span class="c"># → 14   peek at the min, O(1). Do NOT pop to look.</span>
+heapq.heappop(heap)             <span class="c"># → 14   O(log n), last-to-root then percolate down</span>
+
+nums = [<span class="s">14</span>, <span class="s">19</span>, <span class="s">16</span>, <span class="s">21</span>, <span class="s">26</span>, <span class="s">19</span>, <span class="s">68</span>, <span class="s">65</span>, <span class="s">30</span>]
+heapq.heapify(nums)             <span class="c"># O(n), in place, reorders the SAME list</span>
+nums[<span class="s">0</span>]                         <span class="c"># → 14</span>
+
+heapq.heappushpop(heap, x)      <span class="c"># push x, then pop the min  (faster than two calls)</span>
+heapq.heapreplace(heap, x)      <span class="c"># pop the min, then push x  (heap must be non-empty)</span>
+
+heapq.nlargest(<span class="s">2</span>, [<span class="s">5</span>, <span class="s">1</span>, <span class="s">9</span>, <span class="s">3</span>, <span class="s">7</span>])            <span class="c"># → [9, 7]</span>
+heapq.nsmallest(<span class="s">2</span>, [<span class="s">5</span>, <span class="s">1</span>, <span class="s">9</span>, <span class="s">3</span>, <span class="s">7</span>])           <span class="c"># → [1, 3]</span>
+heapq.nsmallest(<span class="s">1</span>, [<span class="s">"kiwi"</span>, <span class="s">"fig"</span>, <span class="s">"banana"</span>], key=len)   <span class="c"># → ["fig"]</span></code></pre>
+
+  <p><code>nlargest</code> and <code>nsmallest</code> return a <em>sorted</em> list of the k extreme items and accept a <code>key=</code> like <code>sorted</code> does. For small k they run in about O(n log k); for k close to n it is cheaper to just sort.</p>
+
+  <h3>Max heap: negate on the way in, negate on the way out</h3>
+  <p><code>heapq</code> has no max-heap mode. The standard trick: push <code>-x</code> instead of <code>x</code>. The smallest negative is the largest original, so <code>-heap[0]</code> is the max. Every place you read a value, put the minus sign back.</p>
+
+<pre><code>maxh = []
+<span class="k">for</span> v <span class="k">in</span> [<span class="s">3</span>, <span class="s">10</span>, <span class="s">7</span>]:
+    heapq.heappush(maxh, -v)     <span class="c"># store negatives</span>
+-maxh[<span class="s">0</span>]                         <span class="c"># → 10   the max</span>
+-heapq.heappop(maxh)             <span class="c"># → 10</span>
+-heapq.heappop(maxh)             <span class="c"># → 7</span>
+
+<span class="c"># LeetCode 1046 Last Stone Weight: always smash the two heaviest</span>
+<span class="k">def</span> lastStoneWeight(stones):
+    heap = [-s <span class="k">for</span> s <span class="k">in</span> stones]
+    heapq.heapify(heap)
+    <span class="k">while</span> len(heap) &gt; <span class="s">1</span>:
+        first = -heapq.heappop(heap)          <span class="c"># heaviest</span>
+        second = -heapq.heappop(heap)         <span class="c"># second heaviest</span>
+        <span class="k">if</span> first != second:
+            heapq.heappush(heap, -(first - second))
+    <span class="k">return</span> -heap[<span class="s">0</span>] <span class="k">if</span> heap <span class="k">else</span> <span class="s">0</span>
+
+lastStoneWeight([<span class="s">2</span>, <span class="s">7</span>, <span class="s">4</span>, <span class="s">1</span>, <span class="s">8</span>, <span class="s">1</span>])   <span class="c"># → 1</span></code></pre>
+
+  <h3>Tuples: priority first, tie-breaker second, payload last</h3>
+  <p>Python compares tuples element by element, so a heap of tuples is ordered by the first element, then the second, and so on. Put the priority first. If two items can have the same priority, put a <em>tie-breaker</em> (a counter, an index) second, so the comparison never reaches the payload. This matters when the payload is an object that cannot be compared: Python raises <code>TypeError</code>.</p>
+
+<pre><code>tasks = []
+heapq.heappush(tasks, (<span class="s">2</span>, <span class="s">1</span>, <span class="s">"write tests"</span>))    <span class="c"># (priority, insertion order, payload)</span>
+heapq.heappush(tasks, (<span class="s">1</span>, <span class="s">2</span>, <span class="s">"fix bug"</span>))
+heapq.heappush(tasks, (<span class="s">1</span>, <span class="s">0</span>, <span class="s">"answer pager"</span>))
+heapq.heappop(tasks)     <span class="c"># → (1, 0, "answer pager")   priority 1, earliest</span>
+heapq.heappop(tasks)     <span class="c"># → (1, 2, "fix bug")</span>
+heapq.heappop(tasks)     <span class="c"># → (2, 1, "write tests")</span>
+
+<span class="c"># without a tie-breaker, equal priorities compare the payloads:</span>
+heapq.heappush(bad, (<span class="s">1</span>, Job(<span class="s">"a"</span>)))
+heapq.heappush(bad, (<span class="s">1</span>, Job(<span class="s">"b"</span>)))   <span class="c"># TypeError: '&lt;' not supported between Job and Job</span></code></pre>
+
+  <div class="callout">
+    <span class="lab">heapq mutates your list</span>
+    <p><code>heapq.heapify(nums)</code> returns <code>None</code> and reorders <code>nums</code> in place. Writing <code>heap = heapq.heapify(nums)</code> gives you <code>heap = None</code>. Also, never call <code>heappush</code> on a list you did not <code>heapify</code> first (unless it started empty): the functions assume the list is already a valid heap.</p>
+  </div>
+</section>
+
+<!-- ============================ PATTERNS ============================ -->
+<section id="patterns">
+  <h2><span class="num">5</span>Moves that solve most heap problems</h2>
+  <p>The lessons teach the structure. Interviews test whether you recognize when a heap is the tool. These four moves cover most heap questions.</p>
+
+  <h3>Move 1: Top-K with a heap of size k</h3>
+  <p><strong>When:</strong> "find the k largest / smallest / closest / most frequent". Keep a heap of size k. For the k <em>largest</em>, use a <em>min</em> heap: push every element, and whenever the heap grows past k, pop the smallest. What survives is the k largest, and the root is the k-th largest. Cost O(n log k), which beats sorting when k is small.</p>
+
+<pre><code><span class="k">def</span> findKthLargest(nums, k):          <span class="c"># LeetCode 215</span>
+    heap = []
+    <span class="k">for</span> x <span class="k">in</span> nums:
+        heapq.heappush(heap, x)
+        <span class="k">if</span> len(heap) &gt; k:
+            heapq.heappop(heap)          <span class="c"># throw away the smallest</span>
+    <span class="k">return</span> heap[<span class="s">0</span>]                       <span class="c"># k-th largest sits at the root</span>
+
+findKthLargest([<span class="s">3</span>, <span class="s">2</span>, <span class="s">1</span>, <span class="s">5</span>, <span class="s">6</span>, <span class="s">4</span>], <span class="s">2</span>)     <span class="c"># → 5</span>
+
+
+<span class="k">class</span> KthLargest:                        <span class="c"># LeetCode 703: same idea, but the stream keeps coming</span>
+    <span class="k">def</span> __init__(self, k, nums):
+        self.k = k
+        self.heap = nums
+        heapq.heapify(self.heap)
+        <span class="k">while</span> len(self.heap) &gt; k:
+            heapq.heappop(self.heap)
+
+    <span class="k">def</span> add(self, val):
+        heapq.heappush(self.heap, val)
+        <span class="k">if</span> len(self.heap) &gt; self.k:
+            heapq.heappop(self.heap)
+        <span class="k">return</span> self.heap[<span class="s">0</span>]
+
+
+<span class="k">def</span> kClosest(points, k):                 <span class="c"># LeetCode 973: k SMALLEST → max heap of size k</span>
+    heap = []
+    <span class="k">for</span> x, y <span class="k">in</span> points:
+        d = x * x + y * y
+        heapq.heappush(heap, (-d, x, y))     <span class="c"># negate: max heap on distance</span>
+        <span class="k">if</span> len(heap) &gt; k:
+            heapq.heappop(heap)              <span class="c"># drop the farthest</span>
+    <span class="k">return</span> [[x, y] <span class="k">for</span> _, x, y <span class="k">in</span> heap]
+
+
+<span class="k">def</span> topKFrequent(nums, k):               <span class="c"># LeetCode 347: count, then nlargest by count</span>
+    count = Counter(nums)
+    <span class="k">return</span> [x <span class="k">for</span> x, _ <span class="k">in</span> heapq.nlargest(k, count.items(), key=<span class="k">lambda</span> p: p[<span class="s">1</span>])]</code></pre>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>k largest → <em>min</em> heap of size k (the root is the weakest survivor, so pop it). k smallest → <em>max</em> heap of size k (negate). Beginners get this backwards. Say out loud: "the root is the one I am willing to throw away".</p>
+  </div>
+
+  <h3>Move 2: k-way merge</h3>
+  <p><strong>When:</strong> "merge k sorted lists / arrays / streams". Put the first element of every list in a heap, tagged with which list it came from. Pop the smallest, then push the next element from that same list. Every element passes through a heap of size at most k, so the total is O(N log k) for N elements. The tuple is <code>(value, list_index, position)</code>: the list index is the tie-breaker.</p>
+
+<pre><code><span class="k">def</span> mergeKSorted(lists):                 <span class="c"># LeetCode 23 on plain lists</span>
+    heap = []
+    <span class="k">for</span> li, lst <span class="k">in</span> enumerate(lists):
+        <span class="k">if</span> lst:
+            heapq.heappush(heap, (lst[<span class="s">0</span>], li, <span class="s">0</span>))    <span class="c"># (value, which list, index in it)</span>
+    out = []
+    <span class="k">while</span> heap:
+        val, li, j = heapq.heappop(heap)
+        out.append(val)
+        <span class="k">if</span> j + <span class="s">1</span> &lt; len(lists[li]):
+            heapq.heappush(heap, (lists[li][j + <span class="s">1</span>], li, j + <span class="s">1</span>))
+    <span class="k">return</span> out
+
+mergeKSorted([[<span class="s">1</span>, <span class="s">4</span>, <span class="s">5</span>], [<span class="s">1</span>, <span class="s">3</span>, <span class="s">4</span>], [<span class="s">2</span>, <span class="s">6</span>]])   <span class="c"># → [1, 1, 2, 3, 4, 4, 5, 6]</span></code></pre>
+  <p>For linked lists (the real LeetCode 23) push <code>(node.val, i, node)</code> and advance with <code>node.next</code>; the <code>i</code> keeps two equal values from ever comparing <code>ListNode</code> objects.</p>
+
+  <h3>Move 3: Two heaps for a running median</h3>
+  <p><strong>When:</strong> "median of a stream", or any "split the data into a lower half and an upper half" problem. Keep the lower half in a max heap and the upper half in a min heap. The median is then at one root or the average of both. Two rules after every insert: every element of the lower half must be <code>&lt;=</code> every element of the upper half, and the sizes may differ by at most 1.</p>
+
+  <figure>
+    <svg viewBox="0 0 640 160" role="img" aria-label="Two small heaps side by side. Left: a max heap holding the lower half 1, 2, 3 with 3 at the root, stored as negated values. Right: a min heap holding the upper half 5, 8, 10 with 5 at the root. The median is the average of the two roots, 4.">
+      <text x="150" y="20" class="t ptrlab" text-anchor="middle">small: lower half, MAX heap</text>
+      <line x1="150" y1="52" x2="110" y2="104" class="ptr"/>
+      <line x1="150" y1="52" x2="190" y2="104" class="ptr"/>
+      <circle cx="150" cy="52" r="15" class="nd newnd"/><text x="150" y="57" class="t" text-anchor="middle" font-size="12">3</text>
+      <circle cx="110" cy="104" r="15" class="nd"/><text x="110" y="109" class="t" text-anchor="middle" font-size="12">1</text>
+      <circle cx="190" cy="104" r="15" class="nd"/><text x="190" y="109" class="t" text-anchor="middle" font-size="12">2</text>
+      <text x="150" y="140" class="t small" text-anchor="middle">stored as [-3, -1, -2]; root = -small[0]</text>
+
+      <text x="490" y="20" class="t ptrlab" text-anchor="middle">large: upper half, MIN heap</text>
+      <line x1="490" y1="52" x2="450" y2="104" class="ptr"/>
+      <line x1="490" y1="52" x2="530" y2="104" class="ptr"/>
+      <circle cx="490" cy="52" r="15" class="nd newnd"/><text x="490" y="57" class="t" text-anchor="middle" font-size="12">5</text>
+      <circle cx="450" cy="104" r="15" class="nd"/><text x="450" y="109" class="t" text-anchor="middle" font-size="12">8</text>
+      <circle cx="530" cy="104" r="15" class="nd"/><text x="530" y="109" class="t" text-anchor="middle" font-size="12">10</text>
+      <text x="490" y="140" class="t small" text-anchor="middle">stored as [5, 8, 10]; root = large[0]</text>
+
+      <text x="320" y="48" class="t small" text-anchor="middle">3 ≤ 5 ✓</text>
+      <text x="320" y="66" class="t small" text-anchor="middle">sizes 3 and 3 ✓</text>
+      <text x="320" y="96" class="t newlab" text-anchor="middle">median = (3 + 5) / 2 = 4</text>
+      <text x="320" y="114" class="t small" text-anchor="middle">both roots, O(1)</text>
+    </svg>
+    <figcaption><b>The two roots face each other.</b> The max of the lower half and the min of the upper half are the two middle values. Everything below the roots is unsorted and does not matter. After each insert you may need to move one root across to restore the two rules.</figcaption>
+  </figure>
+
+<pre><code><span class="k">class</span> MedianFinder:                      <span class="c"># LeetCode 295</span>
+    <span class="k">def</span> __init__(self):
+        self.small = []      <span class="c"># max heap (negated): lower half</span>
+        self.large = []      <span class="c"># min heap: upper half</span>
+
+    <span class="k">def</span> addNum(self, num):
+        heapq.heappush(self.small, -num)
+        <span class="c"># rule 1: every element of small must be &lt;= every element of large</span>
+        <span class="k">if</span> self.large <span class="k">and</span> -self.small[<span class="s">0</span>] &gt; self.large[<span class="s">0</span>]:
+            heapq.heappush(self.large, -heapq.heappop(self.small))
+        <span class="c"># rule 2: sizes may differ by at most 1</span>
+        <span class="k">if</span> len(self.small) &gt; len(self.large) + <span class="s">1</span>:
+            heapq.heappush(self.large, -heapq.heappop(self.small))
+        <span class="k">if</span> len(self.large) &gt; len(self.small) + <span class="s">1</span>:
+            heapq.heappush(self.small, -heapq.heappop(self.large))
+
+    <span class="k">def</span> findMedian(self):
+        <span class="k">if</span> len(self.small) &gt; len(self.large):
+            <span class="k">return</span> -self.small[<span class="s">0</span>]
+        <span class="k">if</span> len(self.large) &gt; len(self.small):
+            <span class="k">return</span> self.large[<span class="s">0</span>]
+        <span class="k">return</span> (-self.small[<span class="s">0</span>] + self.large[<span class="s">0</span>]) / <span class="s">2</span></code></pre>
+
+  <h3>Move 4: Heap or sort? The decision</h3>
+  <p>A heap is not "a faster sort". It is a structure for when the data <em>keeps changing</em> or when you need only a <em>few</em> extremes. Use this table when you feel the urge to call <code>sorted()</code>.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>You need</th><th>Use</th><th>Cost</th></tr></thead>
+    <tbody>
+      <tr><td>Everything in order, once, data is fixed</td><td><code>sorted()</code></td><td class="big">O(n log n)</td></tr>
+      <tr><td>The k smallest / largest, k much smaller than n</td><td>heap of size k, or <code>nsmallest</code> / <code>nlargest</code></td><td class="big fast">O(n log k)</td></tr>
+      <tr><td>Only the min (or max), once</td><td><code>min()</code> / <code>max()</code></td><td class="big fast">O(n)</td></tr>
+      <tr><td>The min repeatedly, with inserts in between</td><td>heap</td><td class="big fast">O(log n) each</td></tr>
+      <tr><td>Items arrive over time (a stream) and you must answer as you go</td><td>heap (or two heaps)</td><td class="big fast">O(log n) each</td></tr>
+      <tr><td>Merge k sorted inputs</td><td>heap of size k</td><td class="big fast">O(N log k)</td></tr>
+      <tr><td>Always process the "most urgent" thing next (scheduling, Dijkstra)</td><td>heap of (priority, item)</td><td class="big fast">O(log n) each</td></tr>
+    </tbody>
+  </table></div>
+  <p>Rule of thumb: if the word "stream", "repeatedly", "each time", "k-th", or "top k" appears in the problem, think heap. If it says "sort" and the data does not change, just sort.</p>
+</section>
+
+<!-- ============================ COMPLEXITY ============================ -->
+<section id="complexity">
+  <h2><span class="num">6</span>Big-O summary</h2>
+  <p>Say these out loud in interviews. n is the number of elements in the heap; k is the size of a bounded heap.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Operation</th><th>Binary heap</th><th>Sorted Python list</th><th>Unsorted Python list</th></tr></thead>
+    <tbody>
+      <tr><td>Peek min (<code>heap[0]</code>)</td><td class="big fast">O(1)</td><td class="big fast">O(1)</td><td class="big slow">O(n)</td></tr>
+      <tr><td>Push</td><td class="big fast">O(log n)</td><td class="big slow">O(n) insert + shift</td><td class="big fast">O(1)</td></tr>
+      <tr><td>Pop min</td><td class="big fast">O(log n)</td><td class="big slow">O(n) pop(0)</td><td class="big slow">O(n) find + remove</td></tr>
+      <tr><td>Build from n items</td><td class="big fast">O(n) heapify</td><td class="big slow">O(n log n) sort</td><td class="big fast">O(n)</td></tr>
+      <tr><td>Build by n pushes</td><td class="big slow">O(n log n)</td><td>-</td><td>-</td></tr>
+      <tr><td>Search for an arbitrary value</td><td class="big slow">O(n)</td><td class="big fast">O(log n) binary search</td><td class="big slow">O(n)</td></tr>
+      <tr><td>Top-k of n (size-k heap)</td><td class="big fast">O(n log k)</td><td class="big slow">O(n log n) sort then slice</td><td>-</td></tr>
+      <tr><td>Space</td><td>O(n), one array, no pointers</td><td>O(n)</td><td>O(n)</td></tr>
+    </tbody>
+  </table></div>
+  <p>The heap gives up one thing to get its speed: there is no fast search for a random value, and no fast "delete this specific element". A heap only knows where its min is. If you need arbitrary deletes, the usual trick is <em>lazy deletion</em>: mark the item as dead in a set, and skip dead items when they reach the root.</p>
+</section>
+
+<!-- ============================ MISTAKES ============================ -->
+<section id="mistakes">
+  <h2><span class="num">7</span>Mistakes to watch for</h2>
+  <div class="mistake">
+    <div>
+      <div class="bad">Assuming the array is sorted</div>
+      <p>Only <code>heap[0]</code> is guaranteed to be the min. <code>heap[1]</code> is not the second smallest; it is just the smaller of two children. To get items in order you must pop repeatedly.</p>
+    </div>
+    <div>
+      <div class="bad">Mixing 1-indexed and 0-indexed formulas</div>
+      <p>The lesson's class uses a dummy at index 0 and <code>2i, 2i+1, i//2</code>. <code>heapq</code> has no dummy and uses <code>2i+1, 2i+2, (i-1)//2</code>. Pick one and stay there; mixing them gives an invalid heap that looks fine at the root.</p>
+    </div>
+    <div>
+      <div class="bad">Pulling children up in pop</div>
+      <p>Replacing the root with the smaller child, repeatedly, keeps order but leaves a hole: the tree is no longer complete. Always move the <em>last</em> element to the root first, then percolate down.</p>
+    </div>
+    <div>
+      <div class="bad">Percolating down toward the larger child</div>
+      <p>You must swap with the <em>smaller</em> child, or the larger one becomes the parent of the smaller one and the order property breaks one level down. Check the right child exists before reading it.</p>
+    </div>
+    <div>
+      <div class="bad">heap = heapq.heapify(nums)</div>
+      <p><code>heapify</code> works in place and returns <code>None</code>. Write <code>heapq.heapify(nums)</code> on its own line and keep using <code>nums</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Forgetting the minus sign on the way out</div>
+      <p>With the negation trick, every read must be negated: <code>-heap[0]</code>, <code>-heapq.heappop(heap)</code>. Forgetting once returns the wrong sign and usually the wrong element.</p>
+    </div>
+    <div>
+      <div class="bad">Min heap for k smallest</div>
+      <p>For the k smallest you need a size-k <em>max</em> heap, so the root is the largest survivor and can be thrown away. A size-k min heap throws away the small ones, the opposite of what you want.</p>
+    </div>
+    <div>
+      <div class="bad">Tuples with unorderable payloads</div>
+      <p><code>(priority, node)</code> raises <code>TypeError</code> the first time two priorities tie. Insert a counter or index: <code>(priority, i, node)</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Popping from an empty heap</div>
+      <p><code>heapq.heappop([])</code> raises <code>IndexError</code>. Guard with <code>while heap:</code> or <code>if heap:</code>. The lesson's class returns <code>None</code> instead; know which behavior you are relying on.</p>
+    </div>
+  </div>
+
+  <div class="cheat">
+    <h3>Interview one-liners</h3>
+    <ul>
+      <li>"A heap is a complete binary tree stored in an array, with every parent smaller than its children (min heap). Peek is O(1), push and pop are O(log n)."</li>
+      <li>"Complete means filled level by level, left to right, so the children of index i are at 2i and 2i+1 and the parent is at i//2 with 1-based indexing."</li>
+      <li>"Push appends at the end and percolates up; pop moves the last element to the root and percolates down toward the smaller child."</li>
+      <li>"Heapify is O(n), not O(n log n): half the nodes are leaves and do nothing, and the number of nodes halves each level while the distance grows by one."</li>
+      <li>"For the top k I keep a heap of size k, so the whole pass is O(n log k) instead of sorting in O(n log n)."</li>
+      <li>"Python's <code>heapq</code> is a 0-indexed min heap over a list; for a max heap I push negated values, and I use tuples with a tie-breaker for priorities."</li>
+      <li>"A heap does not support search or arbitrary delete; if I need that I use lazy deletion or a different structure."</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================ PRACTICE ============================ -->
+<section id="practice">
+  <h2><span class="num">8</span>Practice, in this order</h2>
+  <p>Notes do not make you good at this. Solving does. Do these on LeetCode with no notes open, then check against the templates above.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Problem</th><th>Move it trains</th><th>Level</th></tr></thead>
+    <tbody>
+      <tr><td>1046</td><td>Last Stone Weight</td><td>max heap via negation, pop two / push one</td><td>Easy</td></tr>
+      <tr><td>703</td><td>Kth Largest Element in a Stream</td><td>size-k min heap on a stream</td><td>Easy</td></tr>
+      <tr><td>215</td><td>Kth Largest Element in an Array</td><td>size-k min heap (also try <code>nlargest</code>)</td><td>Medium</td></tr>
+      <tr><td>973</td><td>K Closest Points to Origin</td><td>size-k max heap of (−distance, x, y)</td><td>Medium</td></tr>
+      <tr><td>347</td><td>Top K Frequent Elements</td><td>Counter + heap of (count, value)</td><td>Medium</td></tr>
+      <tr><td>373</td><td>Find K Pairs with Smallest Sums</td><td>k-way merge with (sum, i, j) tuples</td><td>Medium</td></tr>
+      <tr><td>621</td><td>Task Scheduler</td><td>max heap of counts + a cooldown queue</td><td>Medium</td></tr>
+      <tr><td>767</td><td>Reorganize String</td><td>max heap of counts, always take the most frequent</td><td>Medium</td></tr>
+      <tr><td>355</td><td>Design Twitter</td><td>k-way merge of per-user feeds with a heap</td><td>Medium</td></tr>
+      <tr><td>23</td><td>Merge k Sorted Lists</td><td>k-way merge, (val, i, node) tie-breaker</td><td>Hard</td></tr>
+      <tr><td>295</td><td>Find Median from Data Stream</td><td>two heaps</td><td>Hard</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Your next step today:</strong> LeetCode 1046. Write it with <code>heapq</code> and the negation trick from memory, run it, then re-read the max heap block in section 4 and compare.</p>
+</section>
+
+<!-- ============================ QUIZ ============================ -->
+<section id="quiz">
+  <h2><span class="num">9</span>Self-check</h2>
+  <p>Answer out loud before opening. If you cannot answer in one breath, reread that section.</p>
+
+  <details><summary><span class="q">Q1</span>What are the two heap properties? Which one does "complete" belong to?</summary><div><p>Structure property: the tree is complete, every level full except the last, which is filled left to right. Order property: in a min heap every descendant is <code>&gt;=</code> its ancestors (every parent <code>&lt;=</code> its children). "Complete" is the structure property.</p></div></details>
+
+  <details><summary><span class="q">Q2</span>With 1-based indexing, where are the children and the parent of index 5?</summary><div><p>Left child at <code>2 * 5 = 10</code>, right child at <code>2 * 5 + 1 = 11</code>, parent at <code>5 // 2 = 2</code>. In the lesson heap, index 5 holds 26 and its parent at index 2 is 19.</p></div></details>
+
+  <details><summary><span class="q">Q3</span>Why does the lesson start at index 1 and not 0?</summary><div><p>With index 0, <code>2 * 0 = 0</code> would say the root's left child is the root itself. Starting at 1 makes <code>2i</code>, <code>2i+1</code>, <code>i//2</code> all correct. <code>heapq</code> uses 0 with the adjusted formulas <code>2i+1</code>, <code>2i+2</code>, <code>(i-1)//2</code>.</p></div></details>
+
+  <details><summary><span class="q">Q4</span>Can a heap contain duplicate values? Can a BST?</summary><div><p>A heap can: the lesson heap has 19 twice, and the order property uses <code>&gt;=</code>. A standard BST cannot (or must pick a side rule).</p></div></details>
+
+  <details><summary><span class="q">Q5</span>Describe push in one sentence. Why is it O(log n)?</summary><div><p>Append the value at the end (the next free slot of the complete tree), then swap it with its parent while it is smaller than the parent. It moves up one level per swap and the tree has about log n levels, because a complete tree is always balanced.</p></div></details>
+
+  <details><summary><span class="q">Q6</span>Why is "replace the root with its smaller child, repeatedly" the wrong way to pop?</summary><div><p>It keeps the order property but breaks the structure property: the last node moved up leaves a hole somewhere in the middle of the tree, so the tree is no longer complete and the index formulas no longer work.</p></div></details>
+
+  <details><summary><span class="q">Q7</span>In percolate-down, which child do you swap with, and what happens if you pick the other one?</summary><div><p>The smaller child. If you swap with the larger child, that larger value becomes the parent of the smaller child, which violates the order property one level down.</p></div></details>
+
+  <details><summary><span class="q">Q8</span>Why is heapify O(n) when n pushes cost O(n log n)?</summary><div><p>Heapify percolates <em>down</em> from the last non-leaf to the root. About n/2 nodes are leaves and do nothing; n/4 nodes can move at most 1 level, n/8 at most 2, and so on. The number of nodes halves while the distance grows by 1, and the sum is bounded by n. Pushing one at a time percolates <em>up</em>, and most nodes end up near the bottom where the path up is long.</p></div></details>
+
+  <details><summary><span class="q">Q9</span>Which node does heapify start from, for n elements, and which nodes does it skip?</summary><div><p>It starts at index <code>n // 2</code>, the last non-leaf node, and walks down to index 1. It skips indices <code>n // 2 + 1</code> to <code>n</code>, which are all leaves. For n = 9, it processes 4, 3, 2, 1 and skips 5 to 9.</p></div></details>
+
+  <details><summary><span class="q">Q10</span>How do you get a max heap from <code>heapq</code>, and what is the bug people write?</summary><div><p>Push <code>-x</code> and negate again on every read: <code>-heap[0]</code>, <code>-heapq.heappop(heap)</code>. The bug is forgetting the second minus sign on the way out.</p></div></details>
+
+  <details><summary><span class="q">Q11</span>You want the k smallest items from a huge list in O(n log k). Min heap or max heap of size k, and why?</summary><div><p>A <em>max</em> heap of size k. Its root is the largest of the survivors, which is exactly the one to throw away when the heap grows past k. (For the k largest, use a min heap.)</p></div></details>
+
+  <details><summary><span class="q">Q12</span>Trace it: push 12 onto the lesson heap <code>[0, 14, 19, 16, 21, 26, 19, 68, 65, 30]</code>. Give the array after each swap.</summary><div><p>Append: 12 at index 10, parent 26 at 5. 12 &lt; 26 → <code>[0, 14, 19, 16, 21, 12, 19, 68, 65, 30, 26]</code>. Parent now 19 at 2, 12 &lt; 19 → <code>[0, 14, 12, 16, 21, 19, 19, 68, 65, 30, 26]</code>. Parent now 14 at 1, 12 &lt; 14 → <code>[0, 12, 14, 16, 21, 19, 19, 68, 65, 30, 26]</code>. <code>i = 1</code>, loop ends. 12 is the new root.</p></div></details>
+
+  <details><summary><span class="q">Q13</span>Trace it: pop twice from the lesson heap. What is returned each time and what is the array at the end?</summary><div><p>Pop 1 returns 14: 30 goes to the root, swaps with 16, then with 19 → <code>[0, 16, 19, 19, 21, 26, 30, 68, 65]</code>. Pop 2 returns 16: 65 goes to the root; children are 19 and 19, the tie goes left → <code>[0, 19, 65, 19, 21, 26, 30, 68]</code>; at index 2 the children are 21 and 26, swap left → <code>[0, 19, 21, 19, 65, 26, 30, 68]</code>; index 4 has no children, stop.</p></div></details>
+</section>
+
+<nav class="pager" aria-label="Previous and next topic">
+  <a class="prev" href="07-backtracking.html"><small>Previous</small>Backtracking</a>
+  <a class="next" href="09-hashing.html"><small>Next</small>Hashing</a>
+</nav>
+
+<footer>
+  Source: NeetCode "Algorithms and Data Structures for Beginners", lessons 23 (Heap Properties), 24 (Heaps Push and Pop), 25 (Heapify). All Python on this page was run and tested. Orange in every diagram marks what changed.
+</footer>
+</div>
+</body>
+</html>

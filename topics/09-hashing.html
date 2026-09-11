@@ -1,0 +1,1069 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hashing · DSA Field Notes</title>
+<meta name="description" content="Hash maps and hash sets: how to use them for counting and lookups, how they work under the hood (hash function, resize, rehash, collisions), tested Python, Big-O, mistakes, practice, self-check.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arr"/></marker>
+    <marker id="arrNew" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrNew"/></marker>
+    <marker id="arrOld" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrOld"/></marker>
+    <marker id="arrCur" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrCur"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="site-head">
+  <a class="brand" href="../index.html">DSA <span>Field Notes</span></a>
+  <div class="crumbs"><a href="../index.html">Course map</a> <span>/</span> <span>09 Hashing</span></div>
+</header>
+<header class="top">
+  <div class="eyebrow">NeetCode · DSA for Beginners · Lessons 26-27</div>
+  <h1>Hashing Field Notes</h1>
+  <p class="lede">Hash maps and hash sets: the structure you will use in more interview problems than any other. First how to use them (counting, lookups, grouping), then how they work inside: hash function, resize, rehash, collisions. Every number in the diagrams comes from the lesson's own example.</p>
+</header>
+
+<nav class="sections" aria-label="Sections">
+  <a href="#why">Why</a>
+  <a href="#usage">Usage</a>
+  <a href="#hashing">Hash function</a>
+  <a href="#code">The code</a>
+  <a href="#patterns">Patterns</a>
+  <a href="#complexity">Big-O</a>
+  <a href="#mistakes">Mistakes</a>
+  <a href="#practice">Practice</a>
+  <a href="#quiz">Self-check</a>
+</nav>
+
+<!-- ============================ WHY ============================ -->
+<section id="why">
+  <h2><span class="num">0</span>Why hashing exists</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>A coat check at a theatre. You hand over your coat and get ticket number 41. Later you say "41" and the attendant walks straight to hook 41. Nobody searches through every coat. The <em>ticket number is computed from the item</em>, and that number tells you exactly where to look. A hash map does the same: it computes a number from the key and uses that number as the position in an array.</p>
+  </div>
+
+  <p>You already know two ways to store key-value pairs. An <strong>array</strong> gives O(1) access by index but O(n) search by value. A <strong>TreeMap</strong> (a balanced binary search tree) gives O(log n) for everything and keeps keys sorted. A <dfn>hash map</dfn> gives O(1) insert, remove and search on average, by turning each key into an array index with a <dfn>hash function</dfn>. The price: keys are stored in no useful order.</p>
+
+  <p>NeetCode's rule of thumb, which you should memorize: when a problem says <strong>"unique"</strong>, <strong>"count"</strong>, or <strong>"frequency"</strong>, a hash map or hash set is almost certainly the tool.</p>
+
+  <figure>
+    <svg viewBox="0 0 680 215" role="img" aria-label="Searching for kim in an array checks every element, six checks. A hash map computes hash of kim, gets index 5, and jumps straight to that slot.">
+      <text x="20" y="20" class="t ptrlab">ARRAY: search by walking</text>
+      <text x="215" y="20" class="t small">is it "kim"? ask every box until one says yes</text>
+      <g>
+        <rect x="20" y="32" width="90" height="40" class="nd"/><text x="65" y="57" class="t" text-anchor="middle">alice</text>
+        <rect x="110" y="32" width="90" height="40" class="nd"/><text x="155" y="57" class="t" text-anchor="middle">brad</text>
+        <rect x="200" y="32" width="90" height="40" class="nd"/><text x="245" y="57" class="t" text-anchor="middle">collin</text>
+        <rect x="290" y="32" width="90" height="40" class="nd"/><text x="335" y="57" class="t" text-anchor="middle">brad</text>
+        <rect x="380" y="32" width="90" height="40" class="nd"/><text x="425" y="57" class="t" text-anchor="middle">dylan</text>
+        <rect x="470" y="32" width="90" height="40" class="nd newnd"/><text x="515" y="57" class="t" text-anchor="middle">kim</text>
+        <text x="65" y="88" class="t small" text-anchor="middle">no ①</text>
+        <text x="155" y="88" class="t small" text-anchor="middle">no ②</text>
+        <text x="245" y="88" class="t small" text-anchor="middle">no ③</text>
+        <text x="335" y="88" class="t small" text-anchor="middle">no ④</text>
+        <text x="425" y="88" class="t small" text-anchor="middle">no ⑤</text>
+        <text x="515" y="88" class="t newlab" text-anchor="middle" font-size="11">yes ⑥</text>
+      </g>
+      <text x="580" y="57" class="t small">6 checks → O(n)</text>
+
+      <text x="20" y="128" class="t ptrlab">HASH MAP: search by computing</text>
+      <text x="250" y="128" class="t small">turn the key into a number, use the number as the index</text>
+      <rect x="20" y="142" width="70" height="40" class="nd"/><text x="55" y="167" class="t" text-anchor="middle">"kim"</text>
+      <path d="M92,162 L126,162" class="ptr" marker-end="url(#arr)"/>
+      <rect x="128" y="142" width="80" height="40" class="nd"/><text x="168" y="167" class="t mono" text-anchor="middle">hash()</text>
+      <path d="M210,162 L244,162" class="ptr" marker-end="url(#arr)"/>
+      <rect x="246" y="142" width="76" height="40" class="nd"/><text x="284" y="167" class="t mono" text-anchor="middle">index 5</text>
+      <path d="M324,162 C 350,162 350,150 366,150 L 552,150 L 552,142" class="ptr newp" marker-end="url(#arrNew)"/>
+      <g>
+        <rect x="370" y="142" width="36" height="40" class="nd"/>
+        <rect x="406" y="142" width="36" height="40" class="nd"/>
+        <rect x="442" y="142" width="36" height="40" class="nd"/>
+        <rect x="478" y="142" width="36" height="40" class="nd"/>
+        <rect x="514" y="142" width="36" height="40" class="nd"/>
+        <rect x="550" y="142" width="36" height="40" class="nd newnd"/><text x="568" y="167" class="t mono" text-anchor="middle">kim</text>
+        <rect x="586" y="142" width="36" height="40" class="nd"/>
+        <rect x="622" y="142" width="36" height="40" class="nd"/>
+        <text x="388" y="197" class="t small" text-anchor="middle">0</text>
+        <text x="424" y="197" class="t small" text-anchor="middle">1</text>
+        <text x="460" y="197" class="t small" text-anchor="middle">2</text>
+        <text x="496" y="197" class="t small" text-anchor="middle">3</text>
+        <text x="532" y="197" class="t small" text-anchor="middle">4</text>
+        <text x="568" y="197" class="t newlab" text-anchor="middle" font-size="11">5</text>
+        <text x="604" y="197" class="t small" text-anchor="middle">6</text>
+        <text x="640" y="197" class="t small" text-anchor="middle">7</text>
+      </g>
+      <text x="20" y="207" class="t small">1 computation + 1 jump → O(1) on average</text>
+    </svg>
+    <figcaption><b>Search by computing, not by walking.</b> The array on top has no idea where "kim" is; it must ask each box. The hash map computes <code>hash("kim") % 8 = 5</code> and goes there directly. The rest of this page explains how that computation works and what happens when two keys compute the same index.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================ USAGE (Lesson 26) ============================ -->
+<section id="usage">
+  <h2><span class="num">1</span>Hash usage: sets, maps, counting</h2>
+
+  <p>Lesson 26 is about <em>using</em> hash sets and hash maps; lesson 27 is about building one. NeetCode says knowing the usage matters more than knowing the implementation, and interviewers agree: you will use a dict in hundreds of problems and implement one in almost none.</p>
+
+  <h3>Set = keys only. Map = key-value pairs.</h3>
+  <p>A <dfn>hash set</dfn> stores keys and answers one question: "is this key here?". A <dfn>hash map</dfn> stores key-value pairs and answers "what value belongs to this key?". Both refuse duplicate keys. In Python a hash set is <code>set</code> and a hash map is <code>dict</code>. Earlier in the course you saw the same two interfaces built on a tree (TreeSet, TreeMap). Same interface, different engine, different trade-offs.</p>
+
+  <h3>The trade-off table (memorize it)</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Operation</th><th>TreeMap</th><th>HashMap</th><th>Array</th></tr></thead>
+    <tbody>
+      <tr><td>Insert</td><td>O(log n)</td><td class="big fast">O(1)</td><td class="big slow">O(n)</td></tr>
+      <tr><td>Remove</td><td>O(log n)</td><td class="big fast">O(1)</td><td class="big slow">O(n)</td></tr>
+      <tr><td>Search</td><td>O(log n)</td><td class="big fast">O(1)</td><td>O(log n) if sorted, else O(n)</td></tr>
+      <tr><td>Inorder traversal (visit keys in sorted order)</td><td class="big fast">O(n)</td><td>-</td><td>-</td></tr>
+    </tbody>
+  </table></div>
+  <p>The HashMap column is the <dfn>average case</dfn>: what happens with a good hash function and few collisions. The worst case is O(n). It is widely accepted, including in interviews, to say "O(1)" for hash map operations. Say "O(1) average" if you want to be exact.</p>
+
+  <h3>The one thing a tree map does better: order</h3>
+  <p>A hash map is <strong>not ordered</strong>. You cannot walk its keys from smallest to largest. If you need the keys in sorted order you must sort them first, which costs O(n log n). A tree map gives you sorted order for O(n) with an inorder traversal. So: need sorted keys or "the next larger key"? Tree map. Need fast insert, remove, and lookup? Hash map. In interviews the second case is far more common.</p>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind: Python dict order</span>
+    <p>Since Python 3.7 a <code>dict</code> remembers <em>insertion</em> order: <code>list(d)</code> gives keys in the order you added them. That is not the same as <em>sorted</em> order. <code>{"kim": 1, "alice": 1}</code> iterates as kim, alice. To get alice, kim you write <code>sorted(d)</code>, and that is the O(n log n) sort NeetCode is talking about.</p>
+  </div>
+
+  <h3>Counting frequency: the phonebook example</h3>
+  <p>Because a map cannot hold a key twice, and each key carries a value, a map can <strong>count</strong>. The lesson's example: a list of names, some repeated. Map each name to how many times it appears. For each name: if the key already exists, add 1 to its value; otherwise insert it with value 1.</p>
+
+<pre><code>names = [<span class="s">"alice"</span>, <span class="s">"brad"</span>, <span class="s">"collin"</span>, <span class="s">"brad"</span>, <span class="s">"dylan"</span>, <span class="s">"kim"</span>]
+
+countMap = {}
+<span class="k">for</span> name <span class="k">in</span> names:
+    <span class="c"># If countMap does not contain name</span>
+    <span class="k">if</span> name <span class="k">not in</span> countMap:
+        countMap[name] = <span class="s">1</span>
+    <span class="k">else</span>:
+        countMap[name] += <span class="s">1</span>
+
+<span class="c"># countMap == {"alice": 1, "brad": 2, "collin": 1, "dylan": 1, "kim": 1}</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 680 285" role="img" aria-label="The six names in the array feed into a key-value table. alice, collin, dylan and kim each get value 1. brad appears at index 1 and index 3, so its value becomes 2, shown in orange.">
+      <text x="36" y="22" class="t ptrlab">names[]</text>
+      <text x="100" y="22" class="t small">loop top to bottom</text>
+      <g>
+        <text x="28" y="60" class="t small" text-anchor="end">0</text>
+        <rect x="36" y="40" width="110" height="32" class="nd"/><text x="91" y="61" class="t" text-anchor="middle">alice</text>
+        <text x="28" y="96" class="t small" text-anchor="end">1</text>
+        <rect x="36" y="76" width="110" height="32" class="nd"/><text x="91" y="97" class="t" text-anchor="middle">brad</text>
+        <text x="28" y="132" class="t small" text-anchor="end">2</text>
+        <rect x="36" y="112" width="110" height="32" class="nd"/><text x="91" y="133" class="t" text-anchor="middle">collin</text>
+        <text x="28" y="168" class="t small" text-anchor="end">3</text>
+        <rect x="36" y="148" width="110" height="32" class="nd newnd"/><text x="91" y="169" class="t" text-anchor="middle">brad</text>
+        <text x="28" y="204" class="t small" text-anchor="end">4</text>
+        <rect x="36" y="184" width="110" height="32" class="nd"/><text x="91" y="205" class="t" text-anchor="middle">dylan</text>
+        <text x="28" y="240" class="t small" text-anchor="end">5</text>
+        <rect x="36" y="220" width="110" height="32" class="nd"/><text x="91" y="241" class="t" text-anchor="middle">kim</text>
+      </g>
+
+      <text x="480" y="22" class="t ptrlab" text-anchor="middle">countMap</text>
+      <text x="480" y="36" class="t small" text-anchor="middle">key</text>
+      <text x="575" y="36" class="t small" text-anchor="middle">value</text>
+      <g>
+        <rect x="420" y="40" width="120" height="32" class="nd"/><line x1="540" y1="40" x2="540" y2="72" class="cell"/><rect x="540" y="40" width="70" height="32" class="nd"/>
+        <text x="480" y="61" class="t" text-anchor="middle">alice</text><text x="575" y="61" class="t mono" text-anchor="middle">1</text>
+        <rect x="420" y="76" width="120" height="32" class="nd"/><rect x="540" y="76" width="70" height="32" class="nd newnd"/>
+        <text x="480" y="97" class="t" text-anchor="middle">brad</text><text x="575" y="97" class="t newlab" text-anchor="middle">2</text>
+        <rect x="420" y="112" width="120" height="32" class="nd"/><rect x="540" y="112" width="70" height="32" class="nd"/>
+        <text x="480" y="133" class="t" text-anchor="middle">collin</text><text x="575" y="133" class="t mono" text-anchor="middle">1</text>
+        <rect x="420" y="148" width="120" height="32" class="nd"/><rect x="540" y="148" width="70" height="32" class="nd"/>
+        <text x="480" y="169" class="t" text-anchor="middle">dylan</text><text x="575" y="169" class="t mono" text-anchor="middle">1</text>
+        <rect x="420" y="184" width="120" height="32" class="nd"/><rect x="540" y="184" width="70" height="32" class="nd"/>
+        <text x="480" y="205" class="t" text-anchor="middle">kim</text><text x="575" y="205" class="t mono" text-anchor="middle">1</text>
+      </g>
+
+      <path d="M148,56 L416,56" class="ptr" marker-end="url(#arr)"/>
+      <path d="M148,92 L416,92" class="ptr" marker-end="url(#arr)"/>
+      <path d="M148,128 L416,128" class="ptr" marker-end="url(#arr)"/>
+      <path d="M148,164 C 260,164 300,96 416,94" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="282" y="150" class="t newlab" text-anchor="middle" font-size="11">key exists → += 1</text>
+      <path d="M148,200 C 260,200 300,168 416,166" class="ptr" marker-end="url(#arr)"/>
+      <path d="M148,236 C 260,236 300,204 416,202" class="ptr" marker-end="url(#arr)"/>
+      <text x="282" y="70" class="t small" text-anchor="middle">new key → insert with 1</text>
+
+      <text x="20" y="275" class="t small">6 names in, 5 unique keys out. Time O(n) for the loop; space O(number of unique keys).</text>
+    </svg>
+    <figcaption><b>Six inputs, five rows.</b> The second "brad" (index 3) does not create a new row; it finds the existing row and turns its value from 1 to 2 (orange). That is the whole trick behind every "count the frequency" problem.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Loop turn</th><th><code>name</code></th><th><code>name not in countMap</code>?</th><th>action</th><th><code>countMap</code> after</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>alice</td><td>True</td><td>insert 1</td><td>{alice: 1}</td></tr>
+      <tr><td>2</td><td>brad</td><td>True</td><td>insert 1</td><td>{alice: 1, brad: 1}</td></tr>
+      <tr><td>3</td><td>collin</td><td>True</td><td>insert 1</td><td>{alice: 1, brad: 1, collin: 1}</td></tr>
+      <tr><td>4</td><td>brad</td><td>False</td><td><strong>brad += 1 → 2</strong></td><td>{alice: 1, brad: 2, collin: 1}</td></tr>
+      <tr><td>5</td><td>dylan</td><td>True</td><td>insert 1</td><td>{alice: 1, brad: 2, collin: 1, dylan: 1}</td></tr>
+      <tr><td>6</td><td>kim</td><td>True</td><td>insert 1</td><td>{alice: 1, brad: 2, collin: 1, dylan: 1, kim: 1}</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Time and space of counting</h3>
+  <p>The loop touches each of the n names once and every map operation is O(1), so counting is <strong>O(n)</strong>. With a tree map each insert costs O(log n), so the same loop costs O(n log n). Space is <strong>O(n)</strong> in the worst case, more precisely proportional to the number of <em>unique</em> keys: five rows here, not six.</p>
+
+  <h3>The same count, the Python way</h3>
+  <p>NeetCode's <code>if / else</code> is the clearest version. In real code, Python gives you three shorter tools. All four produce the same dictionary; the check script proves it.</p>
+
+<pre><code><span class="k">from</span> collections <span class="k">import</span> Counter, defaultdict
+
+<span class="c"># 1. dict.get with a default: "current count, or 0 if missing, plus 1"</span>
+count = {}
+<span class="k">for</span> name <span class="k">in</span> names:
+    count[name] = count.get(name, <span class="s">0</span>) + <span class="s">1</span>
+
+<span class="c"># 2. defaultdict(int): a missing key is created as 0 the first time you touch it</span>
+count = defaultdict(int)
+<span class="k">for</span> name <span class="k">in</span> names:
+    count[name] += <span class="s">1</span>
+
+<span class="c"># 3. Counter: the whole loop in one call</span>
+count = Counter(names)
+count[<span class="s">"brad"</span>]          <span class="c"># 2</span>
+count[<span class="s">"nobody"</span>]        <span class="c"># 0, no KeyError (a plain dict would raise)</span>
+count.most_common(<span class="s">1</span>)   <span class="c"># [("brad", 2)]</span>
+
+<span class="c"># set: keys only. "how many unique names?"</span>
+len(set(names))        <span class="c"># 5</span>
+<span class="s">"brad"</span> <span class="k">in</span> set(names)   <span class="c"># True, O(1)</span></code></pre>
+
+  <h3>What can be a key?</h3>
+  <p>A key must be <dfn>hashable</dfn>: Python must be able to turn it into a fixed number, and that number must never change. So the key must be <strong>immutable</strong>. <code>str</code>, <code>int</code>, <code>float</code>, <code>bool</code>, <code>tuple</code> and <code>frozenset</code> are hashable. <code>list</code>, <code>dict</code> and <code>set</code> are not, because you could change them after inserting and the stored hash would be wrong.</p>
+
+<pre><code>d = {}
+d[<span class="s">"alice"</span>] = <span class="s">1</span>      <span class="c"># str   ok</span>
+d[<span class="s">42</span>] = <span class="s">2</span>           <span class="c"># int   ok</span>
+d[(<span class="s">1</span>, <span class="s">2</span>)] = <span class="s">3</span>       <span class="c"># tuple ok  (this is how you key by a pair, a grid cell, a sorted word)</span>
+d[[<span class="s">1</span>, <span class="s">2</span>]] = <span class="s">4</span>       <span class="c"># TypeError: unhashable type: 'list'</span>
+
+hash(<span class="s">"Alice"</span>) == hash(<span class="s">"Alice"</span>)   <span class="c"># True: same key, same number, always</span></code></pre>
+
+  <div class="callout">
+    <span class="lab">Grid cells and sorted words</span>
+    <p>When your natural key is a list (a coordinate <code>[r, c]</code>, a sorted word <code>sorted(s)</code>, a 26-letter count), convert it: <code>(r, c)</code>, <code>tuple(sorted(s))</code>, <code>"".join(sorted(s))</code>. You will do this in Group Anagrams and in every grid problem that keeps a <code>visited</code> set.</p>
+  </div>
+</section>
+
+<!-- ============================ HASH FUNCTION / RESIZE / COLLISIONS (Lesson 27, ideas) ============================ -->
+<section id="hashing">
+  <h2><span class="num">2</span>Under the hood: hash function, resize, collisions</h2>
+
+  <p>You are unlikely to be asked to implement a hash map from scratch, but the ideas show up in many algorithms and in system design (distributed caches, load balancing, sharding all use hashing). Hash maps are most commonly built on <strong>arrays</strong>. An empty hash map has size zero, but the underlying array does <em>not</em> start at size zero; NeetCode's starts at capacity 2.</p>
+
+  <p>The example pairs for the whole lesson:</p>
+<pre><code>hashmap[<span class="s">"Alice"</span>]  = <span class="s">"NYC"</span>
+hashmap[<span class="s">"Brad"</span>]   = <span class="s">"Chicago"</span>
+hashmap[<span class="s">"Collin"</span>] = <span class="s">"Seattle"</span></code></pre>
+
+  <h3>The hash function: string in, index out</h3>
+  <p>To store <code>"Alice"</code> in O(1) we need a <dfn>hash function</dfn>: it takes the key and converts it into an integer, and that integer is the array index where the pair lives. Three requirements: the result must be a valid index; the same string must always produce the same integer; and ideally two different keys should not produce the same index. NeetCode's function is the simplest possible one:</p>
+  <ol>
+    <li>Take the ASCII code of each character (<code>ord(c)</code> in Python).</li>
+    <li>Add them up. This sum can be big, larger than the array.</li>
+    <li>Take <code>sum % capacity</code> so the result is between 0 and capacity - 1.</li>
+  </ol>
+  <p>Step 1-2 (turning the key into some big integer) is sometimes called <dfn>pre-hashing</dfn>; step 3 squeezes it into the array.</p>
+
+  <figure>
+    <svg viewBox="0 0 820 150" role="img" aria-label="Hash pipeline: the string Alice becomes ASCII codes 65 108 105 99 101, which sum to 478, then 478 modulo capacity 8 gives index 6.">
+      <text x="60" y="44" class="t small" text-anchor="middle">key</text>
+      <rect x="20" y="54" width="80" height="44" class="nd"/><text x="60" y="81" class="t" text-anchor="middle">"Alice"</text>
+      <path d="M102,76 L136,76" class="ptr" marker-end="url(#arr)"/>
+      <text x="184" y="30" class="t small" text-anchor="middle">① ord(c): ASCII code of each char</text>
+      <text x="250" y="44" class="t small" text-anchor="middle">A       l       i       c       e</text>
+      <g>
+        <rect x="140" y="54" width="44" height="44" class="nd"/><text x="162" y="81" class="t mono" text-anchor="middle">65</text>
+        <rect x="184" y="54" width="44" height="44" class="nd"/><text x="206" y="81" class="t mono" text-anchor="middle">108</text>
+        <rect x="228" y="54" width="44" height="44" class="nd"/><text x="250" y="81" class="t mono" text-anchor="middle">105</text>
+        <rect x="272" y="54" width="44" height="44" class="nd"/><text x="294" y="81" class="t mono" text-anchor="middle">99</text>
+        <rect x="316" y="54" width="44" height="44" class="nd"/><text x="338" y="81" class="t mono" text-anchor="middle">101</text>
+      </g>
+      <path d="M362,76 L396,76" class="ptr" marker-end="url(#arr)"/>
+      <text x="435" y="44" class="t small" text-anchor="middle">② sum</text>
+      <rect x="400" y="54" width="70" height="44" class="nd"/><text x="435" y="81" class="t mono" text-anchor="middle">478</text>
+      <path d="M472,76 L506,76" class="ptr" marker-end="url(#arr)"/>
+      <text x="545" y="44" class="t small" text-anchor="middle">③ % capacity</text>
+      <rect x="510" y="54" width="70" height="44" class="nd"/><text x="545" y="81" class="t mono" text-anchor="middle">% 8</text>
+      <path d="M582,76 L616,76" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="645" y="44" class="t newlab" text-anchor="middle" font-size="11">index</text>
+      <rect x="620" y="54" width="50" height="44" class="nd newnd"/><text x="645" y="81" class="t newlab" text-anchor="middle">6</text>
+      <text x="20" y="128" class="t small">Real ord() sums: Alice 478, Brad 377, Collin 609.  In the video NeetCode makes up small sums to keep the maths readable: Alice 25, Brad 27, Collin 33.</text>
+      <text x="20" y="143" class="t small">With capacity 2 the video gets 25 % 2 = 1; the real code gets 478 % 2 = 0. Same pipeline, same idea.</text>
+    </svg>
+    <figcaption><b>Deterministic: same string in, same index out, every time.</b> That is what makes lookup possible: to find "Alice" later you run the same three steps and land on the same slot. Note the last step depends on <code>capacity</code>, which is why resizing forces every key to be re-hashed (next).</figcaption>
+  </figure>
+
+  <p>With an array of size 2 there are only two possible indexes, so a second key will very often land on the same one. Two keys mapping to the same index is a <dfn>collision</dfn>. Collisions are very common; they can be minimized but never fully avoided. Two things fight collisions: keeping the array roomy (resize) and having a plan for when they happen anyway (chaining or open addressing).</p>
+
+  <h3>Resizing: double when half full</h3>
+  <p>The map tracks two numbers. <dfn>capacity</dfn> is the length of the underlying array. <dfn>size</dfn> is how many pairs are stored. When space runs low, create a new array with <code>2 * capacity</code>, exactly like the dynamic array chapter. The difference from a dynamic array: to keep collisions rare, we resize when the array is <strong>half full</strong>, not completely full. With capacity 2, inserting "Alice" makes size 1, which is half of 2, so the array doubles to 4 right away. The resize happens the moment the array becomes half full, not when the next pair arrives.</p>
+
+  <h3>Rehashing: every key moves</h3>
+  <p>After resizing, the pairs cannot simply be copied to the same indexes. The index was <code>sum % capacity</code> and capacity just changed, so the index changes too. <dfn>Rehashing</dfn> means: run every existing pair through the hash function again with the new capacity and re-insert it. In the video, Alice's made-up sum 25 gives 25 % 2 = 1 and then 25 % 4 = 1: she happens to stay at index 1. If the new value were 2 she would move to 2. Brad's 27 gives 27 % 4 = 3, index 3. Then the array is half full again (2 of 4), so it doubles to 8.</p>
+
+  <figure>
+    <svg viewBox="-60 0 860 318" role="img" aria-label="Three arrays of capacity 2, 4 and 8. Alice goes to index 0 in capacity 2, is rehashed to index 2 in capacity 4 where Brad is inserted at index 1, then both are rehashed into capacity 8: Alice to index 6, Brad stays at 1. Each resize happens when the array is half full.">
+      <!-- row A: cap 2 -->
+      <text x="20" y="62" class="t ptrlab">cap 2</text>
+      <rect x="140" y="36" width="60" height="40" class="nd newnd"/><text x="170" y="61" class="t mono" text-anchor="middle">Alice</text>
+      <rect x="200" y="36" width="60" height="40" class="nd"/>
+      <text x="170" y="92" class="t small" text-anchor="middle">0</text>
+      <text x="230" y="92" class="t small" text-anchor="middle">1</text>
+      <text x="278" y="54" class="t small">① put(Alice): 478 % 2 = 0 → slot 0, size = 1</text>
+      <text x="278" y="70" class="t small">size 1 ≥ 2 // 2 → half full → double to 4</text>
+      <!-- rehash arrow A -> B -->
+      <path d="M170,78 C170,112 290,100 290,134" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="130" y="112" class="t newlab" text-anchor="end" font-size="11">rehash: 478 % 4 = 2</text>
+
+      <!-- row B: cap 4 -->
+      <text x="20" y="162" class="t ptrlab">cap 4</text>
+      <rect x="140" y="136" width="60" height="40" class="nd"/>
+      <rect x="200" y="136" width="60" height="40" class="nd newnd"/><text x="230" y="161" class="t mono" text-anchor="middle">Brad</text>
+      <rect x="260" y="136" width="60" height="40" class="nd"/><text x="290" y="161" class="t mono" text-anchor="middle">Alice</text>
+      <rect x="320" y="136" width="60" height="40" class="nd"/>
+      <text x="170" y="192" class="t small" text-anchor="middle">0</text>
+      <text x="230" y="192" class="t small" text-anchor="middle">1</text>
+      <text x="290" y="192" class="t small" text-anchor="middle">2</text>
+      <text x="350" y="192" class="t small" text-anchor="middle">3</text>
+      <text x="398" y="154" class="t small">② put(Brad): 377 % 4 = 1 → slot 1, size = 2</text>
+      <text x="398" y="170" class="t small">size 2 ≥ 4 // 2 → half full → double to 8</text>
+      <!-- rehash arrows B -> C -->
+      <path d="M230,178 L230,234" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="130" y="212" class="t newlab" text-anchor="end" font-size="11">377 % 8 = 1 (stays)</text>
+      <path d="M290,178 C290,216 530,196 530,234" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="410" y="192" class="t newlab" text-anchor="middle" font-size="11">478 % 8 = 6 (moves)</text>
+
+      <!-- row C: cap 8 -->
+      <text x="20" y="262" class="t ptrlab">cap 8</text>
+      <rect x="140" y="236" width="60" height="40" class="nd"/>
+      <rect x="200" y="236" width="60" height="40" class="nd"/><text x="230" y="261" class="t mono" text-anchor="middle">Brad</text>
+      <rect x="260" y="236" width="60" height="40" class="nd"/>
+      <rect x="320" y="236" width="60" height="40" class="nd"/>
+      <rect x="380" y="236" width="60" height="40" class="nd"/>
+      <rect x="440" y="236" width="60" height="40" class="nd"/>
+      <rect x="500" y="236" width="60" height="40" class="nd"/><text x="530" y="261" class="t mono" text-anchor="middle">Alice</text>
+      <rect x="560" y="236" width="60" height="40" class="nd"/>
+      <text x="170" y="292" class="t small" text-anchor="middle">0</text>
+      <text x="230" y="292" class="t small" text-anchor="middle">1</text>
+      <text x="290" y="292" class="t small" text-anchor="middle">2</text>
+      <text x="350" y="292" class="t small" text-anchor="middle">3</text>
+      <text x="410" y="292" class="t small" text-anchor="middle">4</text>
+      <text x="470" y="292" class="t small" text-anchor="middle">5</text>
+      <text x="530" y="292" class="t small" text-anchor="middle">6</text>
+      <text x="590" y="292" class="t small" text-anchor="middle">7</text>
+      <text x="140" y="311" class="t small">③ size 2 &lt; 8 // 2 = 4 → no resize. Ready for Collin.</text>
+    </svg>
+    <figcaption><b>Orange arrows are the rehash.</b> Nothing is copied to "the same place"; every pair is re-inserted with the new capacity. This drawing uses the real <code>ord()</code> sums (Alice 478, Brad 377) because they show the move clearly: Alice goes 0 → 2 → 6. In the video, with the made-up sum 25, Alice lands on index 1 at every size and Brad (27) on index 3; the process is identical.</figcaption>
+  </figure>
+
+  <h3>The three puts, traced</h3>
+  <p>Two tables, same code, same three calls. The first uses the video's made-up sums so you can follow along with NeetCode. The second uses the real sums you will see when you run the check script. In both, notice <em>when</em> the resize happens: inside the put that made the array half full.</p>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Call (video sums)</th><th>sum</th><th>sum % capacity</th><th>slot</th><th>size</th><th>half full?</th><th>after</th></tr></thead>
+    <tbody>
+      <tr><td>put("Alice", "NYC")</td><td>25</td><td>25 % 2 = 1</td><td>1</td><td>1</td><td>1 ≥ 2//2 <strong>yes</strong> → cap 4, re-put Alice: 25 % 4 = 1</td><td>cap 4, size 1, {1: Alice}</td></tr>
+      <tr><td>put("Brad", "Chicago")</td><td>27</td><td>27 % 4 = 3</td><td>3</td><td>2</td><td>2 ≥ 4//2 <strong>yes</strong> → cap 8, re-put: Alice 25 % 8 = 1, Brad 27 % 8 = 3</td><td>cap 8, size 2, {1: Alice, 3: Brad}</td></tr>
+      <tr><td>put("Collin", "Seattle")</td><td>33</td><td>33 % 8 = 1 → <strong>taken by Alice</strong> → try 2</td><td>2</td><td>3</td><td>3 ≥ 8//2 no</td><td>cap 8, size 3, {1: Alice, 2: Collin, 3: Brad}</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Call (real ord sums)</th><th>sum</th><th>sum % capacity</th><th>slot</th><th>size</th><th>half full?</th><th>after</th></tr></thead>
+    <tbody>
+      <tr><td>put("Alice", "NYC")</td><td>478</td><td>478 % 2 = 0</td><td>0</td><td>1</td><td>1 ≥ 2//2 <strong>yes</strong> → cap 4, re-put Alice: 478 % 4 = 2</td><td>cap 4, size 1, {2: Alice}</td></tr>
+      <tr><td>put("Brad", "Chicago")</td><td>377</td><td>377 % 4 = 1</td><td>1</td><td>2</td><td>2 ≥ 4//2 <strong>yes</strong> → cap 8, re-put: Alice 478 % 8 = 6, Brad 377 % 8 = 1</td><td>cap 8, size 2, {1: Brad, 6: Alice}</td></tr>
+      <tr><td>put("Collin", "Seattle")</td><td>609</td><td>609 % 8 = 1 → <strong>taken by Brad</strong> → try 2</td><td>2</td><td>3</td><td>3 ≥ 8//2 no</td><td>cap 8, size 3, {1: Brad, 2: Collin, 6: Alice}</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>Both traces end with capacity 8, size 3, and a collision on index 1 that was solved by moving one step right. Only the names in the slots differ.</p>
+
+  <h3>Collisions: two keys, one index</h3>
+  <p>In the video, "Collin" hashes to 33, and 33 % 8 = 1: the same index as Alice. Two ideas that do <em>not</em> work: overwrite the slot (Alice is lost), or keep growing the array until the two keys separate (may never happen, and wastes huge memory). Two strategies that do work:</p>
+
+  <p><strong>1. Chaining.</strong> Each slot holds a linked list. Alice and Collin both live at index 1, chained together. To look up Collin: hash to 1, walk the short chain. Worst case, if every key lands on one index, search and insert become O(n); on average the chains are tiny and it is O(1).</p>
+
+  <p><strong>2. Open addressing.</strong> No slot may hold more than one pair. If index 1 is taken, try 2, then 3, and so on until an empty slot appears. Lookup does the same walk: start at the hashed index and keep checking the following slots until you find the key or hit an empty slot. This is the version NeetCode codes. It is more efficient than chaining when collisions are rare, but it has a hard limit (you can never store more pairs than the capacity) and it is trickier to get right. NeetCode's advice: stick with chaining unless you have a specific reason.</p>
+
+  <figure>
+    <svg viewBox="0 0 780 300" role="img" aria-label="Collin hashes to index 1 which Alice already occupies. Left: chaining hangs a linked list Alice then Collin off slot 1. Right: open addressing puts Collin in the next free slot, index 2.">
+      <!-- collision -->
+      <rect x="175" y="6" width="80" height="30" class="nd newnd"/><text x="215" y="26" class="t mono" text-anchor="middle">Collin</text>
+      <path d="M215,38 L215,50" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="270" y="26" class="t nulltxt" font-size="12">33 % 8 = 1, but index 1 already holds Alice → collision</text>
+      <g>
+        <rect x="140" y="52" width="50" height="38" class="nd"/>
+        <rect x="190" y="52" width="50" height="38" class="nd"/><text x="215" y="76" class="t mono" text-anchor="middle">Alice</text>
+        <rect x="240" y="52" width="50" height="38" class="nd"/>
+        <rect x="290" y="52" width="50" height="38" class="nd"/><text x="315" y="76" class="t mono" text-anchor="middle">Brad</text>
+        <rect x="340" y="52" width="50" height="38" class="nd"/>
+        <rect x="390" y="52" width="50" height="38" class="nd"/>
+        <rect x="440" y="52" width="50" height="38" class="nd"/>
+        <rect x="490" y="52" width="50" height="38" class="nd"/>
+        <text x="165" y="104" class="t small" text-anchor="middle">0</text>
+        <text x="215" y="104" class="t small" text-anchor="middle">1</text>
+        <text x="265" y="104" class="t small" text-anchor="middle">2</text>
+        <text x="315" y="104" class="t small" text-anchor="middle">3</text>
+        <text x="365" y="104" class="t small" text-anchor="middle">4</text>
+        <text x="415" y="104" class="t small" text-anchor="middle">5</text>
+        <text x="465" y="104" class="t small" text-anchor="middle">6</text>
+        <text x="515" y="104" class="t small" text-anchor="middle">7</text>
+      </g>
+
+      <!-- LEFT: chaining -->
+      <text x="20" y="134" class="t ptrlab">CHAINING</text>
+      <text x="100" y="134" class="t small">a linked list per slot</text>
+      <g>
+        <rect x="20" y="150" width="38" height="36" class="nd"/>
+        <rect x="58" y="150" width="38" height="36" class="nd"/><circle cx="77" cy="168" r="3.5" class="dot"/>
+        <rect x="96" y="150" width="38" height="36" class="nd"/>
+        <rect x="134" y="150" width="38" height="36" class="nd"/><text x="153" y="172" class="t small" text-anchor="middle" font-size="9">Brad</text>
+        <rect x="172" y="150" width="38" height="36" class="nd"/>
+        <rect x="210" y="150" width="38" height="36" class="nd"/>
+        <rect x="248" y="150" width="38" height="36" class="nd"/>
+        <rect x="286" y="150" width="38" height="36" class="nd"/>
+        <text x="39" y="200" class="t small" text-anchor="middle">0</text>
+        <text x="77" y="200" class="t small" text-anchor="middle">1</text>
+        <text x="115" y="200" class="t small" text-anchor="middle">2</text>
+        <text x="153" y="200" class="t small" text-anchor="middle">3</text>
+        <text x="191" y="200" class="t small" text-anchor="middle">4</text>
+        <text x="229" y="200" class="t small" text-anchor="middle">5</text>
+        <text x="267" y="200" class="t small" text-anchor="middle">6</text>
+        <text x="305" y="200" class="t small" text-anchor="middle">7</text>
+      </g>
+      <path d="M77,168 C77,190 60,200 60,214" class="ptr" marker-end="url(#arr)"/>
+      <g>
+        <rect x="40" y="216" width="110" height="30" class="nd"/><line x1="115" y1="216" x2="115" y2="246" class="cell"/>
+        <text x="77" y="236" class="t mono" text-anchor="middle">Alice</text><circle cx="132" cy="231" r="3.5" class="dot newd"/>
+        <path d="M132,231 L188,231" class="ptr newp" marker-end="url(#arrNew)"/>
+        <rect x="190" y="216" width="110" height="30" class="nd newnd"/><line x1="265" y1="216" x2="265" y2="246" class="cell"/>
+        <text x="227" y="236" class="t mono" text-anchor="middle">Collin</text><text x="282" y="236" class="t nulltxt" text-anchor="middle">∅</text>
+      </g>
+      <text x="20" y="270" class="t small">get: hash → 1, walk: Alice? no. Collin? yes.</text>
+      <text x="20" y="286" class="t small">average O(1); worst (one long chain) O(n)</text>
+
+      <!-- RIGHT: open addressing -->
+      <text x="360" y="134" class="t ptrlab">OPEN ADDRESSING</text>
+      <text x="490" y="134" class="t small">next free slot</text>
+      <g>
+        <rect x="360" y="150" width="38" height="36" class="nd"/>
+        <rect x="398" y="150" width="38" height="36" class="nd"/><text x="417" y="172" class="t small" text-anchor="middle" font-size="9">Alice</text>
+        <rect x="436" y="150" width="38" height="36" class="nd newnd"/><text x="455" y="172" class="t newlab" text-anchor="middle" font-size="9">Collin</text>
+        <rect x="474" y="150" width="38" height="36" class="nd"/><text x="493" y="172" class="t small" text-anchor="middle" font-size="9">Brad</text>
+        <rect x="512" y="150" width="38" height="36" class="nd"/>
+        <rect x="550" y="150" width="38" height="36" class="nd"/>
+        <rect x="588" y="150" width="38" height="36" class="nd"/>
+        <rect x="626" y="150" width="38" height="36" class="nd"/>
+        <text x="379" y="200" class="t small" text-anchor="middle">0</text>
+        <text x="417" y="200" class="t small" text-anchor="middle">1</text>
+        <text x="455" y="200" class="t newlab" text-anchor="middle" font-size="11">2</text>
+        <text x="493" y="200" class="t small" text-anchor="middle">3</text>
+        <text x="531" y="200" class="t small" text-anchor="middle">4</text>
+        <text x="569" y="200" class="t small" text-anchor="middle">5</text>
+        <text x="607" y="200" class="t small" text-anchor="middle">6</text>
+        <text x="645" y="200" class="t small" text-anchor="middle">7</text>
+      </g>
+      <path d="M417,148 C417,128 455,128 455,148" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="380" y="228" class="t small">put(Collin): 1 is taken → try 2 → empty → store there.</text>
+      <text x="380" y="244" class="t small">get(Collin): 1 is Alice, not it → 2 is Collin → found.</text>
+      <text x="380" y="270" class="t small">every slot holds at most one pair,</text>
+      <text x="380" y="286" class="t small">so entries can never exceed capacity</text>
+    </svg>
+    <figcaption><b>Same collision, two answers.</b> Chaining keeps Collin at his true index inside a short list. Open addressing walks right to the first empty slot; the lookup must walk the same way. Both keep the average cost O(1) as long as the array stays roomy, which is exactly what resizing at half full guarantees.</figcaption>
+  </figure>
+
+  <h3>Why a prime capacity helps</h3>
+  <p>NeetCode mentions that it is mathematically better to choose a <dfn>prime</dfn> number (divisible only by 1 and itself) for the capacity. The reason in one example: suppose your keys happen to be multiples of 4 (4, 8, 12, 16). With capacity 8, the indexes are 4, 0, 4, 0: two collisions, because 4 and 8 share a factor. With capacity 7, the indexes are 4, 1, 5, 2: all different. A prime shares no factor with any key pattern, so patterns in the keys do not turn into patterns in the slots. NeetCode uses 2, 4, 8 in the lesson for simplicity; real implementations either use primes or use a much better hash function so that the doubling does not matter.</p>
+</section>
+
+<!-- ============================ THE CODE (Lesson 27, implementation) ============================ -->
+<section id="code">
+  <h2><span class="num">3</span>The code: open addressing, line by line</h2>
+
+  <p>The lesson's implementation stores a list of <code>Pair</code> objects. <code>size</code> is the number of pairs in the map; <code>capacity</code> is the length of the underlying array. This is NeetCode's code exactly; the check script runs it on the three names and asserts every state in the trace tables above.</p>
+
+<pre><code><span class="k">class</span> Pair:
+    <span class="k">def</span> __init__(self, key, val):
+        self.key = key
+        self.val = val
+
+
+<span class="k">class</span> HashMap:
+    <span class="k">def</span> __init__(self):
+        self.size = <span class="s">0</span>              <span class="c"># pairs stored</span>
+        self.capacity = <span class="s">2</span>          <span class="c"># length of the array</span>
+        self.map = [<span class="k">None</span>, <span class="k">None</span>]
+
+    <span class="k">def</span> hash(self, key):
+        index = <span class="s">0</span>
+        <span class="k">for</span> c <span class="k">in</span> key:
+            index += ord(c)        <span class="c"># sum the ASCII codes</span>
+        <span class="k">return</span> index % self.capacity
+
+    <span class="k">def</span> get(self, key):
+        index = self.hash(key)
+
+        <span class="k">while</span> self.map[index] != <span class="k">None</span>:       <span class="c"># stop at the first empty slot</span>
+            <span class="k">if</span> self.map[index].key == key:
+                <span class="k">return</span> self.map[index].val
+            index += <span class="s">1</span>                       <span class="c"># open addressing: look in the next slot</span>
+            index = index % self.capacity    <span class="c"># wrap around at the end</span>
+        <span class="k">return None</span>
+
+    <span class="k">def</span> put(self, key, val):
+        index = self.hash(key)
+
+        <span class="k">while True</span>:
+            <span class="k">if</span> self.map[index] == <span class="k">None</span>:                  <span class="c"># 1. vacant: store here</span>
+                self.map[index] = Pair(key, val)
+                self.size += <span class="s">1</span>
+                <span class="k">if</span> self.size &gt;= self.capacity // <span class="s">2</span>:      <span class="c">#    half full → grow now</span>
+                    self.rehash()
+                <span class="k">return</span>
+            <span class="k">elif</span> self.map[index].key == key:            <span class="c"># 2. same key: update the value</span>
+                self.map[index].val = val
+                <span class="k">return</span>
+                                                        <span class="c"># 3. different key: try the next slot</span>
+            index += <span class="s">1</span>
+            index = index % self.capacity
+
+    <span class="k">def</span> remove(self, key):
+        <span class="k">if not</span> self.get(key):
+            <span class="k">return</span>
+
+        index = self.hash(key)
+        <span class="k">while True</span>:
+            <span class="k">if</span> self.map[index].key == key:
+                <span class="c"># Removing an element using open-addressing actually causes a bug,</span>
+                <span class="c"># because we may create a hole in the list, and our get() may</span>
+                <span class="c"># stop searching early when it reaches this hole.</span>
+                self.map[index] = <span class="k">None</span>
+                self.size -= <span class="s">1</span>
+                <span class="k">return</span>
+            index += <span class="s">1</span>
+            index = index % self.capacity
+
+    <span class="k">def</span> rehash(self):
+        self.capacity = <span class="s">2</span> * self.capacity
+        newMap = []
+        <span class="k">for</span> i <span class="k">in</span> range(self.capacity):
+            newMap.append(<span class="k">None</span>)
+
+        oldMap = self.map
+        self.map = newMap
+        self.size = <span class="s">0</span>                  <span class="c"># put() will count the pairs again</span>
+        <span class="k">for</span> pair <span class="k">in</span> oldMap:
+            <span class="k">if</span> pair:
+                self.put(pair.key, pair.val)   <span class="c"># re-insert with the NEW capacity</span>
+
+    <span class="k">def</span> print(self):
+        <span class="k">for</span> pair <span class="k">in</span> self.map:
+            <span class="k">if</span> pair:
+                print(pair.key, pair.val)</code></pre>
+
+  <h3>What each method does</h3>
+  <ul>
+    <li><strong>hash</strong>: sum the ASCII codes (<code>ord</code>) of the characters, then <code>% capacity</code>.</li>
+    <li><strong>get</strong>: compute the index. While the slot is not empty: if the key matches, return its value; otherwise move to the next slot, wrapping with <code>%</code>. If you reach an empty slot the key is not here: return <code>None</code>.</li>
+    <li><strong>put</strong>: compute the index. Three scenarios. Slot vacant: store the pair, <code>size += 1</code>, and if <code>size &gt;= capacity // 2</code> call <code>rehash</code>. Slot holds the same key: update the value. Slot holds a different key: move to the next slot and check again.</li>
+    <li><strong>remove</strong>: if the key is absent, return. Otherwise find the slot holding the key and set it to <code>None</code>. This creates the hole described next.</li>
+    <li><strong>rehash</strong>: double <code>capacity</code>, build a new empty array, reset <code>size</code> to 0, and <code>put</code> every existing pair again. The re-puts cannot trigger another rehash: the old pair count was half of the old capacity, which is a quarter of the new one.</li>
+  </ul>
+
+<pre><code>hm = HashMap()
+hm.put(<span class="s">"Alice"</span>, <span class="s">"NYC"</span>)        <span class="c"># capacity 2 → 4</span>
+hm.put(<span class="s">"Brad"</span>, <span class="s">"Chicago"</span>)     <span class="c"># capacity 4 → 8</span>
+hm.put(<span class="s">"Collin"</span>, <span class="s">"Seattle"</span>)   <span class="c"># collision on 1, stored at 2</span>
+hm.get(<span class="s">"Collin"</span>)              <span class="c"># "Seattle"</span>
+hm.get(<span class="s">"Dylan"</span>)               <span class="c"># None</span>
+hm.capacity, hm.size          <span class="c"># (8, 3)</span></code></pre>
+
+  <h3>The removal hole: why this remove() is buggy</h3>
+  <p>The comment in <code>remove</code> is the most important line in the lesson. Open addressing relies on one invariant: "if I walk from a key's home index and hit an empty slot, the key is not in the map". Removing by writing <code>None</code> breaks that promise. Concrete case from the video: Collin's home index is 1, but he sits at 2 because Alice was at 1. Remove Alice, and slot 1 becomes a hole. Now <code>get("Collin")</code> starts at 1, sees <code>None</code>, and the <code>while</code> loop ends before it ever looks at slot 2. Collin is still in the array, but unreachable.</p>
+
+  <figure>
+    <svg viewBox="-40 0 840 245" role="img" aria-label="Before: Alice at 1, Collin at 2 whose home index is 1, Brad at 3. After remove Alice, slot 1 is None. get Collin starts at slot 1, finds None, and stops, so Collin at slot 2 is never reached.">
+      <text x="20" y="66" class="t ptrlab">before</text>
+      <path d="M250,48 C250,26 190,26 190,48" class="ptr old" marker-end="url(#arrOld)"/>
+      <text x="220" y="22" class="t small" text-anchor="middle">home = 33 % 8 = 1</text>
+      <g>
+        <rect x="100" y="50" width="60" height="40" class="nd"/>
+        <rect x="160" y="50" width="60" height="40" class="nd"/><text x="190" y="75" class="t mono" text-anchor="middle">Alice</text>
+        <rect x="220" y="50" width="60" height="40" class="nd"/><text x="250" y="75" class="t mono" text-anchor="middle">Collin</text>
+        <rect x="280" y="50" width="60" height="40" class="nd"/><text x="310" y="75" class="t mono" text-anchor="middle">Brad</text>
+        <rect x="340" y="50" width="60" height="40" class="nd"/>
+        <rect x="400" y="50" width="60" height="40" class="nd"/>
+        <rect x="460" y="50" width="60" height="40" class="nd"/>
+        <rect x="520" y="50" width="60" height="40" class="nd"/>
+        <text x="130" y="104" class="t small" text-anchor="middle">0</text>
+        <text x="190" y="104" class="t small" text-anchor="middle">1</text>
+        <text x="250" y="104" class="t small" text-anchor="middle">2</text>
+        <text x="310" y="104" class="t small" text-anchor="middle">3</text>
+        <text x="370" y="104" class="t small" text-anchor="middle">4</text>
+        <text x="430" y="104" class="t small" text-anchor="middle">5</text>
+        <text x="490" y="104" class="t small" text-anchor="middle">6</text>
+        <text x="550" y="104" class="t small" text-anchor="middle">7</text>
+      </g>
+      <text x="600" y="75" class="t small">get(Collin) works:</text>
+      <text x="600" y="90" class="t small">1 → 2 → found</text>
+
+      <text x="20" y="176" class="t ptrlab">after</text>
+      <text x="20" y="192" class="t small">remove(Alice)</text>
+      <text x="190" y="128" class="t mono" text-anchor="middle">get(Collin) ①</text>
+      <path d="M190,134 L190,156" class="cur" marker-end="url(#arrCur)"/>
+      <g>
+        <rect x="100" y="160" width="60" height="40" class="nd"/>
+        <rect x="160" y="160" width="60" height="40" class="nd newnd"/><text x="190" y="185" class="t nulltxt" text-anchor="middle" font-size="12">None</text>
+        <rect x="220" y="160" width="60" height="40" class="nd"/><text x="250" y="185" class="t mono" text-anchor="middle">Collin</text>
+        <rect x="280" y="160" width="60" height="40" class="nd"/><text x="310" y="185" class="t mono" text-anchor="middle">Brad</text>
+        <rect x="340" y="160" width="60" height="40" class="nd"/>
+        <rect x="400" y="160" width="60" height="40" class="nd"/>
+        <rect x="460" y="160" width="60" height="40" class="nd"/>
+        <rect x="520" y="160" width="60" height="40" class="nd"/>
+        <text x="130" y="214" class="t small" text-anchor="middle">0</text>
+        <text x="190" y="214" class="t small" text-anchor="middle">1</text>
+        <text x="250" y="214" class="t small" text-anchor="middle">2</text>
+        <text x="310" y="214" class="t small" text-anchor="middle">3</text>
+        <text x="370" y="214" class="t small" text-anchor="middle">4</text>
+        <text x="430" y="214" class="t small" text-anchor="middle">5</text>
+        <text x="490" y="214" class="t small" text-anchor="middle">6</text>
+        <text x="550" y="214" class="t small" text-anchor="middle">7</text>
+      </g>
+      <text x="600" y="180" class="t nulltxt" font-size="12">map[1] is None</text>
+      <text x="600" y="195" class="t nulltxt" font-size="12">→ loop stops</text>
+      <text x="600" y="210" class="t nulltxt" font-size="12">→ returns None</text>
+      <text x="100" y="238" class="t small">Collin is still in slot 2, but get() never looks there. The hole lies: "nothing past here".</text>
+    </svg>
+    <figcaption><b>A hole looks like "end of cluster" to get().</b> The lesson leaves this as a known limitation. Real open-addressing tables fix it with a <dfn>tombstone</dfn> (a special "deleted, keep walking" marker) or by re-inserting the pairs that follow the hole. The check script includes a fixed <code>remove</code> that re-puts the rest of the cluster, and it passes.</figcaption>
+  </figure>
+
+<pre><code><span class="c"># the concrete case, video numbers (Alice 25, Brad 27, Collin 33)</span>
+lm.put(<span class="s">"Alice"</span>, <span class="s">"NYC"</span>); lm.put(<span class="s">"Brad"</span>, <span class="s">"Chicago"</span>); lm.put(<span class="s">"Collin"</span>, <span class="s">"Seattle"</span>)
+<span class="c"># slots: {1: Alice, 2: Collin, 3: Brad}</span>
+lm.remove(<span class="s">"Alice"</span>)            <span class="c"># slot 1 becomes None</span>
+lm.map[<span class="s">2</span>].key                 <span class="c"># "Collin"  (still there)</span>
+lm.get(<span class="s">"Collin"</span>)              <span class="c"># None      (BUG: stopped at the hole)</span>
+
+<span class="c"># one fix: after clearing the slot, re-put everything that follows in the cluster</span>
+<span class="k">class</span> HashMapFixed(HashMap):
+    <span class="k">def</span> remove(self, key):
+        index = self.hash(key)
+        <span class="k">while</span> self.map[index] <span class="k">is not None</span>:
+            <span class="k">if</span> self.map[index].key == key:
+                self.map[index] = <span class="k">None</span>
+                self.size -= <span class="s">1</span>
+                index = (index + <span class="s">1</span>) % self.capacity
+                <span class="k">while</span> self.map[index] <span class="k">is not None</span>:      <span class="c"># everyone after the hole...</span>
+                    pair = self.map[index]
+                    self.map[index] = <span class="k">None</span>
+                    self.size -= <span class="s">1</span>
+                    self.put(pair.key, pair.val)          <span class="c"># ...is inserted again, so Collin slides into 1</span>
+                    index = (index + <span class="s">1</span>) % self.capacity
+                <span class="k">return</span>
+            index = (index + <span class="s">1</span>) % self.capacity</code></pre>
+
+  <div class="callout">
+    <span class="lab">A second, quieter bug in remove()</span>
+    <p><code>if not self.get(key): return</code> asks "is the value falsy?", not "is the key absent?". Store <code>put("zero", 0)</code> and <code>remove("zero")</code> does nothing, because <code>get</code> returns <code>0</code>. The check script proves it. Fix: search for the key directly (as the fixed version does), or compare with <code>is None</code>. Related style point: Python compares with <code>None</code> using <code>is</code> / <code>is not</code>, not <code>==</code> / <code>!=</code>; NeetCode's <code>!= None</code> works but a reviewer will flag it.</p>
+  </div>
+
+  <h3>Chaining in code (for comparison)</h3>
+  <p>The lesson describes chaining in words only. Here it is in Python so you can see why it is simpler: every slot is a small list, and remove has no hole problem because deleting from one chain never hides another key.</p>
+
+<pre><code><span class="k">class</span> ChainedHashMap:
+    <span class="k">def</span> __init__(self, capacity=<span class="s">8</span>):
+        self.capacity = capacity
+        self.size = <span class="s">0</span>
+        self.buckets = [[] <span class="k">for</span> _ <span class="k">in</span> range(capacity)]   <span class="c"># each slot: a list of [key, val]</span>
+
+    <span class="k">def</span> hash(self, key):
+        <span class="k">return</span> sum(ord(c) <span class="k">for</span> c <span class="k">in</span> key) % self.capacity
+
+    <span class="k">def</span> get(self, key):
+        <span class="k">for</span> k, v <span class="k">in</span> self.buckets[self.hash(key)]:   <span class="c"># walk one short chain</span>
+            <span class="k">if</span> k == key:
+                <span class="k">return</span> v
+        <span class="k">return None</span>
+
+    <span class="k">def</span> put(self, key, val):
+        bucket = self.buckets[self.hash(key)]
+        <span class="k">for</span> item <span class="k">in</span> bucket:
+            <span class="k">if</span> item[<span class="s">0</span>] == key:
+                item[<span class="s">1</span>] = val                          <span class="c"># update</span>
+                <span class="k">return</span>
+        bucket.append([key, val])                       <span class="c"># append to the chain</span>
+        self.size += <span class="s">1</span>
+
+    <span class="k">def</span> remove(self, key):
+        bucket = self.buckets[self.hash(key)]
+        <span class="k">for</span> i, item <span class="k">in</span> enumerate(bucket):
+            <span class="k">if</span> item[<span class="s">0</span>] == key:
+                bucket.pop(i)
+                self.size -= <span class="s">1</span>
+                <span class="k">return</span></code></pre>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind: Python's dict is not this code</span>
+    <p>CPython's <code>dict</code> uses open addressing with a much better probe sequence, a real hash function (<code>hash()</code>), resizing at two-thirds full, and a separate insertion-order array. <code>hash("Alice")</code> is a large, process-specific number, not 478. The lesson's version is a teaching model; the ideas (hash, mod, resize, rehash, collide, probe) are the same.</p>
+  </div>
+
+  <h3>Time complexity of the implementation</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Operation</th><th>HashMap</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Insert</td><td class="big fast">O(1)</td><td>hash + a few probes; the occasional rehash is O(n) but amortizes to O(1)</td></tr>
+      <tr><td>Remove</td><td class="big fast">O(1)</td><td>hash + a few probes</td></tr>
+      <tr><td>Search</td><td class="big fast">O(1)</td><td>hash + a few probes</td></tr>
+    </tbody>
+  </table></div>
+  <p>All three are O(1) <em>on average</em>, assuming a good hash function and few collisions. The worst case, when everything collides into one chain or one long run of slots, is O(n). <dfn>Amortized</dfn> means "averaged over many operations": one rehash costs O(n), but it happens only every n/2 inserts, so each insert pays O(1) on average, exactly as with dynamic arrays.</p>
+</section>
+
+<!-- ============================ PATTERNS ============================ -->
+<section id="patterns">
+  <h2><span class="num">4</span>Five moves that solve most hashing problems</h2>
+  <p>The lessons teach counting. Interviews use the dict and set in five recurring ways. Each template below is tested in the check script.</p>
+
+  <h3>Move 1: Frequency map</h3>
+  <p><strong>When:</strong> the problem says count, frequency, most common, anagram, or "same letters". Count one thing, then compare or consume the counts.</p>
+
+<pre><code><span class="k">def</span> is_anagram(s, t):                    <span class="c"># LC 242</span>
+    <span class="k">if</span> len(s) != len(t):
+        <span class="k">return False</span>
+    count = {}
+    <span class="k">for</span> ch <span class="k">in</span> s:
+        count[ch] = count.get(ch, <span class="s">0</span>) + <span class="s">1</span>    <span class="c"># build</span>
+    <span class="k">for</span> ch <span class="k">in</span> t:
+        <span class="k">if</span> count.get(ch, <span class="s">0</span>) == <span class="s">0</span>:
+            <span class="k">return False</span>
+        count[ch] -= <span class="s">1</span>                      <span class="c"># consume</span>
+    <span class="k">return True</span>
+
+<span class="c"># one-liners, same idea:</span>
+Counter(s) == Counter(t)
+[x <span class="k">for</span> x, _ <span class="k">in</span> Counter(nums).most_common(k)]    <span class="c"># LC 347 Top K Frequent</span></code></pre>
+
+  <h3>Move 2: Seen-set</h3>
+  <p><strong>When:</strong> duplicates, "unique", "have I met this before", visited cells in a grid. Membership test is O(1), so the whole pass is O(n).</p>
+
+<pre><code><span class="k">def</span> contains_duplicate(nums):            <span class="c"># LC 217</span>
+    seen = set()
+    <span class="k">for</span> x <span class="k">in</span> nums:
+        <span class="k">if</span> x <span class="k">in</span> seen:
+            <span class="k">return True</span>
+        seen.add(x)
+    <span class="k">return False</span>
+<span class="c"># or: len(set(nums)) != len(nums)</span>
+
+<span class="k">def</span> longest_consecutive(nums):           <span class="c"># LC 128: the set answers "is x-1 here?" in O(1)</span>
+    s = set(nums)
+    best = <span class="s">0</span>
+    <span class="k">for</span> x <span class="k">in</span> s:
+        <span class="k">if</span> x - <span class="s">1</span> <span class="k">not in</span> s:                 <span class="c"># x is the START of a run; only starts do work</span>
+            length = <span class="s">1</span>
+            <span class="k">while</span> x + length <span class="k">in</span> s:
+                length += <span class="s">1</span>
+            best = max(best, length)
+    <span class="k">return</span> best                          <span class="c"># [100,4,200,1,3,2] → 4</span></code></pre>
+
+  <h3>Move 3: Complement lookup</h3>
+  <p><strong>When:</strong> "find two things that combine to a target". Instead of checking every pair (O(n²)), remember what you have seen and ask the map for the partner you need. Check <em>before</em> you insert, so an element cannot pair with itself.</p>
+
+<pre><code><span class="k">def</span> two_sum(nums, target):               <span class="c"># LC 1</span>
+    seen = {}                            <span class="c"># value → index</span>
+    <span class="k">for</span> i, x <span class="k">in</span> enumerate(nums):
+        need = target - x
+        <span class="k">if</span> need <span class="k">in</span> seen:                    <span class="c"># partner already seen?</span>
+            <span class="k">return</span> [seen[need], i]
+        seen[x] = i                      <span class="c"># insert AFTER the check</span>
+    <span class="k">return</span> []</code></pre>
+
+  <figure>
+    <svg viewBox="0 0 680 185" role="img" aria-label="Two Sum on 2, 7, 11, 15 with target 9. At i equals 1, x is 7, need is 2, and 2 is already in the seen map at index 0, so the answer is 0 and 1.">
+      <text x="20" y="22" class="t ptrlab">nums</text>
+      <text x="70" y="22" class="t small">target = 9</text>
+      <g>
+        <rect x="20" y="34" width="70" height="40" class="nd"/><text x="55" y="59" class="t" text-anchor="middle">2</text>
+        <rect x="90" y="34" width="70" height="40" class="nd newnd"/><text x="125" y="59" class="t" text-anchor="middle">7</text>
+        <rect x="160" y="34" width="70" height="40" class="nd"/><text x="195" y="59" class="t" text-anchor="middle">11</text>
+        <rect x="230" y="34" width="70" height="40" class="nd"/><text x="265" y="59" class="t" text-anchor="middle">15</text>
+        <text x="55" y="90" class="t small" text-anchor="middle">0</text>
+        <text x="125" y="90" class="t small" text-anchor="middle">1</text>
+        <text x="195" y="90" class="t small" text-anchor="middle">2</text>
+        <text x="265" y="90" class="t small" text-anchor="middle">3</text>
+      </g>
+      <text x="125" y="118" class="t mono" text-anchor="middle">i = 1, x = 7</text>
+      <path d="M125,100 L125,80" class="cur" marker-end="url(#arrCur)"/>
+      <text x="125" y="134" class="t newlab" text-anchor="middle" font-size="11">need = 9 - 7 = 2</text>
+
+      <text x="500" y="22" class="t ptrlab" text-anchor="middle">seen  (value → index)</text>
+      <rect x="440" y="34" width="70" height="40" class="nd"/><text x="475" y="59" class="t mono" text-anchor="middle">2</text>
+      <rect x="510" y="34" width="60" height="40" class="nd"/><text x="540" y="59" class="t mono" text-anchor="middle">0</text>
+      <text x="475" y="90" class="t small" text-anchor="middle">key</text>
+      <text x="540" y="90" class="t small" text-anchor="middle">index</text>
+      <path d="M200,128 C 320,128 380,60 436,56" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="330" y="150" class="t newlab" text-anchor="middle" font-size="11">2 in seen? yes → return [seen[2], i] = [0, 1]</text>
+      <text x="20" y="170" class="t small">turn 0: x=2, need 7, not seen → seen = {2: 0}.  turn 1: x=7, need 2, found. One pass: O(n).</text>
+    </svg>
+    <figcaption><b>The map remembers the past so you never look back.</b> At each element you ask one O(1) question: "did I already see my partner?". Without the map you would rescan the prefix, O(n) per element, O(n²) total.</figcaption>
+  </figure>
+
+  <h3>Move 4: Group by a canonical key</h3>
+  <p><strong>When:</strong> "group the items that are the same under some rule" (anagrams, rotations, same digit-sum). Compute one <dfn>canonical</dfn> key (a standard form that all members share) and use it as the dict key. For anagrams, either the sorted string or a 26-letter count tuple.</p>
+
+<pre><code><span class="k">def</span> group_anagrams(strs):                <span class="c"># LC 49</span>
+    groups = defaultdict(list)
+    <span class="k">for</span> s <span class="k">in</span> strs:
+        key = tuple(sorted(s))           <span class="c"># "eat","tea","ate" → ('a','e','t');  O(k log k) per word</span>
+        groups[key].append(s)
+    <span class="k">return</span> list(groups.values())
+
+<span class="k">def</span> group_anagrams_count(strs):          <span class="c"># same, with an O(k) key</span>
+    groups = defaultdict(list)
+    <span class="k">for</span> s <span class="k">in</span> strs:
+        count = [<span class="s">0</span>] * <span class="s">26</span>
+        <span class="k">for</span> ch <span class="k">in</span> s:
+            count[ord(ch) - ord(<span class="s">"a"</span>)] += <span class="s">1</span>
+        groups[tuple(count)].append(s)   <span class="c"># tuple, because a list cannot be a key</span>
+    <span class="k">return</span> list(groups.values())
+<span class="c"># ["eat","tea","tan","ate","nat","bat"] → [["eat","tea","ate"], ["tan","nat"], ["bat"]]</span></code></pre>
+
+  <h3>Move 5: Prefix sum + hashmap</h3>
+  <p><strong>When:</strong> "how many subarrays sum to k" or "longest subarray with sum k". A subarray sum is the difference of two prefix sums: <code>sum(i..j) = prefix[j] - prefix[i-1]</code>. So at each position ask the map: "how many earlier prefixes equal <code>prefix - k</code>?". Seed the map with <code>{0: 1}</code> for subarrays that start at index 0.</p>
+
+<pre><code><span class="k">def</span> subarray_sum(nums, k):               <span class="c"># LC 560</span>
+    count = <span class="s">0</span>
+    prefix = <span class="s">0</span>
+    seen = {<span class="s">0</span>: <span class="s">1</span>}                        <span class="c"># prefix sum → how many times it appeared</span>
+    <span class="k">for</span> x <span class="k">in</span> nums:
+        prefix += x
+        count += seen.get(prefix - k, <span class="s">0</span>) <span class="c"># each earlier prefix of (prefix - k) closes one subarray</span>
+        seen[prefix] = seen.get(prefix, <span class="s">0</span>) + <span class="s">1</span>
+    <span class="k">return</span> count                         <span class="c"># [1,1,1], k=2 → 2</span></code></pre>
+
+  <div class="tbl"><table>
+    <thead><tr><th>x</th><th>prefix</th><th>prefix - k</th><th>seen.get(prefix - k)</th><th>count</th><th>seen after</th></tr></thead>
+    <tbody>
+      <tr><td>start</td><td>0</td><td>-</td><td>-</td><td>0</td><td>{0: 1}</td></tr>
+      <tr><td>1</td><td>1</td><td>-1</td><td>0</td><td>0</td><td>{0: 1, 1: 1}</td></tr>
+      <tr><td>1</td><td>2</td><td>0</td><td>1</td><td>1</td><td>{0: 1, 1: 1, 2: 1}</td></tr>
+      <tr><td>1</td><td>3</td><td>1</td><td>1</td><td>2</td><td>{0: 1, 1: 1, 2: 1, 3: 1}</td></tr>
+    </tbody>
+  </table></div>
+  <p>Trace of <code>[1, 1, 1]</code>, k = 2. The two subarrays are [1,1] at 0..1 (prefix 2 - prefix 0) and [1,1] at 1..2 (prefix 3 - prefix 1).</p>
+</section>
+
+<!-- ============================ COMPLEXITY ============================ -->
+<section id="complexity">
+  <h2><span class="num">5</span>Big-O summary</h2>
+  <p>The three structures side by side, drawn. Say the HashMap column with the word "average" and the interviewer will trust you.</p>
+
+  <figure>
+    <svg viewBox="0 0 800 230" role="img" aria-label="Three structures holding keys 1, 3, 5, 8, 9. A sorted array in order; a balanced BST with 5 at the root; a hash table with the keys scattered across slots. Each is labeled with its Big-O.">
+      <!-- ARRAY -->
+      <text x="20" y="26" class="t ptrlab">SORTED ARRAY</text>
+      <g>
+        <rect x="20" y="50" width="38" height="36" class="nd"/><text x="39" y="73" class="t" text-anchor="middle">1</text>
+        <rect x="58" y="50" width="38" height="36" class="nd"/><text x="77" y="73" class="t" text-anchor="middle">3</text>
+        <rect x="96" y="50" width="38" height="36" class="nd"/><text x="115" y="73" class="t" text-anchor="middle">5</text>
+        <rect x="134" y="50" width="38" height="36" class="nd"/><text x="153" y="73" class="t" text-anchor="middle">8</text>
+        <rect x="172" y="50" width="38" height="36" class="nd"/><text x="191" y="73" class="t" text-anchor="middle">9</text>
+      </g>
+      <text x="20" y="128" class="t small">insert 4: shift 5, 8, 9 → O(n)</text>
+      <text x="20" y="146" class="t small">remove: shift back → O(n)</text>
+      <text x="20" y="164" class="t small">search: binary search O(log n)</text>
+      <text x="20" y="182" class="t small">(unsorted: O(n))</text>
+      <text x="20" y="206" class="t small">in order: free</text>
+
+      <!-- TREEMAP -->
+      <text x="250" y="26" class="t ptrlab">TREEMAP (BST)</text>
+      <line x1="345" y1="52" x2="305" y2="96" class="ptr"/>
+      <line x1="345" y1="52" x2="385" y2="96" class="ptr"/>
+      <line x1="305" y1="96" x2="285" y2="140" class="ptr"/>
+      <line x1="385" y1="96" x2="405" y2="140" class="ptr"/>
+      <circle cx="345" cy="52" r="16" class="nd"/><text x="345" y="57" class="t" text-anchor="middle">5</text>
+      <circle cx="305" cy="96" r="16" class="nd"/><text x="305" y="101" class="t" text-anchor="middle">3</text>
+      <circle cx="385" cy="96" r="16" class="nd"/><text x="385" y="101" class="t" text-anchor="middle">8</text>
+      <circle cx="285" cy="140" r="16" class="nd"/><text x="285" y="145" class="t" text-anchor="middle">1</text>
+      <circle cx="405" cy="140" r="16" class="nd"/><text x="405" y="145" class="t" text-anchor="middle">9</text>
+      <text x="250" y="182" class="t small">insert / remove / search: O(log n)</text>
+      <text x="250" y="206" class="t small">inorder traversal: O(n), sorted</text>
+
+      <!-- HASHMAP -->
+      <text x="460" y="26" class="t ptrlab">HASHMAP</text>
+      <g>
+        <rect x="460" y="50" width="28" height="36" class="nd"/>
+        <rect x="488" y="50" width="28" height="36" class="nd"/><text x="502" y="73" class="t" text-anchor="middle">1</text>
+        <rect x="516" y="50" width="28" height="36" class="nd"/><text x="530" y="73" class="t" text-anchor="middle">8</text>
+        <rect x="544" y="50" width="28" height="36" class="nd"/><text x="558" y="73" class="t" text-anchor="middle">3</text>
+        <rect x="572" y="50" width="28" height="36" class="nd"/><text x="586" y="73" class="t" text-anchor="middle">9</text>
+        <rect x="600" y="50" width="28" height="36" class="nd"/><text x="614" y="73" class="t" text-anchor="middle">5</text>
+        <rect x="628" y="50" width="28" height="36" class="nd"/>
+        <text x="474" y="100" class="t small" text-anchor="middle">0</text>
+        <text x="502" y="100" class="t small" text-anchor="middle">1</text>
+        <text x="530" y="100" class="t small" text-anchor="middle">2</text>
+        <text x="558" y="100" class="t small" text-anchor="middle">3</text>
+        <text x="586" y="100" class="t small" text-anchor="middle">4</text>
+        <text x="614" y="100" class="t small" text-anchor="middle">5</text>
+        <text x="642" y="100" class="t small" text-anchor="middle">6</text>
+      </g>
+      <text x="460" y="128" class="t small">key % 7: 1→1, 3→3, 5→5,</text>
+      <text x="460" y="146" class="t small">8→1 taken → 2, 9→2 taken → 4</text>
+      <text x="460" y="182" class="t small">insert / remove / search: O(1) avg</text>
+      <text x="460" y="206" class="t small">in order: sort first, O(n log n)</text>
+    </svg>
+    <figcaption><b>Speed versus order.</b> The array and the tree keep the keys sorted; the hash table scatters them by <code>key % capacity</code> (here capacity 7, with linear probing). That scattering is exactly what makes lookup O(1), and exactly why there is no cheap way to walk the keys in order.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Operation</th><th>HashMap / set</th><th>TreeMap</th><th>Sorted array</th></tr></thead>
+    <tbody>
+      <tr><td>Insert</td><td class="big fast">O(1)*</td><td>O(log n)</td><td class="big slow">O(n)</td></tr>
+      <tr><td>Remove</td><td class="big fast">O(1)*</td><td>O(log n)</td><td class="big slow">O(n)</td></tr>
+      <tr><td>Search / <code>key in d</code></td><td class="big fast">O(1)*</td><td>O(log n)</td><td>O(log n)</td></tr>
+      <tr><td>Iterate in sorted order</td><td class="big slow">O(n log n)</td><td class="big fast">O(n)</td><td class="big fast">O(n)</td></tr>
+      <tr><td>Count frequencies of n items</td><td class="big fast">O(n)</td><td class="big slow">O(n log n)</td><td>-</td></tr>
+      <tr><td>Space</td><td>O(unique keys)</td><td>O(unique keys)</td><td>O(n)</td></tr>
+      <tr><td>Rehash (one resize)</td><td class="big slow">O(n)</td><td>-</td><td>-</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>The asterisk:</strong> O(1) is the average with a good hash function and few collisions; the worst case is O(n). Insert is also <em>amortized</em>: one insert in every n/2 triggers an O(n) rehash, which averages out to O(1) per insert. Interviewers accept "O(1)" for hash map operations; saying "O(1) average, O(n) worst" shows you understand why.</p>
+</section>
+
+<!-- ============================ MISTAKES ============================ -->
+<section id="mistakes">
+  <h2><span class="num">6</span>Mistakes to watch for</h2>
+  <div class="mistake">
+    <div>
+      <div class="bad">Using a list as a key</div>
+      <p><code>d[[r, c]]</code> or <code>d[sorted(s)]</code> raises <code>TypeError: unhashable type: 'list'</code>. Keys must be immutable. Convert: <code>d[(r, c)]</code>, <code>d[tuple(sorted(s))]</code>, <code>d["".join(sorted(s))]</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Expecting the dict to be sorted</div>
+      <p>A Python dict iterates in insertion order, never in sorted order. If the answer needs "smallest key first", write <code>for k in sorted(d)</code> and remember to count the O(n log n).</p>
+    </div>
+    <div>
+      <div class="bad">KeyError on a key you have not inserted yet</div>
+      <p><code>count[x] += 1</code> crashes the first time it sees <code>x</code>. Use <code>count[x] = count.get(x, 0) + 1</code>, or <code>defaultdict(int)</code>, or <code>Counter</code>. Same for lists: <code>defaultdict(list)</code> instead of checking <code>if k not in groups</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Changing a dict while looping over it</div>
+      <p><code>for k in d: del d[k]</code> raises <code>RuntimeError: dictionary changed size during iteration</code>. Loop over a copy: <code>for k in list(d)</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Two Sum: inserting before checking</div>
+      <p>If you write <code>seen[x] = i</code> before <code>if need in seen</code>, then for <code>[3, 2, 4]</code> with target 6 the element 3 pairs with itself and you return <code>[0, 0]</code>. Check first, insert after.</p>
+    </div>
+    <div>
+      <div class="bad">Saying "O(1) worst case"</div>
+      <p>Hash map operations are O(1) on average. The worst case, when many keys collide, is O(n). Say "average" and mention collisions; that is the answer interviewers want.</p>
+    </div>
+    <div>
+      <div class="bad">Removing from an open-addressing table by writing None</div>
+      <p>The lesson's own bug. A <code>None</code> in the middle of a run of probes tells <code>get</code> "nothing past here", so keys placed after it become unreachable. Use a tombstone marker, re-insert the rest of the cluster, or use chaining.</p>
+    </div>
+    <div>
+      <div class="bad">Testing the value when you meant the key</div>
+      <p><code>if not self.get(key)</code> treats value <code>0</code>, <code>""</code> or <code>None</code> as "key absent". Use <code>if key not in d</code> for dicts, or search for the key directly in your own implementation. And compare with <code>None</code> using <code>is</code>, not <code>==</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Resizing only when the array is full</div>
+      <p>An almost-full open-addressing table probes long runs of slots and every operation drifts toward O(n). Resize at half full (NeetCode) or two-thirds (CPython) so collisions stay rare, and remember that resizing means rehashing every key, not copying.</p>
+    </div>
+  </div>
+
+  <div class="cheat">
+    <h3>Interview one-liners</h3>
+    <ul>
+      <li>"The problem says unique / count / frequency, so I will use a hash map. Insert, remove and lookup are O(1) average."</li>
+      <li>"A hash map turns the key into an array index with a hash function: hash the key, then mod the capacity."</li>
+      <li>"Collisions are handled by chaining, a linked list per slot, or open addressing, probing the next free slot. Average stays O(1) as long as the table is kept roomy by resizing."</li>
+      <li>"Resizing doubles the array and rehashes every key, because the index depends on the capacity. That is O(n) once, amortized O(1) per insert."</li>
+      <li>"A hash map has no order. If I need sorted keys I sort them, O(n log n), or I use a tree map, O(log n) per operation but O(n) in-order traversal."</li>
+      <li>"Counting n items costs O(n) time and O(unique keys) space."</li>
+      <li>"In Python: <code>dict</code>, <code>set</code>, <code>Counter</code>, <code>defaultdict</code>. Keys must be immutable: strings, ints, tuples, not lists."</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================ PRACTICE ============================ -->
+<section id="practice">
+  <h2><span class="num">7</span>Practice, in this order</h2>
+  <p>Do these on LeetCode with the notes closed. For each one, say the move out loud before you type ("seen-set", "complement lookup") and then write it.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Problem</th><th>Move it trains</th><th>Level</th></tr></thead>
+    <tbody>
+      <tr><td>217</td><td>Contains Duplicate</td><td>seen-set</td><td>Easy</td></tr>
+      <tr><td>242</td><td>Valid Anagram</td><td>frequency map, build then consume</td><td>Easy</td></tr>
+      <tr><td>1</td><td>Two Sum</td><td>complement lookup, check before insert</td><td>Easy</td></tr>
+      <tr><td>383</td><td>Ransom Note</td><td>frequency map with Counter subtraction</td><td>Easy</td></tr>
+      <tr><td>387</td><td>First Unique Character in a String</td><td>count, then second pass for count == 1</td><td>Easy</td></tr>
+      <tr><td>219</td><td>Contains Duplicate II</td><td>value → last index map</td><td>Easy</td></tr>
+      <tr><td>705</td><td>Design HashSet</td><td>build it: hash, buckets, chaining</td><td>Easy</td></tr>
+      <tr><td>706</td><td>Design HashMap</td><td>build it: Pair, put / get / remove</td><td>Easy</td></tr>
+      <tr><td>49</td><td>Group Anagrams</td><td>canonical key (sorted tuple or 26-count)</td><td>Medium</td></tr>
+      <tr><td>347</td><td>Top K Frequent Elements</td><td>Counter + most_common (or bucket sort by count)</td><td>Medium</td></tr>
+      <tr><td>128</td><td>Longest Consecutive Sequence</td><td>set + "is x-1 here?" start check</td><td>Medium</td></tr>
+      <tr><td>560</td><td>Subarray Sum Equals K</td><td>prefix sum + hashmap, seed {0: 1}</td><td>Medium</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Your next step today:</strong> LeetCode 1, Two Sum. Write it from memory with the check-then-insert order, run it on <code>[3, 2, 4]</code>, target 6, and confirm you get <code>[1, 2]</code>, not <code>[0, 0]</code>.</p>
+</section>
+
+<!-- ============================ QUIZ ============================ -->
+<section id="quiz">
+  <h2><span class="num">8</span>Self-check</h2>
+  <p>Answer out loud before opening. If you cannot answer in one breath, reread that section.</p>
+
+  <details><summary><span class="q">Q1</span>Which three words in a problem statement should make you reach for a hash map or hash set?</summary><div><p>"Unique", "count", "frequency". Also anything like "have I seen this before" or "how many times".</p></div></details>
+
+  <details><summary><span class="q">Q2</span>What is the difference between a hash set and a hash map? Name the Python type for each.</summary><div><p>A set stores keys only and answers "is it here?" (<code>set</code>). A map stores key-value pairs and answers "what value goes with this key?" (<code>dict</code>). Neither allows duplicate keys.</p></div></details>
+
+  <details><summary><span class="q">Q3</span>Why can a tuple be a dict key but a list cannot?</summary><div><p>Keys must be hashable, which requires them to be immutable. A tuple cannot change after creation, so its hash stays valid. A list can be modified after insertion, so its stored hash would become wrong; Python refuses with <code>TypeError: unhashable type: 'list'</code>.</p></div></details>
+
+  <details><summary><span class="q">Q4</span>Is a Python dict sorted? How do you iterate its keys in sorted order, and what does that cost?</summary><div><p>No. Since 3.7 it keeps insertion order, which is not sorted order. Use <code>sorted(d)</code>, which costs O(n log n). A tree map gives sorted order in O(n) with an inorder traversal; that is the one place it beats a hash map.</p></div></details>
+
+  <details><summary><span class="q">Q5</span>Walk "Alice" through NeetCode's hash function with capacity 8. What index comes out?</summary><div><p>ASCII codes 65 + 108 + 105 + 99 + 101 = 478. Then 478 % 8 = 6. (In the video NeetCode makes up the sum 25, giving 25 % 8 = 1.)</p></div></details>
+
+  <details><summary><span class="q">Q6</span>When does the lesson's map resize, and why not wait until it is full?</summary><div><p>Inside <code>put</code>, right after an insert makes <code>size &gt;= capacity // 2</code>: at half full, not when the next pair arrives. Waiting until full would make collisions (and long probe runs) very common; keeping the table at most half full keeps operations O(1) on average.</p></div></details>
+
+  <details><summary><span class="q">Q7</span>What is rehashing and why is it unavoidable after a resize?</summary><div><p>Re-inserting every existing pair into the new array by running the hash function again. It is unavoidable because the index is <code>sum % capacity</code>; when capacity changes from 4 to 8 the index of most keys changes too (Alice with sum 478: 2 → 6).</p></div></details>
+
+  <details><summary><span class="q">Q8</span>Name the two collision strategies and say which one NeetCode recommends by default.</summary><div><p>Chaining (a linked list per slot) and open addressing (probe the next free slot). NeetCode recommends chaining unless you have a specific reason; open addressing is more efficient with few collisions but caps the entries at the capacity and is harder to get right, as the removal bug shows.</p></div></details>
+
+  <details><summary><span class="q">Q9</span>Trace it: using the video's sums (Alice 25, Brad 27, Collin 33), give capacity, size and the occupied slots after each of the three puts.</summary><div><p>put(Alice): 25 % 2 = 1, size 1 = half → resize to 4, re-put 25 % 4 = 1. State: cap 4, size 1, {1: Alice}. put(Brad): 27 % 4 = 3, size 2 = half → resize to 8: Alice 25 % 8 = 1, Brad 27 % 8 = 3. State: cap 8, size 2, {1: Alice, 3: Brad}. put(Collin): 33 % 8 = 1, taken → 2 is free. State: cap 8, size 3, {1: Alice, 2: Collin, 3: Brad}.</p></div></details>
+
+  <details><summary><span class="q">Q10</span>Trace it: from the state in Q9, call <code>remove("Alice")</code> then <code>get("Collin")</code>. What is returned and why?</summary><div><p><code>None</code>. remove sets slot 1 to <code>None</code>. get("Collin") hashes to 1, sees <code>None</code>, and the <code>while self.map[index] != None</code> loop ends immediately, so it never reaches slot 2 where Collin still is. The hole is mistaken for "end of the cluster". Fix with a tombstone or by re-inserting the pairs after the hole.</p></div></details>
+
+  <details><summary><span class="q">Q11</span>Counting the frequency of n names: time and space with a hash map, and time with a tree map?</summary><div><p>Hash map: O(n) time (n operations at O(1) each), O(n) space, more precisely proportional to the number of unique keys. Tree map: O(n log n) time because each insert is O(log n).</p></div></details>
+
+  <details><summary><span class="q">Q12</span>Trace it: <code>two_sum([3, 2, 4], 6)</code>. What is <code>seen</code> after each turn, and what is returned?</summary><div><p>Turn 0: x = 3, need = 3, not in seen (checked before inserting), seen = {3: 0}. Turn 1: x = 2, need = 4, not in seen, seen = {3: 0, 2: 1}. Turn 2: x = 4, need = 2, in seen at index 1 → return [1, 2]. If you had inserted before checking, turn 0 would have returned [0, 0].</p></div></details>
+
+  <details><summary><span class="q">Q13</span>Why does a prime capacity reduce collisions?</summary><div><p>If keys share a pattern (all multiples of 4, say) and the capacity shares a factor with that pattern (8), the keys pile onto a few slots: 4, 8, 12, 16 → 4, 0, 4, 0. A prime like 7 shares no factor with anything, so 4, 8, 12, 16 → 4, 1, 5, 2, all different.</p></div></details>
+</section>
+
+<nav class="pager" aria-label="Previous and next topic">
+  <a class="prev" href="08-heaps.html"><small>Previous</small>Heap / Priority Queue</a>
+  <a class="next" href="10-graphs.html"><small>Next</small>Graphs</a>
+</nav>
+
+<footer>
+  Source: NeetCode "Algorithms and Data Structures for Beginners", lessons 26 (Hash Usage) and 27 (Hash Implementation). All Python in these notes was run and tested. Orange in every diagram marks what changed.
+</footer>
+</div>
+</body>
+</html>

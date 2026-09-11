@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TOPIC TITLE}} · DSA Field Notes</title>
+<meta name="description" content="{{one sentence: what this page teaches}}">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+<!-- Shared SVG arrowheads. Every diagram references these ids: #arr (teal, normal pointer), #arrNew (orange, the pointer that changed), #arrOld (grey dashed, old pointer), #arrCur (ink, a cursor/index marker). -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arr"/></marker>
+    <marker id="arrNew" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrNew"/></marker>
+    <marker id="arrOld" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrOld"/></marker>
+    <marker id="arrCur" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrCur"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="site-head">
+  <a class="brand" href="../index.html">DSA <span>Field Notes</span></a>
+  <div class="crumbs"><a href="../index.html">Course map</a> <span>/</span> <span>{{NN}} {{TOPIC TITLE}}</span></div>
+</header>
+
+<header class="top">
+  <div class="eyebrow">NeetCode · DSA for Beginners · Lessons {{X-Y}}</div>
+  <h1>{{TOPIC TITLE}} Field Notes</h1>
+  <p class="lede">{{Two or three short sentences. What the reader will be able to do after this page.}}</p>
+</header>
+
+<nav class="sections" aria-label="Sections">
+  <a href="#why">Why</a>
+  <!-- one link per numbered section below, e.g. -->
+  <a href="#s1">{{Short}}</a>
+  <a href="#s2">{{Short}}</a>
+  <a href="#patterns">Patterns</a>
+  <a href="#complexity">Big-O</a>
+  <a href="#mistakes">Mistakes</a>
+  <a href="#practice">Practice</a>
+  <a href="#quiz">Self-check</a>
+</nav>
+
+<!-- ============================ 0 WHY ============================ -->
+<section id="why">
+  <h2><span class="num">0</span>{{Why this exists / the one-line idea}}</h2>
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>{{Real-world analogy in 2-4 plain sentences.}}</p>
+  </div>
+  <p>{{Then the technical framing.}}</p>
+  <figure>
+    <svg viewBox="0 0 640 200" role="img" aria-label="{{what the picture shows}}">
+      <!-- diagram -->
+    </svg>
+    <figcaption><b>{{Bold claim.}}</b> {{One or two sentences explaining what to notice.}}</figcaption>
+  </figure>
+</section>
+
+<!-- ============================ 1..N  one section per lesson or per big idea ============================ -->
+<section id="s1">
+  <h2><span class="num">1</span>{{Lesson / idea title}}</h2>
+  <h3>{{Sub-idea}}</h3>
+  <p>...</p>
+<pre><code><span class="k">def</span> example(arr):
+    <span class="k">return</span> arr[<span class="s">0</span>]   <span class="c"># comment</span></code></pre>
+  <figure> ... </figure>
+  <div class="tbl"><table> ... trace table ... </table></div>
+  <div class="callout keep"><span class="lab">Keep in mind</span><p>...</p></div>
+  <div class="callout"><span class="lab">{{Warning label}}</span><p>...</p></div>
+</section>
+
+<!-- ============================ PATTERNS ============================ -->
+<section id="patterns">
+  <h2><span class="num">N</span>Moves that solve most {{topic}} problems</h2>
+  <!-- 2-4 interview patterns with template code + one diagram -->
+</section>
+
+<!-- ============================ COMPLEXITY ============================ -->
+<section id="complexity">
+  <h2><span class="num">N</span>Big-O summary</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Operation</th><th>...</th></tr></thead>
+    <tbody><tr><td>...</td><td class="big fast">O(1)</td><td class="big slow">O(n)</td></tr></tbody>
+  </table></div>
+</section>
+
+<!-- ============================ MISTAKES ============================ -->
+<section id="mistakes">
+  <h2><span class="num">N</span>Mistakes to watch for</h2>
+  <div class="mistake">
+    <div><div class="bad">{{Mistake name}}</div><p>{{What goes wrong and the fix.}}</p></div>
+  </div>
+  <div class="cheat">
+    <h3>Interview one-liners</h3>
+    <ul><li>"..."</li></ul>
+  </div>
+</section>
+
+<!-- ============================ PRACTICE ============================ -->
+<section id="practice">
+  <h2><span class="num">N</span>Practice, in this order</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Problem</th><th>Move it trains</th><th>Level</th></tr></thead>
+    <tbody><tr><td>{{LC number}}</td><td>{{name}}</td><td>{{pattern}}</td><td>Easy</td></tr></tbody>
+  </table></div>
+  <p><strong>Your next step today:</strong> {{one problem}}.</p>
+</section>
+
+<!-- ============================ QUIZ ============================ -->
+<section id="quiz">
+  <h2><span class="num">N</span>Self-check</h2>
+  <p>Answer out loud before opening. If you cannot answer in one breath, reread that section.</p>
+  <details><summary><span class="q">Q1</span>{{question}}</summary><div><p>{{answer}}</p></div></details>
+</section>
+
+<nav class="pager" aria-label="Previous and next topic">
+  <a class="prev" href="{{prev file}}"><small>Previous</small>{{prev title}}</a>
+  <a class="next" href="{{next file}}"><small>Next</small>{{next title}}</a>
+</nav>
+
+<footer>
+  Source: NeetCode "Algorithms and Data Structures for Beginners", lessons {{X-Y}}. All Python on this page was run and tested. Orange in every diagram marks what changed.
+</footer>
+</div>
+</body>
+</html>

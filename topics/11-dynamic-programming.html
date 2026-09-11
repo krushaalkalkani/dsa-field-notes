@@ -1,0 +1,961 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dynamic Programming · DSA Field Notes</title>
+<meta name="description" content="1-D and 2-D dynamic programming - fibonacci and unique paths, brute force to memoization to bottom-up, call-tree diagrams, tested Python, Big-O, mistakes, practice, self-check.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arr"/></marker>
+    <marker id="arrNew" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrNew"/></marker>
+    <marker id="arrOld" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrOld"/></marker>
+    <marker id="arrCur" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrCur"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="site-head">
+  <a class="brand" href="../index.html">DSA <span>Field Notes</span></a>
+  <div class="crumbs"><a href="../index.html">Course map</a> <span>/</span> <span>11 Dynamic Programming</span></div>
+</header>
+<header class="top">
+  <div class="eyebrow">NeetCode · DSA for Beginners · Lessons 32-33</div>
+  <h1>Dynamic Programming Field Notes</h1>
+  <p class="lede">Recursion that remembers. Fibonacci in 1-D, unique paths in 2-D, and the same four moves both times: brute force, find the repeats, add a cache, flip it bottom-up. Every diagram shows which call was saved.</p>
+</header>
+
+<nav class="sections" aria-label="Sections">
+  <a href="#why">Why</a>
+  <a href="#topdown">Top-down</a>
+  <a href="#bottomup">Bottom-up</a>
+  <a href="#twodim">2-D DP</a>
+  <a href="#recipe">Recipe</a>
+  <a href="#patterns">Patterns</a>
+  <a href="#complexity">Big-O</a>
+  <a href="#mistakes">Mistakes</a>
+  <a href="#practice">Practice</a>
+  <a href="#quiz">Self-check</a>
+</nav>
+
+<!-- ============================ WHY ============================ -->
+<section id="why">
+  <h2><span class="num">0</span>Why dynamic programming exists</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>A homework set where the same small sub-question shows up inside ten different problems. One student re-solves it ten times. Another solves it once, writes the answer in the margin of the notebook, and just looks it up the other nine times. Same answers, a tenth of the work. The notebook is the <strong>cache</strong>. Dynamic programming is "recursion with a notebook".</p>
+  </div>
+
+  <p>NeetCode says it plainly: DP is considered one of the hardest topics in CS, mostly because people overcomplicate it. Some DP <em>problems</em> are very hard, but the <em>concept</em> is not. <dfn>Dynamic programming</dfn> (DP) is an optimized version of recursion. You take a big problem, break it into smaller problems, and make sure each small problem is solved only once. That is usually better in time, and often in space, than plain recursion.</p>
+
+  <p>Start with the recursion you already know. Fibonacci, F(n) = F(n-1) + F(n-2):</p>
+
+<pre><code><span class="k">def</span> bruteForce(n):
+    <span class="k">if</span> n &lt;= <span class="s">1</span>:
+        <span class="k">return</span> n
+    <span class="k">return</span> bruteForce(n - <span class="s">1</span>) + bruteForce(n - <span class="s">2</span>)</code></pre>
+
+  <p>Every call makes two more calls, so each level of the call tree doubles. Time is O(2<sup>n</sup>). Look at the tree for <code>bruteForce(5)</code> and count how often the same subtree appears.</p>
+
+  <figure>
+    <svg viewBox="-20 0 760 330" role="img" aria-label="Call tree of bruteForce(5). F(5) calls F(4) and F(3). The F(2) subtree appears three times, highlighted in orange, and the F(3) subtree appears twice, outlined with dashed boxes. 15 calls in total.">
+      <!-- dashed boxes around the two F(3) subtrees -->
+      <rect x="406" y="66" width="198" height="164" rx="8" class="mem"/>
+      <text x="412" y="62" class="t small">F(3) subtree, again</text>
+      <rect x="6" y="124" width="178" height="164" rx="8" class="mem"/>
+      <text x="10" y="120" class="t small">F(3) subtree, again</text>
+
+      <!-- edges level 0 -> 1 -->
+      <line x1="350" y1="50" x2="200" y2="72" class="ptr"/>
+      <line x1="350" y1="50" x2="520" y2="72" class="ptr"/>
+      <!-- edges level 1 -> 2 -->
+      <line x1="200" y1="108" x2="110" y2="130" class="ptr"/>
+      <line x1="200" y1="108" x2="290" y2="130" class="ptr"/>
+      <line x1="520" y1="108" x2="460" y2="130" class="ptr"/>
+      <line x1="520" y1="108" x2="580" y2="130" class="ptr"/>
+      <!-- edges level 2 -> 3 -->
+      <line x1="110" y1="166" x2="60" y2="188" class="ptr"/>
+      <line x1="110" y1="166" x2="160" y2="188" class="ptr"/>
+      <line x1="290" y1="166" x2="260" y2="188" class="ptr newp"/>
+      <line x1="290" y1="166" x2="320" y2="188" class="ptr newp"/>
+      <line x1="460" y1="166" x2="430" y2="188" class="ptr newp"/>
+      <line x1="460" y1="166" x2="490" y2="188" class="ptr newp"/>
+      <!-- edges level 3 -> 4 -->
+      <line x1="60" y1="224" x2="30" y2="246" class="ptr newp"/>
+      <line x1="60" y1="224" x2="90" y2="246" class="ptr newp"/>
+
+      <!-- level 0 -->
+      <circle cx="350" cy="32" r="18" class="nd"/><text x="350" y="36" class="t mono" text-anchor="middle">F(5)</text>
+      <!-- level 1 -->
+      <circle cx="200" cy="90" r="18" class="nd"/><text x="200" y="94" class="t mono" text-anchor="middle">F(4)</text>
+      <circle cx="520" cy="90" r="18" class="nd"/><text x="520" y="94" class="t mono" text-anchor="middle">F(3)</text>
+      <!-- level 2 -->
+      <circle cx="110" cy="148" r="18" class="nd"/><text x="110" y="152" class="t mono" text-anchor="middle">F(3)</text>
+      <circle cx="290" cy="148" r="18" class="nd newnd"/><text x="290" y="152" class="t mono" text-anchor="middle">F(2)</text>
+      <circle cx="460" cy="148" r="18" class="nd newnd"/><text x="460" y="152" class="t mono" text-anchor="middle">F(2)</text>
+      <circle cx="580" cy="148" r="18" class="nd"/><text x="580" y="152" class="t mono" text-anchor="middle">F(1)</text>
+      <!-- level 3 -->
+      <circle cx="60" cy="206" r="18" class="nd newnd"/><text x="60" y="210" class="t mono" text-anchor="middle">F(2)</text>
+      <circle cx="160" cy="206" r="18" class="nd"/><text x="160" y="210" class="t mono" text-anchor="middle">F(1)</text>
+      <circle cx="260" cy="206" r="18" class="nd newnd"/><text x="260" y="210" class="t mono" text-anchor="middle">F(1)</text>
+      <circle cx="320" cy="206" r="18" class="nd newnd"/><text x="320" y="210" class="t mono" text-anchor="middle">F(0)</text>
+      <circle cx="430" cy="206" r="18" class="nd newnd"/><text x="430" y="210" class="t mono" text-anchor="middle">F(1)</text>
+      <circle cx="490" cy="206" r="18" class="nd newnd"/><text x="490" y="210" class="t mono" text-anchor="middle">F(0)</text>
+      <!-- level 4 -->
+      <circle cx="30" cy="264" r="18" class="nd newnd"/><text x="30" y="268" class="t mono" text-anchor="middle">F(1)</text>
+      <circle cx="90" cy="264" r="18" class="nd newnd"/><text x="90" y="268" class="t mono" text-anchor="middle">F(0)</text>
+
+      <text x="350" y="306" class="t newlab" text-anchor="middle">F(2) is computed 3 times (orange). F(3) is computed 2 times (dashed).</text>
+      <text x="350" y="322" class="t small" text-anchor="middle">15 calls for n = 5. Each level doubles → O(2^n). For n = 100 the tree has more calls than you can wait for.</text>
+    </svg>
+    <figcaption><b>The waste is the repeated subtrees.</b> F(2) is calculated three times, and each time its whole subtree is rebuilt. For n = 5 that is a few extra calls. For fibonacci of 100 the repeated work grows exponentially and the function never finishes. DP removes exactly this repetition.</figcaption>
+  </figure>
+
+  <p>Two words you need for the rest of the page. A <dfn>subproblem</dfn> is a smaller copy of the same question: F(3) is a subproblem of F(5). Subproblems are <dfn>overlapping</dfn> when the same one is asked more than once. Overlapping subproblems are the signal that DP will help.</p>
+</section>
+
+<!-- ============================ TOP-DOWN ============================ -->
+<section id="topdown">
+  <h2><span class="num">1</span>1-D DP, top-down: recursion plus a cache</h2>
+
+  <h3>Memoization is a fancy word for caching</h3>
+  <p><dfn>Memoization</dfn> means: once a computation is done, store the result in a cache (a hash map or an array). If the same computation is asked again, retrieve it from the cache instead of recomputing. For fibonacci the hash map key is the index <code>n</code> and the value is F(n). A hash map lookup is O(1).</p>
+
+  <p>Recursion with memoization is called <dfn>top-down</dfn> DP, because you still start at the root of the tree (F(5)) and recurse down to the base cases. Only three lines change compared with the brute force:</p>
+
+<pre><code><span class="k">def</span> memoization(n, cache):
+    <span class="k">if</span> n &lt;= <span class="s">1</span>:
+        <span class="k">return</span> n
+    <span class="k">if</span> n <span class="k">in</span> cache:               <span class="c"># ② new base case: already solved? return it</span>
+        <span class="k">return</span> cache[n]
+
+    cache[n] = memoization(n - <span class="s">1</span>, cache) + memoization(n - <span class="s">2</span>, cache)
+    <span class="k">return</span> cache[n]               <span class="c"># ③ store, then return</span>
+
+memoization(<span class="s">5</span>, {})                <span class="c"># ① the cache is passed in as a parameter → 5</span></code></pre>
+
+  <ol>
+    <li><strong>Add a cache parameter</strong> (a hash map).</li>
+    <li><strong>Add a base case:</strong> if <code>n</code> is in the cache, return the cached value instead of recursing.</li>
+    <li><strong>After computing F(n), store it</strong> in the cache before returning.</li>
+  </ol>
+
+  <figure>
+    <svg viewBox="0 0 700 305" role="img" aria-label="The same call tree with memoization. F(5) calls F(4), which calls F(3), which calls F(2), which calls F(1) and F(0). The second F(2) and the second F(3) are replaced by cache-hit leaves. The cache on the right fills in the order F(2), F(3), F(4), F(5).">
+      <!-- edges -->
+      <line x1="300" y1="50" x2="190" y2="72" class="ptr"/>
+      <line x1="300" y1="50" x2="410" y2="76" class="ptr newp" marker-end="url(#arrNew)"/>
+      <line x1="190" y1="108" x2="110" y2="130" class="ptr"/>
+      <line x1="190" y1="108" x2="270" y2="134" class="ptr newp" marker-end="url(#arrNew)"/>
+      <line x1="110" y1="166" x2="60" y2="188" class="ptr"/>
+      <line x1="110" y1="166" x2="160" y2="188" class="ptr"/>
+      <line x1="60" y1="224" x2="30" y2="246" class="ptr"/>
+      <line x1="60" y1="224" x2="90" y2="246" class="ptr"/>
+
+      <!-- real computations -->
+      <circle cx="300" cy="32" r="18" class="nd"/><text x="300" y="36" class="t mono" text-anchor="middle">F(5)</text>
+      <text x="326" y="28" class="t newlab" font-size="11">④</text>
+      <circle cx="190" cy="90" r="18" class="nd"/><text x="190" y="94" class="t mono" text-anchor="middle">F(4)</text>
+      <text x="164" y="86" class="t newlab" font-size="11" text-anchor="end">③</text>
+      <circle cx="110" cy="148" r="18" class="nd"/><text x="110" y="152" class="t mono" text-anchor="middle">F(3)</text>
+      <text x="84" y="144" class="t newlab" font-size="11" text-anchor="end">②</text>
+      <circle cx="60" cy="206" r="18" class="nd"/><text x="60" y="210" class="t mono" text-anchor="middle">F(2)</text>
+      <text x="34" y="202" class="t newlab" font-size="11" text-anchor="end">①</text>
+      <circle cx="160" cy="206" r="18" class="nd"/><text x="160" y="210" class="t mono" text-anchor="middle">F(1)</text>
+      <text x="160" y="238" class="t small" text-anchor="middle">base</text>
+      <circle cx="30" cy="264" r="18" class="nd"/><text x="30" y="268" class="t mono" text-anchor="middle">F(1)</text>
+      <text x="30" y="296" class="t small" text-anchor="middle">base</text>
+      <circle cx="90" cy="264" r="18" class="nd"/><text x="90" y="268" class="t mono" text-anchor="middle">F(0)</text>
+      <text x="90" y="296" class="t small" text-anchor="middle">base</text>
+
+      <!-- cache-hit leaves (collapsed subtrees) -->
+      <rect x="360" y="76" width="110" height="30" rx="6" class="nd newnd"/>
+      <text x="415" y="95" class="t mono" text-anchor="middle">F(3) → hit</text>
+      <text x="415" y="122" class="t small" text-anchor="middle">cache[3] = 2, O(1)</text>
+      <rect x="220" y="134" width="110" height="30" rx="6" class="nd newnd"/>
+      <text x="275" y="153" class="t mono" text-anchor="middle">F(2) → hit</text>
+      <text x="275" y="180" class="t small" text-anchor="middle">cache[2] = 1, O(1)</text>
+
+      <!-- cache column -->
+      <text x="600" y="60" class="t ptrlab" text-anchor="middle">cache (hash map)</text>
+      <rect x="545" y="72" width="110" height="28" class="nd"/><text x="600" y="90" class="t mono" text-anchor="middle">① 2 : 1</text>
+      <rect x="545" y="102" width="110" height="28" class="nd"/><text x="600" y="120" class="t mono" text-anchor="middle">② 3 : 2</text>
+      <rect x="545" y="132" width="110" height="28" class="nd"/><text x="600" y="150" class="t mono" text-anchor="middle">③ 4 : 3</text>
+      <rect x="545" y="162" width="110" height="28" class="nd"/><text x="600" y="180" class="t mono" text-anchor="middle">④ 5 : 5</text>
+      <text x="600" y="206" class="t small" text-anchor="middle">key = n, value = F(n)</text>
+      <text x="600" y="222" class="t small" text-anchor="middle">filled in the order ①②③④</text>
+
+      <text x="380" y="268" class="t small" text-anchor="middle">real computations: F(5) F(4) F(3) F(2) F(1) F(0)  =  n + 1  =  6</text>
+      <text x="380" y="286" class="t small" text-anchor="middle">plus 2 cache hits and 1 extra base case → 9 calls instead of 15</text>
+    </svg>
+    <figcaption><b>The repeated subtrees collapse into one cache lookup each.</b> Orange marks what changed: the second F(3) and the second F(2) are no longer computed; they are read from the cache in O(1). Only n + 1 = 6 fibonacci values are ever computed. The cache fills from the smallest solved subproblem up, in the order ①②③④, even though the calls started at the top.</figcaption>
+  </figure>
+
+  <p><strong>Time O(n):</strong> each fibonacci number is computed once. <strong>Space O(n):</strong> the cache holds up to n entries, and the recursion stack is also n deep at its deepest point.</p>
+
+  <h3>In real Python: <code>functools.cache</code></h3>
+  <p>Python ships the cache as a decorator. <code>@lru_cache(maxsize=None)</code> or the shorter <code>@cache</code> (Python 3.9+) wraps a function so that every call with the same arguments returns the stored result. You write the brute force and add one line above it.</p>
+
+<pre><code><span class="k">from</span> functools <span class="k">import</span> lru_cache, cache
+
+@lru_cache(maxsize=<span class="k">None</span>)          <span class="c"># unlimited cache, keyed by the arguments</span>
+<span class="k">def</span> fib_lru(n):
+    <span class="k">if</span> n &lt;= <span class="s">1</span>:
+        <span class="k">return</span> n
+    <span class="k">return</span> fib_lru(n - <span class="s">1</span>) + fib_lru(n - <span class="s">2</span>)
+
+@cache                            <span class="c"># same thing, shorter (3.9+)</span>
+<span class="k">def</span> fib_cache(n):
+    <span class="k">if</span> n &lt;= <span class="s">1</span>:
+        <span class="k">return</span> n
+    <span class="k">return</span> fib_cache(n - <span class="s">1</span>) + fib_cache(n - <span class="s">2</span>)
+
+fib_cache(<span class="s">100</span>)                    <span class="c"># 354224848179261915075, instantly</span>
+fib_lru.cache_info()              <span class="c"># shows hits and misses - proof the cache is working</span></code></pre>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>The decorator does exactly the three edits from the lesson, for you: it adds the hidden hash map, checks it before running the body, and stores the result after. In an interview say "I will memoize this with a dictionary" and then write either version. Arguments must be <dfn>hashable</dfn> (int, str, tuple - not list) because they become dictionary keys.</p>
+  </div>
+</section>
+
+<!-- ============================ BOTTOM-UP ============================ -->
+<section id="bottomup">
+  <h2><span class="num">2</span>1-D DP, bottom-up: fill a table, then shrink it</h2>
+
+  <h3>Tabulation: base cases first, work up</h3>
+  <p>Top-down starts at F(5) and asks for smaller values. <dfn>Bottom-up</dfn> DP (also called <dfn>tabulation</dfn>) goes the other way: compute the base cases first, then use them to build the next value, and so on up to n. No recursion. Use an array of size n + 1 where index i holds F(i). For n = 5 the finished array is <code>[0, 1, 1, 2, 3, 5]</code>.</p>
+
+<pre><code><span class="k">def</span> tabulation(n):
+    <span class="k">if</span> n &lt; <span class="s">2</span>:
+        <span class="k">return</span> n
+    table = [<span class="s">0</span>] * (n + <span class="s">1</span>)         <span class="c"># index i will hold F(i)</span>
+    table[<span class="s">1</span>] = <span class="s">1</span>                  <span class="c"># base cases: table[0] = 0, table[1] = 1</span>
+    <span class="k">for</span> i <span class="k">in</span> range(<span class="s">2</span>, n + <span class="s">1</span>):
+        table[i] = table[i - <span class="s">1</span>] + table[i - <span class="s">2</span>]
+    <span class="k">return</span> table[n]</code></pre>
+
+  <figure>
+    <svg viewBox="0 0 740 175" role="img" aria-label="Bottom-up table for n equals 5 being filled left to right: 0, 1, 1, 2, 3, and finally 5, which is the sum of the two cells to its left.">
+      <text x="400" y="22" class="t newlab" text-anchor="middle">table[5] = table[4] + table[3] = 3 + 2</text>
+      <path d="M310,58 C 330,26 440,26 466,56" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M390,58 C 405,36 450,36 464,56" class="ptr newp" marker-end="url(#arrNew)"/>
+      <!-- cells -->
+      <rect x="40" y="60" width="60" height="44" class="nd"/><text x="70" y="87" class="t" text-anchor="middle">0</text>
+      <rect x="120" y="60" width="60" height="44" class="nd"/><text x="150" y="87" class="t" text-anchor="middle">1</text>
+      <rect x="200" y="60" width="60" height="44" class="nd"/><text x="230" y="87" class="t" text-anchor="middle">1</text>
+      <rect x="280" y="60" width="60" height="44" class="nd"/><text x="310" y="87" class="t" text-anchor="middle">2</text>
+      <rect x="360" y="60" width="60" height="44" class="nd"/><text x="390" y="87" class="t" text-anchor="middle">3</text>
+      <rect x="440" y="60" width="60" height="44" class="nd newnd"/><text x="470" y="87" class="t" text-anchor="middle">5</text>
+      <text x="520" y="87" class="t small">= F(5), return this</text>
+      <!-- indices -->
+      <text x="18" y="124" class="t small">i</text>
+      <text x="70" y="124" class="t small" text-anchor="middle">0</text>
+      <text x="150" y="124" class="t small" text-anchor="middle">1</text>
+      <text x="230" y="124" class="t small" text-anchor="middle">2</text>
+      <text x="310" y="124" class="t small" text-anchor="middle">3</text>
+      <text x="390" y="124" class="t small" text-anchor="middle">4</text>
+      <text x="470" y="124" class="t small" text-anchor="middle">5</text>
+      <text x="110" y="142" class="t ptrlab" text-anchor="middle" font-size="11">base cases</text>
+      <path d="M200,158 L500,158" class="ptr" marker-end="url(#arr)"/>
+      <text x="350" y="172" class="t small" text-anchor="middle">fill order: left to right, each cell uses the two before it</text>
+    </svg>
+    <figcaption><b>Same numbers as the tree, no recursion.</b> The base cases sit at index 0 and 1. Every other cell is the sum of the two cells to its left, so by the time you reach index i, both inputs already exist. Time O(n), space O(n) for the table.</figcaption>
+  </figure>
+
+  <h3>Do we need the whole array? Only the last two</h3>
+  <p>Look at the arrows in the picture: cell 5 reads only cells 3 and 4. Cells 0, 1, 2 are never touched again. We only ever use the previous <em>two</em> values, so keep just those two and compute in order. NeetCode uses an array of size 2, <code>dp = [F(i-2), F(i-1)]</code>, and slides it forward with a temporary variable: store <code>dp[1]</code> in <code>tmp</code>, compute the next number into <code>dp[1]</code>, then overwrite <code>dp[0]</code> with <code>tmp</code>. Space drops to O(1).</p>
+
+<pre><code><span class="k">def</span> dp(n):
+    <span class="k">if</span> n &lt; <span class="s">2</span>:
+        <span class="k">return</span> n
+
+    dp = [<span class="s">0</span>, <span class="s">1</span>]                  <span class="c"># [F(0), F(1)]  - only two slots, ever</span>
+    i = <span class="s">2</span>
+    <span class="k">while</span> i &lt;= n:
+        tmp = dp[<span class="s">1</span>]               <span class="c"># ① remember F(i-1) before it is overwritten</span>
+        dp[<span class="s">1</span>] = dp[<span class="s">0</span>] + dp[<span class="s">1</span>]     <span class="c"># ② F(i) = F(i-2) + F(i-1)</span>
+        dp[<span class="s">0</span>] = tmp               <span class="c"># ③ slide: old F(i-1) becomes the new "two back"</span>
+        i += <span class="s">1</span>
+    <span class="k">return</span> dp[<span class="s">1</span>]</code></pre>
+
+  <figure>
+    <svg viewBox="-20 0 740 325" role="img" aria-label="Four steps of the two-variable fibonacci for n equals 5. In each step tmp copies dp[1], dp[1] becomes dp[0] plus dp[1], and dp[0] becomes tmp. The pair goes 0,1 to 1,1 to 1,2 to 2,3 to 3,5.">
+      <!-- headers -->
+      <text x="85" y="24" class="t small" text-anchor="middle">dp[0]</text>
+      <text x="135" y="24" class="t small" text-anchor="middle">dp[1]</text>
+      <text x="110" y="10" class="t ptrlab" text-anchor="middle" font-size="11">before</text>
+      <text x="265" y="24" class="t small" text-anchor="middle">tmp</text>
+      <text x="395" y="24" class="t small" text-anchor="middle">dp[0]</text>
+      <text x="445" y="24" class="t small" text-anchor="middle">dp[1]</text>
+      <text x="420" y="10" class="t newlab" text-anchor="middle" font-size="11">after</text>
+
+      <!-- row i=2 : before [0,1] tmp 1 after [1,1] -->
+      <text x="14" y="66" class="t mono">i=2</text>
+      <rect x="60" y="44" width="50" height="36" class="nd"/><text x="85" y="67" class="t" text-anchor="middle">0</text>
+      <rect x="110" y="44" width="50" height="36" class="nd"/><text x="135" y="67" class="t" text-anchor="middle">1</text>
+      <path d="M162,56 L238,56" class="ptr" marker-end="url(#arr)"/>
+      <text x="200" y="50" class="t newlab" text-anchor="middle" font-size="11">①</text>
+      <rect x="240" y="44" width="50" height="36" class="nd"/><text x="265" y="67" class="t" text-anchor="middle">1</text>
+      <path d="M135,80 C 135,98 445,98 445,82" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="290" y="106" class="t newlab" text-anchor="middle" font-size="11">② dp[0] + dp[1]</text>
+      <path d="M292,62 L368,62" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="330" y="56" class="t newlab" text-anchor="middle" font-size="11">③</text>
+      <rect x="370" y="44" width="50" height="36" class="nd newnd"/><text x="395" y="67" class="t" text-anchor="middle">1</text>
+      <rect x="420" y="44" width="50" height="36" class="nd newnd"/><text x="445" y="67" class="t" text-anchor="middle">1</text>
+      <text x="490" y="66" class="t small">F(2) = 1</text>
+
+      <!-- row i=3 : before [1,1] tmp 1 after [1,2] -->
+      <text x="14" y="136" class="t mono">i=3</text>
+      <rect x="60" y="114" width="50" height="36" class="nd"/><text x="85" y="137" class="t" text-anchor="middle">1</text>
+      <rect x="110" y="114" width="50" height="36" class="nd"/><text x="135" y="137" class="t" text-anchor="middle">1</text>
+      <path d="M162,126 L238,126" class="ptr" marker-end="url(#arr)"/>
+      <rect x="240" y="114" width="50" height="36" class="nd"/><text x="265" y="137" class="t" text-anchor="middle">1</text>
+      <path d="M135,150 C 135,168 445,168 445,152" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M292,132 L368,132" class="ptr newp" marker-end="url(#arrNew)"/>
+      <rect x="370" y="114" width="50" height="36" class="nd newnd"/><text x="395" y="137" class="t" text-anchor="middle">1</text>
+      <rect x="420" y="114" width="50" height="36" class="nd newnd"/><text x="445" y="137" class="t" text-anchor="middle">2</text>
+      <text x="490" y="136" class="t small">F(3) = 2</text>
+
+      <!-- row i=4 : before [1,2] tmp 2 after [2,3] -->
+      <text x="14" y="206" class="t mono">i=4</text>
+      <rect x="60" y="184" width="50" height="36" class="nd"/><text x="85" y="207" class="t" text-anchor="middle">1</text>
+      <rect x="110" y="184" width="50" height="36" class="nd"/><text x="135" y="207" class="t" text-anchor="middle">2</text>
+      <path d="M162,196 L238,196" class="ptr" marker-end="url(#arr)"/>
+      <rect x="240" y="184" width="50" height="36" class="nd"/><text x="265" y="207" class="t" text-anchor="middle">2</text>
+      <path d="M135,220 C 135,238 445,238 445,222" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M292,202 L368,202" class="ptr newp" marker-end="url(#arrNew)"/>
+      <rect x="370" y="184" width="50" height="36" class="nd newnd"/><text x="395" y="207" class="t" text-anchor="middle">2</text>
+      <rect x="420" y="184" width="50" height="36" class="nd newnd"/><text x="445" y="207" class="t" text-anchor="middle">3</text>
+      <text x="490" y="206" class="t small">F(4) = 3</text>
+
+      <!-- row i=5 : before [2,3] tmp 3 after [3,5] -->
+      <text x="14" y="276" class="t mono">i=5</text>
+      <rect x="60" y="254" width="50" height="36" class="nd"/><text x="85" y="277" class="t" text-anchor="middle">2</text>
+      <rect x="110" y="254" width="50" height="36" class="nd"/><text x="135" y="277" class="t" text-anchor="middle">3</text>
+      <path d="M162,266 L238,266" class="ptr" marker-end="url(#arr)"/>
+      <rect x="240" y="254" width="50" height="36" class="nd"/><text x="265" y="277" class="t" text-anchor="middle">3</text>
+      <path d="M135,290 C 135,308 445,308 445,292" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M292,272 L368,272" class="ptr newp" marker-end="url(#arrNew)"/>
+      <rect x="370" y="254" width="50" height="36" class="nd newnd"/><text x="395" y="277" class="t" text-anchor="middle">3</text>
+      <rect x="420" y="254" width="50" height="36" class="nd newnd"/><text x="445" y="277" class="t" text-anchor="middle">5</text>
+      <text x="490" y="276" class="t small">F(5) = 5 ← answer</text>
+
+      <text x="320" y="322" class="t small" text-anchor="middle">① tmp = dp[1]      ② dp[1] = dp[0] + dp[1]      ③ dp[0] = tmp      (the "after" pair is the next row's "before")</text>
+    </svg>
+    <figcaption><b>Two slots slide along the fibonacci sequence.</b> The orange pair on the right of each row is the input pair of the next row. <code>tmp</code> exists only because ② destroys the old <code>dp[1]</code> before ③ needs it. Time O(n) (we iterate up to n), space O(1) (always an array of size 2).</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>i</th><th><code>tmp = dp[1]</code></th><th><code>dp[0]</code></th><th><code>dp[1]</code></th><th>meaning</th></tr></thead>
+    <tbody>
+      <tr><td>start</td><td>-</td><td>0</td><td>1</td><td>dp = [F(0), F(1)]</td></tr>
+      <tr><td>2</td><td>1</td><td>1</td><td>1</td><td>dp[1] = 0 + 1; dp = [F(1), F(2)]</td></tr>
+      <tr><td>3</td><td>1</td><td>1</td><td>2</td><td>dp[1] = 1 + 1; dp = [F(2), F(3)]</td></tr>
+      <tr><td>4</td><td>2</td><td>2</td><td>3</td><td>dp[1] = 1 + 2; dp = [F(3), F(4)]</td></tr>
+      <tr><td>5</td><td>3</td><td>3</td><td>5</td><td>dp[1] = 2 + 3; dp = [F(4), F(5)]</td></tr>
+      <tr><td>6</td><td colspan="4"><code>i &lt;= n</code> is False. Return <code>dp[1]</code> = 5.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>The idiomatic Python version</h3>
+  <p>Python's tuple assignment evaluates the whole right side before assigning, so <code>tmp</code> disappears. Same algorithm, same O(n) time and O(1) space.</p>
+
+<pre><code><span class="k">def</span> fib_two_vars(n):
+    a, b = <span class="s">0</span>, <span class="s">1</span>                  <span class="c"># a = F(i), b = F(i+1)</span>
+    <span class="k">for</span> _ <span class="k">in</span> range(n):
+        a, b = b, a + b           <span class="c"># slide both by one; right side computed first</span>
+    <span class="k">return</span> a</code></pre>
+
+  <div class="callout keep">
+    <span class="lab">Why it is called 1-D</span>
+    <p>Every subproblem is identified by one number, n, and its result fits in a one-dimensional structure of size proportional to n (the cache, or the table). That is <strong>1-D DP</strong>. When a subproblem needs two numbers to describe it, you get 2-D DP, which is the next lesson.</p>
+  </div>
+</section>
+
+<!-- ============================ 2-D ============================ -->
+<section id="twodim">
+  <h2><span class="num">3</span>2-D DP: unique paths in a grid</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>City blocks. You stand at the top-left corner and want the bottom-right corner. Streets only go <strong>down</strong> or <strong>right</strong>. How many different walks are there? Ask the same question from any corner: "how many ways from <em>here</em>?" The answer from a corner is the ways from the corner below plus the ways from the corner to the right. That is a subproblem with two coordinates, r and c.</p>
+  </div>
+
+  <p>When the result of a subproblem depends on <strong>two</strong> variables, the cache is a grid instead of a list: that is <dfn>2-D DP</dfn>. The problem from the lesson: count the number of unique paths from the top-left to the bottom-right of a grid with <code>rows</code> rows and <code>cols</code> columns, moving only down or right. Because you only ever increase r or c, the only way to leave the grid is <code>r == rows</code> or <code>c == cols</code>.</p>
+
+  <h3>Brute force: two choices per step</h3>
+  <p>From (0, 0) you have at most two choices, down or right. The number of unique paths from a coordinate is the sum of the two recursive calls. Base cases: out of bounds returns 0 (that path is dead), the bottom-right cell returns 1 (one complete path).</p>
+
+<pre><code><span class="c"># Brute Force - Time: O(2 ^ (n + m)), Space: O(n + m)</span>
+<span class="k">def</span> bruteForce(r, c, rows, cols):
+    <span class="k">if</span> r == rows <span class="k">or</span> c == cols:          <span class="c"># fell off the grid → 0 paths</span>
+        <span class="k">return</span> <span class="s">0</span>
+    <span class="k">if</span> r == rows - <span class="s">1</span> <span class="k">and</span> c == cols - <span class="s">1</span>:  <span class="c"># reached the target → 1 path</span>
+        <span class="k">return</span> <span class="s">1</span>
+
+    <span class="k">return</span> (bruteForce(r + <span class="s">1</span>, c, rows, cols) +   <span class="c"># go down</span>
+            bruteForce(r, c + <span class="s">1</span>, rows, cols))     <span class="c"># go right</span>
+
+bruteForce(<span class="s">0</span>, <span class="s">0</span>, <span class="s">4</span>, <span class="s">4</span>)     <span class="c"># 20</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 680 320" role="img" aria-label="A 4 by 4 grid with a dashed out-of-bounds row and column. Two routes from the start cell, down-then-right and right-then-down, both arrive at cell (1,1), so the brute force computes that cell twice.">
+      <!-- column / row indices -->
+      <text x="65" y="30" class="t small" text-anchor="middle">c=0</text>
+      <text x="115" y="30" class="t small" text-anchor="middle">c=1</text>
+      <text x="165" y="30" class="t small" text-anchor="middle">c=2</text>
+      <text x="215" y="30" class="t small" text-anchor="middle">c=3</text>
+      <text x="265" y="30" class="t small" text-anchor="middle">c=4</text>
+      <text x="30" y="69" class="t small" text-anchor="end">r=0</text>
+      <text x="30" y="119" class="t small" text-anchor="end">r=1</text>
+      <text x="30" y="169" class="t small" text-anchor="end">r=2</text>
+      <text x="30" y="219" class="t small" text-anchor="end">r=3</text>
+      <text x="30" y="269" class="t small" text-anchor="end">r=4</text>
+      <!-- grid rows -->
+      <rect x="40" y="40" width="50" height="50" class="nd"/>
+      <rect x="90" y="40" width="50" height="50" class="nd"/>
+      <rect x="140" y="40" width="50" height="50" class="nd"/>
+      <rect x="190" y="40" width="50" height="50" class="nd"/>
+      <rect x="40" y="90" width="50" height="50" class="nd"/>
+      <rect x="90" y="90" width="50" height="50" class="nd newnd"/>
+      <rect x="140" y="90" width="50" height="50" class="nd"/>
+      <rect x="190" y="90" width="50" height="50" class="nd"/>
+      <rect x="40" y="140" width="50" height="50" class="nd"/>
+      <rect x="90" y="140" width="50" height="50" class="nd"/>
+      <rect x="140" y="140" width="50" height="50" class="nd"/>
+      <rect x="190" y="140" width="50" height="50" class="nd"/>
+      <rect x="40" y="190" width="50" height="50" class="nd"/>
+      <rect x="90" y="190" width="50" height="50" class="nd"/>
+      <rect x="140" y="190" width="50" height="50" class="nd"/>
+      <rect x="190" y="190" width="50" height="50" class="nd"/>
+      <!-- out of bounds strip -->
+      <rect x="240" y="40" width="50" height="200" class="mem"/>
+      <rect x="40" y="240" width="250" height="50" class="mem"/>
+      <text x="265" y="145" class="t nulltxt" text-anchor="middle" font-size="12">0</text>
+      <text x="165" y="270" class="t nulltxt" text-anchor="middle" font-size="12">c == cols or r == rows → return 0</text>
+      <!-- start / end -->
+      <text x="65" y="82" class="t small" text-anchor="middle">start</text>
+      <text x="215" y="220" class="t" text-anchor="middle">1</text>
+      <text x="215" y="234" class="t small" text-anchor="middle">end</text>
+      <text x="115" y="120" class="t newlab" text-anchor="middle">(1,1)</text>
+      <!-- route A: down then right (teal) -->
+      <path d="M58,70 L58,122 L104,122" class="ptr" marker-end="url(#arr)"/>
+      <text x="48" y="112" class="t ptrlab" font-size="11">A</text>
+      <!-- route B: right then down (orange) -->
+      <path d="M72,58 L122,58 L122,104" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="126" y="72" class="t newlab" font-size="11">B</text>
+
+      <!-- explanation -->
+      <text x="320" y="56" class="t ptrlab">A: down, then right</text>
+      <text x="320" y="76" class="t newlab">B: right, then down</text>
+      <text x="320" y="104" class="t">Both routes land on (1, 1).</text>
+      <text x="320" y="124" class="t">bruteForce(1, 1) runs twice,</text>
+      <text x="320" y="144" class="t">and everything under it runs twice.</text>
+      <text x="320" y="176" class="t small">(2, 2) is reached 6 times.</text>
+      <text x="320" y="194" class="t small">(3, 3) is reached 20 times, once per path.</text>
+      <text x="320" y="212" class="t small">99 calls for a grid of 16 cells.</text>
+      <text x="320" y="244" class="t small">Two choices per step, about n + m steps</text>
+      <text x="320" y="262" class="t small">per path → O(2^(n+m)) time,</text>
+      <text x="320" y="280" class="t small">O(n + m) recursion depth for space.</text>
+    </svg>
+    <figcaption><b>Same cell, two routes, two computations.</b> Going down then right reaches (1, 1); going right then down reaches the same (1, 1). The brute force does not remember, so it recounts the paths from (1, 1) twice, and deeper cells many more times. Small grids are fine; the number of calls grows exponentially with n rows and m columns.</figcaption>
+  </figure>
+
+  <h3>Top-down: cache the answer for each coordinate</h3>
+  <p>Same code plus a cache parameter. The cache is a <code>rows × cols</code> grid of zeros, and <code>cache[r][c]</code> stores the number of unique paths from that coordinate. NeetCode checks <code>cache[r][c] &gt; 0</code> to mean "already computed"; that works here because every in-bounds cell has at least one path, so 0 can only mean "not yet computed".</p>
+
+<pre><code><span class="c"># Memoization - Time and Space: O(n * m)</span>
+<span class="k">def</span> memoization(r, c, rows, cols, cache):
+    <span class="k">if</span> r == rows <span class="k">or</span> c == cols:
+        <span class="k">return</span> <span class="s">0</span>
+    <span class="k">if</span> cache[r][c] &gt; <span class="s">0</span>:                 <span class="c"># already solved this coordinate</span>
+        <span class="k">return</span> cache[r][c]
+    <span class="k">if</span> r == rows - <span class="s">1</span> <span class="k">and</span> c == cols - <span class="s">1</span>:
+        <span class="k">return</span> <span class="s">1</span>
+
+    cache[r][c] = (memoization(r + <span class="s">1</span>, c, rows, cols, cache) +
+                   memoization(r, c + <span class="s">1</span>, rows, cols, cache))
+    <span class="k">return</span> cache[r][c]
+
+cache = [[<span class="s">0</span>] * <span class="s">4</span> <span class="k">for</span> _ <span class="k">in</span> range(<span class="s">4</span>)]   <span class="c"># rows x cols grid of zeros</span>
+memoization(<span class="s">0</span>, <span class="s">0</span>, <span class="s">4</span>, <span class="s">4</span>, cache)         <span class="c"># 20</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 760 320" role="img" aria-label="The 4 by 4 cache grid after top-down memoization. The bottom row and right column are all 1, and each other cell is the cell below plus the cell to its right. Cell (0,0) holds 20. Cell (1,1) holds 6 and is computed once but read twice.">
+      <text x="140" y="26" class="t ptrlab" text-anchor="middle">cache[r][c] = paths from (r, c)</text>
+      <!-- row 0 -->
+      <rect x="40" y="40" width="50" height="50" class="nd newnd"/><text x="65" y="70" class="t" text-anchor="middle">20</text>
+      <rect x="90" y="40" width="50" height="50" class="nd"/><text x="115" y="70" class="t" text-anchor="middle">10</text>
+      <rect x="140" y="40" width="50" height="50" class="nd"/><text x="165" y="70" class="t" text-anchor="middle">4</text>
+      <rect x="190" y="40" width="50" height="50" class="nd"/><text x="215" y="70" class="t" text-anchor="middle">1</text>
+      <!-- row 1 -->
+      <rect x="40" y="90" width="50" height="50" class="nd"/><text x="65" y="120" class="t" text-anchor="middle">10</text>
+      <rect x="90" y="90" width="50" height="50" class="nd"/><text x="115" y="120" class="t" text-anchor="middle">6</text>
+      <rect x="140" y="90" width="50" height="50" class="nd"/><text x="165" y="120" class="t" text-anchor="middle">3</text>
+      <rect x="190" y="90" width="50" height="50" class="nd"/><text x="215" y="120" class="t" text-anchor="middle">1</text>
+      <!-- row 2 -->
+      <rect x="40" y="140" width="50" height="50" class="nd"/><text x="65" y="170" class="t" text-anchor="middle">4</text>
+      <rect x="90" y="140" width="50" height="50" class="nd"/><text x="115" y="170" class="t" text-anchor="middle">3</text>
+      <rect x="140" y="140" width="50" height="50" class="nd"/><text x="165" y="170" class="t" text-anchor="middle">2</text>
+      <rect x="190" y="140" width="50" height="50" class="nd"/><text x="215" y="170" class="t" text-anchor="middle">1</text>
+      <!-- row 3 -->
+      <rect x="40" y="190" width="50" height="50" class="nd"/><text x="65" y="220" class="t" text-anchor="middle">1</text>
+      <rect x="90" y="190" width="50" height="50" class="nd"/><text x="115" y="220" class="t" text-anchor="middle">1</text>
+      <rect x="140" y="190" width="50" height="50" class="nd"/><text x="165" y="220" class="t" text-anchor="middle">1</text>
+      <rect x="190" y="190" width="50" height="50" class="nd"/><text x="215" y="216" class="t" text-anchor="middle">1</text>
+      <text x="215" y="232" class="t small" text-anchor="middle">base</text>
+      <!-- dashed box around (1,1) -->
+      <rect x="86" y="86" width="58" height="58" rx="6" class="mem"/>
+      <!-- arrows into (0,0): from below (1,0) and from right (0,1) -->
+      <path d="M65,92 L65,78" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M92,65 L78,65" class="ptr newp" marker-end="url(#arrNew)"/>
+      <!-- fill direction -->
+      <path d="M232,232 L232,232" class="ptr"/>
+      <path d="M250,250 C 250,110 250,60 250,60" class="ptr old" marker-end="url(#arrOld)"/>
+      <path d="M250,250 C 110,250 60,250 60,250" class="ptr old" marker-end="url(#arrOld)"/>
+      <text x="262" y="160" class="t small">values become</text>
+      <text x="262" y="174" class="t small">known from</text>
+      <text x="262" y="188" class="t small">the bottom-right</text>
+      <text x="150" y="270" class="t small" text-anchor="middle">bottom row and right column: only one way (straight) → all 1</text>
+
+      <!-- explanation -->
+      <text x="380" y="56" class="t newlab">(0,0) = (1,0) + (0,1) = 10 + 10 = 20</text>
+      <text x="380" y="80" class="t">Every cell = cell below + cell right.</text>
+      <text x="380" y="110" class="t small">Computing row 1, e.g. (1,0) = 4 + 6 = 10,</text>
+      <text x="380" y="126" class="t small">is what makes row 0 cheap.</text>
+      <text x="380" y="150" class="t small">Dashed: (1,1) = 6 is computed once, when</text>
+      <text x="380" y="166" class="t small">(1,0) asks for it. Later (0,1) asks again and</text>
+      <text x="380" y="182" class="t small">gets a cache hit - no recomputation.</text>
+      <text x="380" y="210" class="t small">Each of the n·m cells is computed once</text>
+      <text x="380" y="226" class="t small">→ time O(n·m), space O(n·m) for the cache.</text>
+      <text x="380" y="256" class="t small">Note: the code returns 1 for the target cell</text>
+      <text x="380" y="272" class="t small">before storing it, so cache[3][3] stays 0.</text>
+      <text x="380" y="288" class="t small">Harmless: nothing ever reads it from cache.</text>
+    </svg>
+    <figcaption><b>The cache fills from the bottom-right corner up.</b> The calls start at (0, 0), but the first value that becomes known is at the target, then the cells next to it, exactly like the fibonacci cache filling from F(2) upward. Once (1, 1) is stored, the second route to it is a lookup. Time and space are both O(n · m), one slot per cell.</figcaption>
+  </figure>
+
+  <h3>Bottom-up: start from the target, build rows upward</h3>
+  <p>The picture above tells you the iterative order. Values become known from the bottom-right, so the loop must run <strong>bottom to top</strong> and, inside each row, <strong>right to left</strong>. Order matters because every value comes from the base-case side: below and to the right. And just like fibonacci, you do not need the whole grid in memory. To compute a row you only need the row below it. Keep two rows: <code>prevRow</code> (the row below) and <code>curRow</code> (the one being built). When a row is finished, it becomes the new <code>prevRow</code>.</p>
+
+<pre><code><span class="c"># Dynamic Programming - Time: O(n * m), Space: O(m), where m is num of cols</span>
+<span class="k">def</span> dp(rows, cols):
+    prevRow = [<span class="s">0</span>] * cols                       <span class="c"># imaginary row below the grid: all 0</span>
+
+    <span class="k">for</span> r <span class="k">in</span> range(rows - <span class="s">1</span>, -<span class="s">1</span>, -<span class="s">1</span>):           <span class="c"># bottom row first, up to row 0</span>
+        curRow = [<span class="s">0</span>] * cols
+        curRow[cols - <span class="s">1</span>] = <span class="s">1</span>                   <span class="c"># right-most column is the base case: 1</span>
+        <span class="k">for</span> c <span class="k">in</span> range(cols - <span class="s">2</span>, -<span class="s">1</span>, -<span class="s">1</span>):       <span class="c"># right to left</span>
+            curRow[c] = curRow[c + <span class="s">1</span>] + prevRow[c]  <span class="c"># right neighbor + cell below</span>
+        prevRow = curRow                        <span class="c"># slide up</span>
+    <span class="k">return</span> prevRow[<span class="s">0</span>]                           <span class="c"># top-left of the last row built</span>
+
+dp(<span class="s">4</span>, <span class="s">4</span>)    <span class="c"># 20</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 780 345" role="img" aria-label="Bottom-up rows for a 4 by 4 grid. prevRow starts as all zeros. Row 3 becomes 1,1,1,1. Row 2 becomes 4,3,2,1 with the 4 computed as 3 plus 1. Row 1 becomes 10,6,3,1. Row 0 becomes 20,10,4,1. The answer 20 is at the top-left.">
+      <!-- row labels -->
+      <text x="22" y="62" class="t mono">r=0</text>
+      <text x="22" y="120" class="t mono">r=1</text>
+      <text x="22" y="178" class="t mono">r=2</text>
+      <text x="22" y="236" class="t mono">r=3</text>
+      <text x="22" y="294" class="t mono">init</text>
+      <!-- r=0 : 20 10 4 1 -->
+      <text x="85" y="30" class="t ptrlab" text-anchor="middle" font-size="11">answer</text>
+      <rect x="60" y="40" width="50" height="36" class="nd"/><text x="85" y="63" class="t" text-anchor="middle">20</text>
+      <rect x="110" y="40" width="50" height="36" class="nd"/><text x="135" y="63" class="t" text-anchor="middle">10</text>
+      <rect x="160" y="40" width="50" height="36" class="nd"/><text x="185" y="63" class="t" text-anchor="middle">4</text>
+      <rect x="210" y="40" width="50" height="36" class="nd"/><text x="235" y="63" class="t" text-anchor="middle">1</text>
+      <!-- r=1 : 10 6 3 1 -->
+      <rect x="60" y="98" width="50" height="36" class="nd"/><text x="85" y="121" class="t" text-anchor="middle">10</text>
+      <rect x="110" y="98" width="50" height="36" class="nd"/><text x="135" y="121" class="t" text-anchor="middle">6</text>
+      <rect x="160" y="98" width="50" height="36" class="nd"/><text x="185" y="121" class="t" text-anchor="middle">3</text>
+      <rect x="210" y="98" width="50" height="36" class="nd"/><text x="235" y="121" class="t" text-anchor="middle">1</text>
+      <!-- r=2 : 4 3 2 1  (4 is the highlighted step) -->
+      <rect x="60" y="156" width="50" height="36" class="nd newnd"/><text x="85" y="179" class="t" text-anchor="middle">4</text>
+      <rect x="110" y="156" width="50" height="36" class="nd"/><text x="135" y="179" class="t" text-anchor="middle">3</text>
+      <rect x="160" y="156" width="50" height="36" class="nd"/><text x="185" y="179" class="t" text-anchor="middle">2</text>
+      <rect x="210" y="156" width="50" height="36" class="nd"/><text x="235" y="179" class="t" text-anchor="middle">1</text>
+      <path d="M138,154 C 130,140 90,140 88,154" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M85,212 L85,194" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="113" y="147" class="t newlab" text-anchor="middle" font-size="11">curRow[1]</text>
+      <text x="112" y="207" class="t newlab" font-size="11">prevRow[0]</text>
+      <!-- r=3 : 1 1 1 1 -->
+      <rect x="60" y="214" width="50" height="36" class="nd"/><text x="85" y="237" class="t" text-anchor="middle">1</text>
+      <rect x="110" y="214" width="50" height="36" class="nd"/><text x="135" y="237" class="t" text-anchor="middle">1</text>
+      <rect x="160" y="214" width="50" height="36" class="nd"/><text x="185" y="237" class="t" text-anchor="middle">1</text>
+      <rect x="210" y="214" width="50" height="36" class="nd"/><text x="235" y="237" class="t" text-anchor="middle">1</text>
+      <!-- init prevRow : 0 0 0 0 -->
+      <rect x="60" y="272" width="50" height="36" class="nd dim"/><text x="85" y="295" class="t" text-anchor="middle">0</text>
+      <rect x="110" y="272" width="50" height="36" class="nd dim"/><text x="135" y="295" class="t" text-anchor="middle">0</text>
+      <rect x="160" y="272" width="50" height="36" class="nd dim"/><text x="185" y="295" class="t" text-anchor="middle">0</text>
+      <rect x="210" y="272" width="50" height="36" class="nd dim"/><text x="235" y="295" class="t" text-anchor="middle">0</text>
+      <!-- build direction -->
+      <path d="M282,300 L282,50" class="cur" marker-end="url(#arrCur)"/>
+      <text x="290" y="180" class="t small">bottom</text>
+      <text x="290" y="194" class="t small">to top</text>
+      <path d="M255,330 L70,330" class="cur" marker-end="url(#arrCur)"/>
+      <text x="160" y="325" class="t small" text-anchor="middle">right to left inside a row</text>
+
+      <!-- explanation -->
+      <text x="360" y="56" class="t newlab">curRow[c] = curRow[c + 1] + prevRow[c]</text>
+      <text x="360" y="80" class="t newlab">curRow[0] = 3 + 1 = 4   (row r = 2)</text>
+      <text x="360" y="112" class="t small">prevRow starts as [0, 0, 0, 0]: the row "below"</text>
+      <text x="360" y="128" class="t small">the grid, so the bottom row adds nothing from below.</text>
+      <text x="360" y="156" class="t small">Every curRow starts as [0, 0, 0, 1]: the right-most</text>
+      <text x="360" y="172" class="t small">column is the base-case value 1.</text>
+      <text x="360" y="200" class="t small">Inner loop c = cols-2 ... 0: right neighbor is</text>
+      <text x="360" y="216" class="t small">already in curRow, cell below is in prevRow.</text>
+      <text x="360" y="244" class="t small">After the row: prevRow = curRow. The old row</text>
+      <text x="360" y="260" class="t small">is dropped → only two rows in memory, O(m).</text>
+      <text x="360" y="288" class="t small">Loop ends after r = 0. Return prevRow[0] = 20.</text>
+    </svg>
+    <figcaption><b>Each row is built right to left from the row below it.</b> Orange shows one step: cell (2, 0) = right neighbor 3 + cell below 1 = 4. The row of 0s under the grid is a trick to avoid a special case for the bottom row. Same O(n · m) time as top-down, but the space drops to O(m): only <code>prevRow</code> and <code>curRow</code> exist at any time.</figcaption>
+  </figure>
+
+  <p>Trace of <code>dp(3, 3)</code>, every row. The answer for a 3 × 3 grid is 6; for 4 × 4 it is 20; for 3 × 7 it is 28.</p>
+
+  <div class="tbl"><table>
+    <thead><tr><th>r</th><th><code>curRow</code> start</th><th>c = 1</th><th>c = 0</th><th><code>curRow</code> end</th><th>then <code>prevRow =</code></th></tr></thead>
+    <tbody>
+      <tr><td>init</td><td colspan="4"><code>prevRow = [0, 0, 0]</code></td><td>[0, 0, 0]</td></tr>
+      <tr><td>2</td><td>[0, 0, 1]</td><td>1 + 0 = 1</td><td>1 + 0 = 1</td><td>[1, 1, 1]</td><td>[1, 1, 1]</td></tr>
+      <tr><td>1</td><td>[0, 0, 1]</td><td>1 + 1 = 2</td><td>2 + 1 = 3</td><td>[3, 2, 1]</td><td>[3, 2, 1]</td></tr>
+      <tr><td>0</td><td>[0, 0, 1]</td><td>1 + 2 = 3</td><td>3 + 3 = 6</td><td>[6, 3, 1]</td><td>[6, 3, 1]</td></tr>
+      <tr><td>end</td><td colspan="5">Loop over r is done. Return <code>prevRow[0]</code> = 6.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>The idiomatic top-down version</h3>
+  <p>With <code>@cache</code> the coordinate pair <code>(r, c)</code> becomes the dictionary key automatically, and the "is it cached?" check disappears from your code. A nested function keeps <code>rows</code> and <code>cols</code> in scope so the cache key stays small.</p>
+
+<pre><code><span class="k">from</span> functools <span class="k">import</span> cache
+
+<span class="k">def</span> uniquePaths_cache(rows, cols):
+    @cache
+    <span class="k">def</span> go(r, c):
+        <span class="k">if</span> r == rows <span class="k">or</span> c == cols:
+            <span class="k">return</span> <span class="s">0</span>
+        <span class="k">if</span> r == rows - <span class="s">1</span> <span class="k">and</span> c == cols - <span class="s">1</span>:
+            <span class="k">return</span> <span class="s">1</span>
+        <span class="k">return</span> go(r + <span class="s">1</span>, c) + go(r, c + <span class="s">1</span>)
+    <span class="k">return</span> go(<span class="s">0</span>, <span class="s">0</span>)
+
+uniquePaths_cache(<span class="s">3</span>, <span class="s">7</span>)    <span class="c"># 28</span></code></pre>
+
+  <h3>Top-down vs bottom-up, side by side</h3>
+
+  <figure>
+    <svg viewBox="0 0 640 200" role="img" aria-label="The fibonacci chain F(0) to F(5). Top-down starts at F(5) and asks leftward for smaller values. Bottom-up starts at F(0) and builds rightward to F(5).">
+      <text x="320" y="24" class="t ptrlab" text-anchor="middle">TOP-DOWN: start at the answer, ask for smaller pieces, cache on the way back</text>
+      <path d="M552,78 C 535,50 505,50 488,78" class="ptr" marker-end="url(#arr)"/>
+      <path d="M452,78 C 435,50 405,50 388,78" class="ptr" marker-end="url(#arr)"/>
+      <path d="M352,78 C 335,50 305,50 288,78" class="ptr" marker-end="url(#arr)"/>
+      <path d="M252,78 C 235,50 205,50 188,78" class="ptr" marker-end="url(#arr)"/>
+      <path d="M152,78 C 135,50 105,50 88,78" class="ptr" marker-end="url(#arr)"/>
+      <text x="470" y="52" class="t small" text-anchor="middle">asks</text>
+      <!-- chain -->
+      <circle cx="70" cy="100" r="18" class="nd"/><text x="70" y="104" class="t mono" text-anchor="middle">F(0)</text>
+      <circle cx="170" cy="100" r="18" class="nd"/><text x="170" y="104" class="t mono" text-anchor="middle">F(1)</text>
+      <circle cx="270" cy="100" r="18" class="nd"/><text x="270" y="104" class="t mono" text-anchor="middle">F(2)</text>
+      <circle cx="370" cy="100" r="18" class="nd"/><text x="370" y="104" class="t mono" text-anchor="middle">F(3)</text>
+      <circle cx="470" cy="100" r="18" class="nd"/><text x="470" y="104" class="t mono" text-anchor="middle">F(4)</text>
+      <circle cx="570" cy="100" r="18" class="nd newnd"/><text x="570" y="104" class="t mono" text-anchor="middle">F(5)</text>
+      <text x="70" y="136" class="t small" text-anchor="middle">base</text>
+      <text x="170" y="136" class="t small" text-anchor="middle">base</text>
+      <text x="570" y="136" class="t small" text-anchor="middle">answer</text>
+      <!-- bottom-up arrows -->
+      <path d="M88,122 C 105,150 135,150 152,122" class="cur" marker-end="url(#arrCur)"/>
+      <path d="M188,122 C 205,150 235,150 252,122" class="cur" marker-end="url(#arrCur)"/>
+      <path d="M288,122 C 305,150 335,150 352,122" class="cur" marker-end="url(#arrCur)"/>
+      <path d="M388,122 C 405,150 435,150 452,122" class="cur" marker-end="url(#arrCur)"/>
+      <path d="M488,122 C 505,150 535,150 552,122" class="cur" marker-end="url(#arrCur)"/>
+      <text x="320" y="158" class="t small" text-anchor="middle">builds</text>
+      <text x="320" y="186" class="t" text-anchor="middle">BOTTOM-UP: start at the base cases, build bigger answers in order, stop at n</text>
+    </svg>
+    <figcaption><b>Both compute every F(i) exactly once; they only differ in who decides the order.</b> Top-down lets the recursion find the order for you (and pays a call stack for it). Bottom-up makes you state the order yourself (and rewards you with no recursion and a chance to shrink the space).</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th></th><th>Top-down (memoization)</th><th>Bottom-up (tabulation)</th></tr></thead>
+    <tbody>
+      <tr><td>Direction</td><td>Root of the tree down to the base cases</td><td>Base cases up to the answer</td></tr>
+      <tr><td>Style</td><td>Recursion + a cache (hash map or grid)</td><td>Loops + a table (array or grid)</td></tr>
+      <tr><td>Order of subproblems</td><td>Found automatically by the recursion</td><td>You must choose it: from the base-case side (left to right, or bottom-right to top-left)</td></tr>
+      <tr><td>Work done</td><td>Only the subproblems actually needed</td><td>Every cell of the table, needed or not</td></tr>
+      <tr><td>Time</td><td class="big fast">O(n) / O(n·m)</td><td class="big fast">O(n) / O(n·m)</td></tr>
+      <tr><td>Space</td><td class="big slow">cache + recursion stack</td><td class="big fast">table, often shrinkable to O(1) or O(m)</td></tr>
+      <tr><td>Risk</td><td>Recursion limit on deep inputs (Python default about 1000 frames)</td><td>Wrong fill order reads a cell that is still 0</td></tr>
+      <tr><td>Python tool</td><td><code>@cache</code> on the brute force</td><td><code>dp = [...]</code>, two variables, or <code>prevRow / curRow</code></td></tr>
+      <tr><td>Reach for it when</td><td>You have the recursion and want a fast, safe speed-up</td><td>You need the best space, or n is too deep for recursion</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============================ RECIPE ============================ -->
+<section id="recipe">
+  <h2><span class="num">4</span>The 4-step DP recipe</h2>
+  <p>Both lessons follow the same four moves. This is the order to use in an interview, out loud, and you can stop at any step that is good enough for the constraints.</p>
+
+  <ol class="steps">
+    <li><strong>Write the brute-force recursion.</strong> Decide what one call means ("paths from (r, c)", "F(n)"), write the base cases, and write the choices as recursive calls added or compared together. This is the <dfn>recurrence</dfn>: the formula that relates a problem to its smaller copies.</li>
+    <li><strong>Find the repeated subproblems.</strong> Draw the call tree for a small input. If the same call appears twice (F(2) three times, (1, 1) twice), you have overlapping subproblems and DP will pay off. The parameters that identify a call are the <dfn>state</dfn>: one number → 1-D, two numbers → 2-D.</li>
+    <li><strong>Add a cache.</strong> Check the cache before recursing, store after computing. In Python: <code>@cache</code>, or an explicit dictionary / grid parameter. Time drops from exponential to (number of states) × (work per state).</li>
+    <li><strong>Flip to bottom-up and shrink the space.</strong> Read the fill order off the cache picture (from the base cases toward the answer), replace recursion with loops, then keep only the rows or values the recurrence actually reads: two variables for fibonacci, two rows for the grid.</li>
+  </ol>
+
+  <div class="callout">
+    <span class="lab">Do not skip step 1</span>
+    <p>Most people who "find DP hard" try to write the bottom-up table first. The table is step 4. The recursion is where you find the states and the base cases; the table is only a re-ordering of it. Write the slow version, make it correct on a tiny input, then speed it up.</p>
+  </div>
+</section>
+
+<!-- ============================ PATTERNS ============================ -->
+<section id="patterns">
+  <h2><span class="num">5</span>Moves that solve most DP problems</h2>
+  <p>The lessons teach fibonacci and unique paths. Interviews reuse the same two shapes with different words. Learn the shapes, and learn how to notice that a problem is one of them.</p>
+
+  <h3>Move 1: The memo decorator (top-down template)</h3>
+  <p><em>When to use:</em> you have a correct recursion and it is too slow. Wrap it. Works for any number of state parameters, as long as they are hashable.</p>
+
+<pre><code><span class="k">from</span> functools <span class="k">import</span> cache
+
+<span class="k">def</span> solve_with_memo(n):
+    @cache
+    <span class="k">def</span> f(i):                       <span class="c"># f(i) = answer for state i</span>
+        <span class="k">if</span> i &lt;= <span class="s">1</span>:                  <span class="c"># base case(s)</span>
+            <span class="k">return</span> i
+        <span class="k">return</span> f(i - <span class="s">1</span>) + f(i - <span class="s">2</span>)  <span class="c"># recurrence: combine smaller states</span>
+    <span class="k">return</span> f(n)</code></pre>
+
+  <h3>Move 2: The 1-D "two back" family: dp[i] from dp[i-1] and dp[i-2]</h3>
+  <p><em>When to use:</em> a line of positions, and the answer at position i depends only on the one or two positions before it. Fibonacci, climbing stairs, house robber, min cost climbing stairs all have this shape. Keep two variables and slide.</p>
+
+<pre><code><span class="c"># Climbing Stairs (LC 70): ways to reach the top taking 1 or 2 steps at a time</span>
+<span class="k">def</span> climbStairs(n):
+    one, two = <span class="s">1</span>, <span class="s">1</span>              <span class="c"># ways from step n, and from step n-1 (both 1)</span>
+    <span class="k">for</span> _ <span class="k">in</span> range(n - <span class="s">1</span>):
+        one, two = one + two, one <span class="c"># exactly the fibonacci slide</span>
+    <span class="k">return</span> one                    <span class="c"># climbStairs(5) → 8</span>
+
+<span class="c"># House Robber (LC 198): rob non-adjacent houses for the max total</span>
+<span class="k">def</span> rob(nums):
+    rob1, rob2 = <span class="s">0</span>, <span class="s">0</span>            <span class="c"># best total ending two back, and one back</span>
+    <span class="k">for</span> n <span class="k">in</span> nums:
+        rob1, rob2 = rob2, max(rob1 + n, rob2)  <span class="c"># rob this house, or skip it</span>
+    <span class="k">return</span> rob2                   <span class="c"># rob([2, 7, 9, 3, 1]) → 12</span>
+
+<span class="c"># Min Cost Climbing Stairs (LC 746): cheapest way past the last step</span>
+<span class="k">def</span> minCostClimbingStairs(cost):
+    a, b = <span class="s">0</span>, <span class="s">0</span>                  <span class="c"># min cost to stand on step i-2, i-1</span>
+    <span class="k">for</span> i <span class="k">in</span> range(<span class="s">2</span>, len(cost) + <span class="s">1</span>):
+        a, b = b, min(b + cost[i - <span class="s">1</span>], a + cost[i - <span class="s">2</span>])
+    <span class="k">return</span> b                      <span class="c"># minCostClimbingStairs([10, 15, 20]) → 15</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 640 190" role="img" aria-label="House robber on 2, 7, 9, 3, 1. A second row holds the best total so far. At house 9, best equals max of 2 plus 9 and 7, which is 11. Only the two previous bests are needed.">
+      <text x="20" y="24" class="t ptrlab">nums</text>
+      <rect x="80" y="34" width="60" height="40" class="nd"/><text x="110" y="59" class="t" text-anchor="middle">2</text>
+      <rect x="160" y="34" width="60" height="40" class="nd"/><text x="190" y="59" class="t" text-anchor="middle">7</text>
+      <rect x="240" y="34" width="60" height="40" class="nd newnd"/><text x="270" y="59" class="t" text-anchor="middle">9</text>
+      <rect x="320" y="34" width="60" height="40" class="nd"/><text x="350" y="59" class="t" text-anchor="middle">3</text>
+      <rect x="400" y="34" width="60" height="40" class="nd"/><text x="430" y="59" class="t" text-anchor="middle">1</text>
+      <text x="20" y="128" class="t ptrlab">best</text>
+      <rect x="80" y="110" width="60" height="40" class="nd"/><text x="110" y="135" class="t" text-anchor="middle">2</text>
+      <rect x="160" y="110" width="60" height="40" class="nd"/><text x="190" y="135" class="t" text-anchor="middle">7</text>
+      <rect x="240" y="110" width="60" height="40" class="nd newnd"/><text x="270" y="135" class="t" text-anchor="middle">11</text>
+      <rect x="320" y="110" width="60" height="40" class="nd dim"/><text x="350" y="135" class="t" text-anchor="middle">?</text>
+      <rect x="400" y="110" width="60" height="40" class="nd dim"/><text x="430" y="135" class="t" text-anchor="middle">?</text>
+      <text x="110" y="168" class="t mono" text-anchor="middle">rob1</text>
+      <text x="190" y="168" class="t mono" text-anchor="middle">rob2</text>
+      <!-- arrows: rob1 + 9 -> 11 ; rob2 -> compare -->
+      <path d="M140,124 C 180,90 230,90 242,118" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M270,76 L270,108" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M222,138 L238,138" class="ptr" marker-end="url(#arr)"/>
+      <text x="480" y="128" class="t newlab">= max(2 + 9, 7) = 11</text>
+      <text x="480" y="146" class="t small">rob this house, or keep</text>
+      <text x="480" y="160" class="t small">the best without it</text>
+      <text x="320" y="184" class="t small" text-anchor="middle">then slide: rob1 = 7, rob2 = 11. Final answer rob([2,7,9,3,1]) = 12 (rob 2, 9, 1)</text>
+    </svg>
+    <figcaption><b>The "best so far" row is fibonacci with a max instead of a plus.</b> Each new cell reads only the two cells before it, so two variables are enough. The only thing that changes between problems is the one-line recurrence.</figcaption>
+  </figure>
+
+  <h3>Move 3: The 2-D grid family: cell from below and right (or above and left)</h3>
+  <p><em>When to use:</em> a grid, moves restricted to two directions, and a question about counting or optimizing paths. Unique paths counts (plus), min path sum optimizes (min). Same two-row loop; only the combine step changes, and for a cost grid you add the cell's own value.</p>
+
+<pre><code><span class="c"># Minimum Path Sum (LC 64): cheapest down/right path from top-left to bottom-right</span>
+<span class="k">def</span> minPathSum(grid):
+    rows, cols = len(grid), len(grid[<span class="s">0</span>])
+    prev = [float(<span class="s">"inf"</span>)] * cols                <span class="c"># "below the grid" is impossible → infinity</span>
+    <span class="k">for</span> r <span class="k">in</span> range(rows - <span class="s">1</span>, -<span class="s">1</span>, -<span class="s">1</span>):
+        cur = [<span class="s">0</span>] * cols
+        <span class="k">for</span> c <span class="k">in</span> range(cols - <span class="s">1</span>, -<span class="s">1</span>, -<span class="s">1</span>):
+            <span class="k">if</span> r == rows - <span class="s">1</span> <span class="k">and</span> c == cols - <span class="s">1</span>:
+                cur[c] = grid[r][c]              <span class="c"># base case: the target itself</span>
+            <span class="k">else</span>:
+                right = cur[c + <span class="s">1</span>] <span class="k">if</span> c + <span class="s">1</span> &lt; cols <span class="k">else</span> float(<span class="s">"inf"</span>)
+                down = prev[c]
+                cur[c] = grid[r][c] + min(right, down)   <span class="c"># min instead of +</span>
+        prev = cur
+    <span class="k">return</span> prev[<span class="s">0</span>]      <span class="c"># minPathSum([[1,3,1],[1,5,1],[4,2,1]]) → 7</span></code></pre>
+
+  <h3>Move 4: How to spot DP in a problem statement</h3>
+  <p>Three kinds of questions, each answered over a series of choices, are DP suspects:</p>
+  <ul>
+    <li><strong>"How many ways"</strong> to reach / build / arrange something (unique paths, climbing stairs, coin change II). The recurrence adds.</li>
+    <li><strong>"Minimum or maximum"</strong> cost, length, profit, sum over a sequence of choices (min path sum, house robber, longest increasing subsequence, coin change). The recurrence takes min or max.</li>
+    <li><strong>"Is it possible / true or false"</strong> to reach a state (word break, partition equal subset sum). The recurrence uses <code>or</code>.</li>
+  </ul>
+  <p>Then confirm the two conditions. <strong>Optimal substructure:</strong> the best answer for the big problem is built from best answers of smaller ones. <strong>Overlapping subproblems:</strong> the brute force asks the same smaller question more than once. If the second condition fails (every subproblem is different, like merge sort), plain recursion is already fine and a cache buys nothing.</p>
+</section>
+
+<!-- ============================ COMPLEXITY ============================ -->
+<section id="complexity">
+  <h2><span class="num">6</span>Big-O summary</h2>
+  <p>n is the fibonacci index; for grids, n is rows and m is columns. The pattern is always the same: exponential brute force, then (number of states) for time, then shrink the space.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Version</th><th>Time</th><th>Space</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Fibonacci, brute force</td><td class="big slow">O(2^n)</td><td class="big fast">O(n)</td><td>each call makes 2 calls, tree depth n; space is the recursion stack</td></tr>
+      <tr><td>Fibonacci, memoization (top-down)</td><td class="big fast">O(n)</td><td class="big fast">O(n)</td><td>each F(i) computed once; cache of n entries plus a stack n deep</td></tr>
+      <tr><td>Fibonacci, bottom-up table</td><td class="big fast">O(n)</td><td class="big fast">O(n)</td><td>one loop; array of size n + 1</td></tr>
+      <tr><td>Fibonacci, two variables</td><td class="big fast">O(n)</td><td class="big fast">O(1)</td><td>only the last two values are ever read</td></tr>
+      <tr><td>Unique paths, brute force</td><td class="big slow">O(2^(n+m))</td><td class="big fast">O(n + m)</td><td>2 choices per step, about n + m steps; stack depth is the path length</td></tr>
+      <tr><td>Unique paths, memoization</td><td class="big fast">O(n · m)</td><td class="big slow">O(n · m)</td><td>each cell computed once; cache is the whole grid</td></tr>
+      <tr><td>Unique paths, bottom-up two rows</td><td class="big fast">O(n · m)</td><td class="big fast">O(m)</td><td>still every cell once, but only prevRow and curRow are kept</td></tr>
+      <tr><td>Hash-map cache lookup</td><td class="big fast">O(1)</td><td>-</td><td>that is why the check "is it cached?" costs nothing</td></tr>
+    </tbody>
+  </table></div>
+  <p>General rule to say in interviews: memoized time = (number of distinct states) × (work per state, not counting the recursive calls). Fibonacci: n states × O(1) = O(n). Grid: n · m states × O(1) = O(n · m).</p>
+</section>
+
+<!-- ============================ MISTAKES ============================ -->
+<section id="mistakes">
+  <h2><span class="num">7</span>Mistakes to watch for</h2>
+  <div class="mistake">
+    <div>
+      <div class="bad">Computing but never storing</div>
+      <p>You add the <code>if n in cache</code> check but forget <code>cache[n] = ...</code> before returning. The cache stays empty and the function is still O(2^n). Store, then return the stored value.</p>
+    </div>
+    <div>
+      <div class="bad">Cache check in the wrong place</div>
+      <p>The lookup goes <em>before</em> the recursive calls and <em>after</em> the cheap base cases. If you put it after the recursion, you recurse anyway. If you put it before the out-of-bounds check in the grid code, you index <code>cache[r][c]</code> with r = rows and crash.</p>
+    </div>
+    <div>
+      <div class="bad">Using 0 as "not computed" when 0 is a real answer</div>
+      <p>NeetCode's <code>cache[r][c] &gt; 0</code> is safe for unique paths because every cell has at least one path. For problems where 0 (or a negative) is a valid result, use <code>-1</code> as the empty marker, or a dictionary with <code>in</code>, or <code>@cache</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Bottom-up in the wrong order</div>
+      <p><code>curRow[c] = curRow[c + 1] + prevRow[c]</code> reads the right neighbor, so the inner loop must go right to left. Going left to right reads a <code>curRow[c + 1]</code> that is still 0 and every answer becomes 0 or 1. Rule: iterate from the base-case side toward the answer.</p>
+    </div>
+    <div>
+      <div class="bad">Overwriting before you read</div>
+      <p>In the two-variable version, <code>dp[0] = dp[1]</code> followed by <code>dp[1] = dp[0] + dp[1]</code> doubles instead of adding. Save <code>tmp = dp[1]</code> first, or use Python's tuple swap <code>a, b = b, a + b</code>, which reads the whole right side first.</p>
+    </div>
+    <div>
+      <div class="bad">Off by one in the table size or loop</div>
+      <p>The table must have n + 1 slots so <code>table[n]</code> exists. The loop must run <code>while i &lt;= n</code> (or <code>range(2, n + 1)</code>). <code>range(2, n)</code> stops one early and returns F(n - 1).</p>
+    </div>
+    <div>
+      <div class="bad">Mutable default argument as the cache</div>
+      <p><code>def memo(n, cache={})</code> creates one dictionary shared by <em>every</em> call of the function for the life of the program. For fibonacci that happens to be harmless; for a function whose answer depends on other inputs (a different grid) it returns stale results. Pass the cache in, or create it inside a wrapper, or use <code>@cache</code> on a nested function.</p>
+    </div>
+    <div>
+      <div class="bad">Unhashable state with @cache</div>
+      <p><code>@cache</code> keys on the arguments. Passing a list (<code>go(nums, i)</code>) raises <code>TypeError: unhashable type</code>. Pass only the indices; keep the array in the enclosing scope.</p>
+    </div>
+    <div>
+      <div class="bad">Hitting the recursion limit</div>
+      <p>Top-down on n = 5000 raises <code>RecursionError</code> in Python (default limit near 1000 frames). Either <code>sys.setrecursionlimit</code> or, better, use the bottom-up loop. This is a real reason interviewers ask for step 4 of the recipe.</p>
+    </div>
+  </div>
+
+  <div class="cheat">
+    <h3>Interview one-liners</h3>
+    <ul>
+      <li>"DP is recursion where each subproblem is solved once and cached; it turns O(2^n) fibonacci into O(n)."</li>
+      <li>"Memoization is top-down: recurse from the root and store results in a hash map keyed by the state."</li>
+      <li>"Tabulation is bottom-up: fill a table from the base cases, in the order the recurrence needs."</li>
+      <li>"The state is whatever identifies a subproblem: one number means 1-D DP, two numbers means 2-D DP."</li>
+      <li>"Memoized time is number of states times work per state; here n states times O(1)."</li>
+      <li>"Fibonacci only reads the previous two values, so I keep two variables and get O(1) space; the grid only reads the row below, so I keep two rows and get O(m) space."</li>
+      <li>"In Python I write the brute force, add <code>@cache</code>, then flip to loops if the input is deep enough to hit the recursion limit."</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================ PRACTICE ============================ -->
+<section id="practice">
+  <h2><span class="num">8</span>Practice, in this order</h2>
+  <p>Do each one in the four steps: brute force, find the repeat, add <code>@cache</code>, flip to bottom-up. Even when the easy version is enough, write the bottom-up version once. That is the muscle.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Problem</th><th>Move it trains</th><th>Level</th></tr></thead>
+    <tbody>
+      <tr><td>509</td><td>Fibonacci Number</td><td>the lesson exactly: memo, then two variables</td><td>Easy</td></tr>
+      <tr><td>70</td><td>Climbing Stairs</td><td>1-D "two back", fibonacci in disguise</td><td>Easy</td></tr>
+      <tr><td>1137</td><td>N-th Tribonacci Number</td><td>1-D "three back", slide three variables</td><td>Easy</td></tr>
+      <tr><td>746</td><td>Min Cost Climbing Stairs</td><td>1-D "two back" with min</td><td>Easy</td></tr>
+      <tr><td>198</td><td>House Robber</td><td>1-D "two back" with max, rob or skip</td><td>Medium</td></tr>
+      <tr><td>213</td><td>House Robber II</td><td>run House Robber twice on a circle</td><td>Medium</td></tr>
+      <tr><td>62</td><td>Unique Paths</td><td>2-D grid, the lesson exactly, two rows</td><td>Medium</td></tr>
+      <tr><td>63</td><td>Unique Paths II</td><td>2-D grid with obstacles (cell = 0)</td><td>Medium</td></tr>
+      <tr><td>64</td><td>Minimum Path Sum</td><td>2-D grid with min instead of plus</td><td>Medium</td></tr>
+      <tr><td>1143</td><td>Longest Common Subsequence</td><td>2-D DP on two strings, state (i, j)</td><td>Medium</td></tr>
+      <tr><td>322</td><td>Coin Change</td><td>1-D min over choices, unbounded</td><td>Medium</td></tr>
+      <tr><td>300</td><td>Longest Increasing Subsequence</td><td>1-D max, dp[i] looks at all j &lt; i</td><td>Medium</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Your next step today:</strong> LeetCode 70, Climbing Stairs. Write the brute force, draw the tree for n = 5, add <code>@cache</code>, then write the two-variable loop from memory and compare with the fibonacci trace table.</p>
+</section>
+
+<!-- ============================ QUIZ ============================ -->
+<section id="quiz">
+  <h2><span class="num">9</span>Self-check</h2>
+  <p>Answer out loud before opening. If you cannot answer in one breath, reread that section.</p>
+
+  <details><summary><span class="q">Q1</span>In one sentence, what is dynamic programming?</summary><div><p>An optimized version of recursion: break the problem into smaller subproblems and solve each subproblem only once by caching its result.</p></div></details>
+
+  <details><summary><span class="q">Q2</span>Why is <code>bruteForce(n)</code> for fibonacci O(2^n)? Which value is repeated in the tree for n = 5, and how many times?</summary><div><p>Every call makes two more calls, so each level of the tree doubles and the depth is n. In the tree for F(5), F(2) is computed three times and F(3) twice.</p></div></details>
+
+  <details><summary><span class="q">Q3</span>What three changes turn the brute force into <code>memoization(n, cache)</code>?</summary><div><p>1. Add a cache parameter (hash map). 2. Add a base case: if n is in the cache, return the cached value. 3. After computing F(n), store it in the cache before returning.</p></div></details>
+
+  <details><summary><span class="q">Q4</span>Why is memoized fibonacci O(n) time and O(n) space?</summary><div><p>Each fibonacci number is computed once and a cache lookup is O(1), so n computations total. The cache holds up to n entries, and the recursion stack is also up to n deep.</p></div></details>
+
+  <details><summary><span class="q">Q5</span>What do "top-down" and "bottom-up" mean?</summary><div><p>Top-down: start at the root (F(n)) and recurse down to the base cases, caching on the way back. Bottom-up: compute the base cases first and build up to n with a loop, no recursion.</p></div></details>
+
+  <details><summary><span class="q">Q6</span>Trace it: run <code>dp(6)</code> from the lesson. Give (i, dp[0], dp[1]) after every loop turn and the return value.</summary><div><p>Start [0, 1]. i=2: [1, 1]. i=3: [1, 2]. i=4: [2, 3]. i=5: [3, 5]. i=6: [5, 8]. Loop stops because 7 &gt; 6. Return dp[1] = 8.</p></div></details>
+
+  <details><summary><span class="q">Q7</span>Why does the two-variable version need <code>tmp</code>? What Python line removes it?</summary><div><p><code>dp[1] = dp[0] + dp[1]</code> destroys the old dp[1], but dp[0] must become that old value next. <code>tmp</code> saves it. <code>a, b = b, a + b</code> evaluates the whole right side before assigning, so no temporary is needed.</p></div></details>
+
+  <details><summary><span class="q">Q8</span>What makes unique paths a 2-D problem instead of 1-D?</summary><div><p>A subproblem is identified by two variables, the row r and the column c. So the cache is a rows × cols grid, one slot per (r, c).</p></div></details>
+
+  <details><summary><span class="q">Q9</span>In the grid brute force, which two cells do the same work twice, and why?</summary><div><p>Any cell reachable by more than one route, for example (1, 1): down-then-right and right-then-down both arrive there, so <code>bruteForce(1, 1)</code> and its whole subtree run twice. The brute force has no memory of earlier calls.</p></div></details>
+
+  <details><summary><span class="q">Q10</span>Trace it: run the bottom-up <code>dp(2, 3)</code>. Give <code>prevRow</code> after each row and the answer.</summary><div><p>init [0, 0, 0]. r=1: curRow starts [0, 0, 1], c=1: 1 + 0 = 1, c=0: 1 + 0 = 1 → [1, 1, 1]. r=0: [0, 0, 1], c=1: 1 + 1 = 2, c=0: 2 + 1 = 3 → [3, 2, 1]. Return prevRow[0] = 3.</p></div></details>
+
+  <details><summary><span class="q">Q11</span>Why does the bottom-up grid loop go right to left inside each row, and bottom to top across rows?</summary><div><p><code>curRow[c] = curRow[c + 1] + prevRow[c]</code>: the value comes from the right neighbor and the cell below, which is the base-case side. Those must already be computed, so you fill from the bottom-right toward the top-left.</p></div></details>
+
+  <details><summary><span class="q">Q12</span>How does the space drop from O(n·m) to O(m) in the grid, and what is the fibonacci equivalent?</summary><div><p>Computing a row only needs the row below it, so keep <code>prevRow</code> and <code>curRow</code> and drop the rest: two rows of m cells. Fibonacci only needs the previous two values, so keep two variables: O(1).</p></div></details>
+
+  <details><summary><span class="q">Q13</span>What does <code>@cache</code> from <code>functools</code> do, and what must be true of the arguments?</summary><div><p>It wraps the function with a hidden dictionary: same arguments → return the stored result instead of running the body. Arguments must be hashable (int, str, tuple), because they become the dictionary key. Lists are not allowed.</p></div></details>
+</section>
+
+<nav class="pager" aria-label="Previous and next topic">
+  <a class="prev" href="10-graphs.html"><small>Previous</small>Graphs</a>
+  <a class="next" href="12-bit-manipulation.html"><small>Next</small>Bit Manipulation</a>
+</nav>
+
+<footer>
+  Source: NeetCode "Algorithms and Data Structures for Beginners", lessons 32 (1-Dimensional Dynamic Programming) and 33 (2-Dimensional Dynamic Programming). All Python in these notes was run and tested. Orange in every diagram marks the call that was saved or the cell that was just computed.
+</footer>
+</div>
+</body>
+</html>

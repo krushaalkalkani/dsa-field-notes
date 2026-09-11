@@ -1,0 +1,1040 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binary Search · DSA Field Notes</title>
+<meta name="description" content="Binary search on a sorted array and on a range of answers - L / mid / R diagrams, full traces, the three templates, bisect, Big-O, mistakes, practice, self-check.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arr"/></marker>
+    <marker id="arrNew" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrNew"/></marker>
+    <marker id="arrOld" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrOld"/></marker>
+    <marker id="arrCur" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrCur"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="site-head">
+  <a class="brand" href="../index.html">DSA <span>Field Notes</span></a>
+  <div class="crumbs"><a href="../index.html">Course map</a> <span>/</span> <span>05 Binary Search</span></div>
+</header>
+<header class="top">
+  <div class="eyebrow">NeetCode · DSA for Beginners · Lessons 14-15</div>
+  <h1>Binary Search Field Notes</h1>
+  <p class="lede">Search a sorted array, then search a range of possible answers. Every diagram shows where L, mid and R stand and which half was thrown away. Read the notes, then close them and write all three templates from memory.</p>
+</header>
+
+<nav class="sections" aria-label="Sections">
+  <a href="#why">Why</a>
+  <a href="#array">Search an array</a>
+  <a href="#range">Search a range</a>
+  <a href="#templates">Templates</a>
+  <a href="#patterns">Patterns</a>
+  <a href="#complexity">Big-O</a>
+  <a href="#mistakes">Mistakes</a>
+  <a href="#practice">Practice</a>
+  <a href="#quiz">Self-check</a>
+</nav>
+
+<!-- ============================ WHY ============================ -->
+<section id="why">
+  <h2><span class="num">0</span>Why binary search exists</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>Looking up "python" in a paper <strong>dictionary</strong>. You do not start at page 1. You open in the middle, see the letter M, and know "python" must be after it. Now the left half of the book is dead to you. Open the middle of the right half, decide again, and repeat. Every open throws away half of the pages that are left, until you land on the word or run out of pages.</p>
+  </div>
+
+  <p>Binary search is an efficient way to search for an element in a <strong>sorted</strong> array. You are given an array and a <dfn>target</dfn> (the value you look for). The word <em>sorted</em> is the whole trick: because the values are in order, one comparison at the middle tells you which half the target can be in, and the other half can be dropped without looking at it.</p>
+
+  <p>NeetCode calls the set of positions the target could still be in the <dfn>search space</dfn>. It starts as the whole array and is cut in half at every step. Two variations show up in interviews:</p>
+  <ol>
+    <li><strong>Search Array</strong> (lesson 14): a sorted array and a target. Decide whether the target is in the array, and where.</li>
+    <li><strong>Search Range</strong> (lesson 15): no array. You get a range of numbers and some way to tell "too big / too small / correct", and you search the range itself.</li>
+  </ol>
+
+  <figure>
+    <svg viewBox="0 0 860 205" role="img" aria-label="Looking up the word python in a dictionary. Open at M, throw away A to L. Open at T, throw away T to Z. Open at P and find the word. The live part of the alphabet shrinks by half each time.">
+      <text x="80" y="10" class="t small">target word: "python"   (its first letter is P)</text>
+      <!-- row 1: all 26 letters, open at M -->
+      <text x="40" y="37" class="t mono" text-anchor="middle">①</text>
+      <g>
+        <rect x="80" y="18" width="20" height="28" class="nd"/><text x="90" y="37" class="t small" text-anchor="middle">A</text>
+        <rect x="100" y="18" width="20" height="28" class="nd"/><text x="110" y="37" class="t small" text-anchor="middle">B</text>
+        <rect x="120" y="18" width="20" height="28" class="nd"/><text x="130" y="37" class="t small" text-anchor="middle">C</text>
+        <rect x="140" y="18" width="20" height="28" class="nd"/><text x="150" y="37" class="t small" text-anchor="middle">D</text>
+        <rect x="160" y="18" width="20" height="28" class="nd"/><text x="170" y="37" class="t small" text-anchor="middle">E</text>
+        <rect x="180" y="18" width="20" height="28" class="nd"/><text x="190" y="37" class="t small" text-anchor="middle">F</text>
+        <rect x="200" y="18" width="20" height="28" class="nd"/><text x="210" y="37" class="t small" text-anchor="middle">G</text>
+        <rect x="220" y="18" width="20" height="28" class="nd"/><text x="230" y="37" class="t small" text-anchor="middle">H</text>
+        <rect x="240" y="18" width="20" height="28" class="nd"/><text x="250" y="37" class="t small" text-anchor="middle">I</text>
+        <rect x="260" y="18" width="20" height="28" class="nd"/><text x="270" y="37" class="t small" text-anchor="middle">J</text>
+        <rect x="280" y="18" width="20" height="28" class="nd"/><text x="290" y="37" class="t small" text-anchor="middle">K</text>
+        <rect x="300" y="18" width="20" height="28" class="nd"/><text x="310" y="37" class="t small" text-anchor="middle">L</text>
+        <rect x="320" y="18" width="20" height="28" class="nd newnd"/><text x="330" y="37" class="t newlab" text-anchor="middle" font-size="11">M</text>
+        <rect x="340" y="18" width="20" height="28" class="nd"/><text x="350" y="37" class="t small" text-anchor="middle">N</text>
+        <rect x="360" y="18" width="20" height="28" class="nd"/><text x="370" y="37" class="t small" text-anchor="middle">O</text>
+        <rect x="380" y="18" width="20" height="28" class="nd"/><text x="390" y="37" class="t small" text-anchor="middle">P</text>
+        <rect x="400" y="18" width="20" height="28" class="nd"/><text x="410" y="37" class="t small" text-anchor="middle">Q</text>
+        <rect x="420" y="18" width="20" height="28" class="nd"/><text x="430" y="37" class="t small" text-anchor="middle">R</text>
+        <rect x="440" y="18" width="20" height="28" class="nd"/><text x="450" y="37" class="t small" text-anchor="middle">S</text>
+        <rect x="460" y="18" width="20" height="28" class="nd"/><text x="470" y="37" class="t small" text-anchor="middle">T</text>
+        <rect x="480" y="18" width="20" height="28" class="nd"/><text x="490" y="37" class="t small" text-anchor="middle">U</text>
+        <rect x="500" y="18" width="20" height="28" class="nd"/><text x="510" y="37" class="t small" text-anchor="middle">V</text>
+        <rect x="520" y="18" width="20" height="28" class="nd"/><text x="530" y="37" class="t small" text-anchor="middle">W</text>
+        <rect x="540" y="18" width="20" height="28" class="nd"/><text x="550" y="37" class="t small" text-anchor="middle">X</text>
+        <rect x="560" y="18" width="20" height="28" class="nd"/><text x="570" y="37" class="t small" text-anchor="middle">Y</text>
+        <rect x="580" y="18" width="20" height="28" class="nd"/><text x="590" y="37" class="t small" text-anchor="middle">Z</text>
+      </g>
+      <text x="80" y="62" class="t small">① open in the middle: M.  "python" comes after M  →  throw away A-M, keep N-Z  (26 → 13 letters)</text>
+
+      <!-- row 2: N..Z live, open at T -->
+      <text x="40" y="103" class="t mono" text-anchor="middle">②</text>
+      <g>
+        <rect x="80" y="84" width="20" height="28" class="nd dim"/><rect x="100" y="84" width="20" height="28" class="nd dim"/><rect x="120" y="84" width="20" height="28" class="nd dim"/><rect x="140" y="84" width="20" height="28" class="nd dim"/><rect x="160" y="84" width="20" height="28" class="nd dim"/><rect x="180" y="84" width="20" height="28" class="nd dim"/><rect x="200" y="84" width="20" height="28" class="nd dim"/><rect x="220" y="84" width="20" height="28" class="nd dim"/><rect x="240" y="84" width="20" height="28" class="nd dim"/><rect x="260" y="84" width="20" height="28" class="nd dim"/><rect x="280" y="84" width="20" height="28" class="nd dim"/><rect x="300" y="84" width="20" height="28" class="nd dim"/><rect x="320" y="84" width="20" height="28" class="nd dim"/>
+        <text x="210" y="103" class="t small" text-anchor="middle" opacity=".5">A ... M  (gone)</text>
+        <rect x="340" y="84" width="20" height="28" class="nd"/><text x="350" y="103" class="t small" text-anchor="middle">N</text>
+        <rect x="360" y="84" width="20" height="28" class="nd"/><text x="370" y="103" class="t small" text-anchor="middle">O</text>
+        <rect x="380" y="84" width="20" height="28" class="nd"/><text x="390" y="103" class="t small" text-anchor="middle">P</text>
+        <rect x="400" y="84" width="20" height="28" class="nd"/><text x="410" y="103" class="t small" text-anchor="middle">Q</text>
+        <rect x="420" y="84" width="20" height="28" class="nd"/><text x="430" y="103" class="t small" text-anchor="middle">R</text>
+        <rect x="440" y="84" width="20" height="28" class="nd"/><text x="450" y="103" class="t small" text-anchor="middle">S</text>
+        <rect x="460" y="84" width="20" height="28" class="nd newnd"/><text x="470" y="103" class="t newlab" text-anchor="middle" font-size="11">T</text>
+        <rect x="480" y="84" width="20" height="28" class="nd"/><text x="490" y="103" class="t small" text-anchor="middle">U</text>
+        <rect x="500" y="84" width="20" height="28" class="nd"/><text x="510" y="103" class="t small" text-anchor="middle">V</text>
+        <rect x="520" y="84" width="20" height="28" class="nd"/><text x="530" y="103" class="t small" text-anchor="middle">W</text>
+        <rect x="540" y="84" width="20" height="28" class="nd"/><text x="550" y="103" class="t small" text-anchor="middle">X</text>
+        <rect x="560" y="84" width="20" height="28" class="nd"/><text x="570" y="103" class="t small" text-anchor="middle">Y</text>
+        <rect x="580" y="84" width="20" height="28" class="nd"/><text x="590" y="103" class="t small" text-anchor="middle">Z</text>
+      </g>
+      <text x="80" y="128" class="t small">② open in the middle of what is left: T.  "python" comes before T  →  throw away T-Z, keep N-S  (13 → 6)</text>
+
+      <!-- row 3: N..S live, open at P -->
+      <text x="40" y="169" class="t mono" text-anchor="middle">③</text>
+      <g>
+        <rect x="80" y="150" width="20" height="28" class="nd dim"/><rect x="100" y="150" width="20" height="28" class="nd dim"/><rect x="120" y="150" width="20" height="28" class="nd dim"/><rect x="140" y="150" width="20" height="28" class="nd dim"/><rect x="160" y="150" width="20" height="28" class="nd dim"/><rect x="180" y="150" width="20" height="28" class="nd dim"/><rect x="200" y="150" width="20" height="28" class="nd dim"/><rect x="220" y="150" width="20" height="28" class="nd dim"/><rect x="240" y="150" width="20" height="28" class="nd dim"/><rect x="260" y="150" width="20" height="28" class="nd dim"/><rect x="280" y="150" width="20" height="28" class="nd dim"/><rect x="300" y="150" width="20" height="28" class="nd dim"/><rect x="320" y="150" width="20" height="28" class="nd dim"/>
+        <text x="210" y="169" class="t small" text-anchor="middle" opacity=".5">A ... M  (gone)</text>
+        <rect x="340" y="150" width="20" height="28" class="nd"/><text x="350" y="169" class="t small" text-anchor="middle">N</text>
+        <rect x="360" y="150" width="20" height="28" class="nd"/><text x="370" y="169" class="t small" text-anchor="middle">O</text>
+        <rect x="380" y="150" width="20" height="28" class="nd newnd"/><text x="390" y="169" class="t newlab" text-anchor="middle" font-size="11">P</text>
+        <rect x="400" y="150" width="20" height="28" class="nd"/><text x="410" y="169" class="t small" text-anchor="middle">Q</text>
+        <rect x="420" y="150" width="20" height="28" class="nd"/><text x="430" y="169" class="t small" text-anchor="middle">R</text>
+        <rect x="440" y="150" width="20" height="28" class="nd"/><text x="450" y="169" class="t small" text-anchor="middle">S</text>
+        <rect x="460" y="150" width="20" height="28" class="nd dim"/><rect x="480" y="150" width="20" height="28" class="nd dim"/><rect x="500" y="150" width="20" height="28" class="nd dim"/><rect x="520" y="150" width="20" height="28" class="nd dim"/><rect x="540" y="150" width="20" height="28" class="nd dim"/><rect x="560" y="150" width="20" height="28" class="nd dim"/><rect x="580" y="150" width="20" height="28" class="nd dim"/>
+        <text x="530" y="169" class="t small" text-anchor="middle" opacity=".5">T ... Z  (gone)</text>
+      </g>
+      <text x="80" y="194" class="t small">③ open in the middle of N-S: P.  Found the P pages after 3 opens instead of walking 15 letters.</text>
+    </svg>
+    <figcaption><b>The search space shrinks by half on every open.</b> Orange is the page you open (the <code>mid</code>). Faded letters are pages you will never touch again. This only works because a dictionary is sorted; in a pile of unsorted pages you would have to read every one.</figcaption>
+  </figure>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>Binary search needs two things: the data is <strong>sorted</strong> (or at least ordered by the question you ask), and you can <strong>jump to the middle in O(1)</strong>. Arrays give you both. A linked list gives you neither, so binary search on a linked list is pointless.</p>
+  </div>
+</section>
+
+<!-- ============================ SEARCH AN ARRAY ============================ -->
+<section id="array">
+  <h2><span class="num">1</span>Search an array (lesson 14)</h2>
+
+  <h3>Three markers: L, mid, R</h3>
+  <p>Set two pointers. <code>L</code> is the left-most index (0) and <code>R</code> is the right-most index (<code>len(arr) - 1</code>). Together they mark the current search space; at the start that is the whole array. NeetCode also calls them <code>low</code> and <code>high</code>, or <code>left</code> and <code>right</code>. Then compute the middle index:</p>
+  <p><code>mid = (L + R) // 2</code>, using <dfn>integer division</dfn> (throw away the fraction). <code>mid</code> is the index that splits the current subarray into two halves.</p>
+  <p>Compare <code>arr[mid]</code> with the target. There are exactly three outcomes:</p>
+  <ul>
+    <li><code>target &gt; arr[mid]</code>: every value at or left of <code>mid</code> is too small (the array is sorted). Search the right half: <code>L = mid + 1</code>.</li>
+    <li><code>target &lt; arr[mid]</code>: every value at or right of <code>mid</code> is too big. Search the left half: <code>R = mid - 1</code>.</li>
+    <li><code>target == arr[mid]</code>: found. Return <code>mid</code>.</li>
+  </ul>
+  <p>Each step throws away half of what is left. That is the whole algorithm.</p>
+
+<pre><code>arr = [<span class="s">1</span>, <span class="s">3</span>, <span class="s">3</span>, <span class="s">4</span>, <span class="s">5</span>, <span class="s">6</span>, <span class="s">7</span>, <span class="s">8</span>]      <span class="c"># NeetCode's array in the code block (note the two 3s)</span>
+
+<span class="k">def</span> binarySearch(arr, target):
+    L, R = <span class="s">0</span>, len(arr) - <span class="s">1</span>          <span class="c"># search space = whole array</span>
+
+    <span class="k">while</span> L &lt;= R:                    <span class="c"># at least one index is still possible</span>
+        mid = (L + R) // <span class="s">2</span>
+
+        <span class="k">if</span> target &gt; arr[mid]:
+            L = mid + <span class="s">1</span>              <span class="c"># drop mid and everything left of it</span>
+        <span class="k">elif</span> target &lt; arr[mid]:
+            R = mid - <span class="s">1</span>              <span class="c"># drop mid and everything right of it</span>
+        <span class="k">else</span>:
+            <span class="k">return</span> mid               <span class="c"># found</span>
+    <span class="k">return</span> -<span class="s">1</span>                        <span class="c"># L crossed R: not in the array</span></code></pre>
+
+  <h3>Case 1: the target exists. arr = [1,2,3,4,5,6,7,8], target = 5</h3>
+  <p>The walkthrough in the video uses the array <code>[1,2,3,4,5,6,7,8]</code> (no duplicates). Follow L, mid and R for three loop turns.</p>
+
+  <figure>
+    <svg viewBox="0 0 680 280" role="img" aria-label="Binary search for 5 in the array 1 to 8. Turn 1: L=0, mid=3, R=7, arr[3]=4 is less than 5 so L moves to 4. Turn 2: L=4, mid=5, R=7, arr[5]=6 is greater than 5 so R moves to 4. Turn 3: L, mid and R are all 4, arr[4]=5, found.">
+      <!-- ===== turn 1 ===== -->
+      <text x="30" y="45" class="t mono" text-anchor="middle">①</text>
+      <text x="98" y="14" class="t ptrlab" text-anchor="middle">L</text>
+      <text x="266" y="14" class="t newlab" text-anchor="middle">mid</text>
+      <text x="490" y="14" class="t ptrlab" text-anchor="middle">R</text>
+      <g>
+        <rect x="70" y="20" width="56" height="40" class="nd"/><text x="98" y="45" class="t" text-anchor="middle">1</text>
+        <rect x="126" y="20" width="56" height="40" class="nd"/><text x="154" y="45" class="t" text-anchor="middle">2</text>
+        <rect x="182" y="20" width="56" height="40" class="nd"/><text x="210" y="45" class="t" text-anchor="middle">3</text>
+        <rect x="238" y="20" width="56" height="40" class="nd newnd"/><text x="266" y="45" class="t" text-anchor="middle">4</text>
+        <rect x="294" y="20" width="56" height="40" class="nd"/><text x="322" y="45" class="t" text-anchor="middle">5</text>
+        <rect x="350" y="20" width="56" height="40" class="nd"/><text x="378" y="45" class="t" text-anchor="middle">6</text>
+        <rect x="406" y="20" width="56" height="40" class="nd"/><text x="434" y="45" class="t" text-anchor="middle">7</text>
+        <rect x="462" y="20" width="56" height="40" class="nd"/><text x="490" y="45" class="t" text-anchor="middle">8</text>
+        <text x="98" y="74" class="t small" text-anchor="middle">0</text><text x="154" y="74" class="t small" text-anchor="middle">1</text><text x="210" y="74" class="t small" text-anchor="middle">2</text><text x="266" y="74" class="t small" text-anchor="middle">3</text><text x="322" y="74" class="t small" text-anchor="middle">4</text><text x="378" y="74" class="t small" text-anchor="middle">5</text><text x="434" y="74" class="t small" text-anchor="middle">6</text><text x="490" y="74" class="t small" text-anchor="middle">7</text>
+      </g>
+      <text x="530" y="40" class="t small">mid = (0+7)//2 = 3</text>
+      <text x="530" y="56" class="t small">arr[3] = 4 &lt; 5  →  L = 4</text>
+
+      <!-- ===== turn 2 ===== -->
+      <text x="30" y="141" class="t mono" text-anchor="middle">②</text>
+      <text x="322" y="110" class="t ptrlab" text-anchor="middle">L</text>
+      <text x="378" y="110" class="t newlab" text-anchor="middle">mid</text>
+      <text x="490" y="110" class="t ptrlab" text-anchor="middle">R</text>
+      <g>
+        <rect x="70" y="116" width="56" height="40" class="nd dim"/><text x="98" y="141" class="t" text-anchor="middle" opacity=".35">1</text>
+        <rect x="126" y="116" width="56" height="40" class="nd dim"/><text x="154" y="141" class="t" text-anchor="middle" opacity=".35">2</text>
+        <rect x="182" y="116" width="56" height="40" class="nd dim"/><text x="210" y="141" class="t" text-anchor="middle" opacity=".35">3</text>
+        <rect x="238" y="116" width="56" height="40" class="nd dim"/><text x="266" y="141" class="t" text-anchor="middle" opacity=".35">4</text>
+        <rect x="294" y="116" width="56" height="40" class="nd"/><text x="322" y="141" class="t" text-anchor="middle">5</text>
+        <rect x="350" y="116" width="56" height="40" class="nd newnd"/><text x="378" y="141" class="t" text-anchor="middle">6</text>
+        <rect x="406" y="116" width="56" height="40" class="nd"/><text x="434" y="141" class="t" text-anchor="middle">7</text>
+        <rect x="462" y="116" width="56" height="40" class="nd"/><text x="490" y="141" class="t" text-anchor="middle">8</text>
+        <text x="98" y="170" class="t small" text-anchor="middle">0</text><text x="154" y="170" class="t small" text-anchor="middle">1</text><text x="210" y="170" class="t small" text-anchor="middle">2</text><text x="266" y="170" class="t small" text-anchor="middle">3</text><text x="322" y="170" class="t small" text-anchor="middle">4</text><text x="378" y="170" class="t small" text-anchor="middle">5</text><text x="434" y="170" class="t small" text-anchor="middle">6</text><text x="490" y="170" class="t small" text-anchor="middle">7</text>
+      </g>
+      <text x="530" y="136" class="t small">mid = (4+7)//2 = 5</text>
+      <text x="530" y="152" class="t small">arr[5] = 6 &gt; 5  →  R = 4</text>
+
+      <!-- ===== turn 3 ===== -->
+      <text x="30" y="237" class="t mono" text-anchor="middle">③</text>
+      <text x="322" y="206" class="t newlab" text-anchor="middle">L = mid = R</text>
+      <g>
+        <rect x="70" y="212" width="56" height="40" class="nd dim"/><text x="98" y="237" class="t" text-anchor="middle" opacity=".35">1</text>
+        <rect x="126" y="212" width="56" height="40" class="nd dim"/><text x="154" y="237" class="t" text-anchor="middle" opacity=".35">2</text>
+        <rect x="182" y="212" width="56" height="40" class="nd dim"/><text x="210" y="237" class="t" text-anchor="middle" opacity=".35">3</text>
+        <rect x="238" y="212" width="56" height="40" class="nd dim"/><text x="266" y="237" class="t" text-anchor="middle" opacity=".35">4</text>
+        <rect x="294" y="212" width="56" height="40" class="nd newnd"/><text x="322" y="237" class="t" text-anchor="middle">5</text>
+        <rect x="350" y="212" width="56" height="40" class="nd dim"/><text x="378" y="237" class="t" text-anchor="middle" opacity=".35">6</text>
+        <rect x="406" y="212" width="56" height="40" class="nd dim"/><text x="434" y="237" class="t" text-anchor="middle" opacity=".35">7</text>
+        <rect x="462" y="212" width="56" height="40" class="nd dim"/><text x="490" y="237" class="t" text-anchor="middle" opacity=".35">8</text>
+        <text x="98" y="266" class="t small" text-anchor="middle">0</text><text x="154" y="266" class="t small" text-anchor="middle">1</text><text x="210" y="266" class="t small" text-anchor="middle">2</text><text x="266" y="266" class="t small" text-anchor="middle">3</text><text x="322" y="266" class="t small" text-anchor="middle">4</text><text x="378" y="266" class="t small" text-anchor="middle">5</text><text x="434" y="266" class="t small" text-anchor="middle">6</text><text x="490" y="266" class="t small" text-anchor="middle">7</text>
+      </g>
+      <text x="530" y="232" class="t small">mid = (4+4)//2 = 4</text>
+      <text x="530" y="248" class="t newlab" font-size="11">arr[4] = 5 = target → return 4</text>
+    </svg>
+    <figcaption><b>Orange is the cell being tested; faded cells are out of the search space for good.</b> After turn ① the search space is indices 4-7. After turn ② it is only index 4. Note that <code>mid</code> itself is dropped each time: the value at <code>mid</code> was compared and was not the target, so there is no reason to keep it.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Turn</th><th>L</th><th>R</th><th><code>L &lt;= R</code>?</th><th>mid = (L+R)//2</th><th>arr[mid]</th><th>compare to 5</th><th>action</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>0</td><td>7</td><td>yes</td><td>3</td><td>4</td><td>5 &gt; 4</td><td><code>L = mid + 1 = 4</code></td></tr>
+      <tr><td>2</td><td>4</td><td>7</td><td>yes</td><td>5</td><td>6</td><td>5 &lt; 6</td><td><code>R = mid - 1 = 4</code></td></tr>
+      <tr><td>3</td><td>4</td><td>4</td><td>yes</td><td>4</td><td>5</td><td>equal</td><td><code>return 4</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Case 2: the target does not exist. Same array, target = 9</h3>
+  <p>9 is bigger than everything, so every comparison says "go right" and <code>L</code> keeps moving up. In the end <code>L</code> walks off the right end of the array, out of bounds. In general the search space is used up when <code>L &gt; R</code>; the loop condition <code>L &lt;= R</code> becomes false and we return <code>-1</code>.</p>
+
+  <figure>
+    <svg viewBox="0 0 760 440" role="img" aria-label="Binary search for 9 in the array 1 to 8. Every comparison moves L right: L goes 0, 4, 6, 7, then 8. At L=8 and R=7, L has crossed R, the loop stops and -1 is returned.">
+      <!-- ===== turn 1 ===== -->
+      <text x="30" y="43" class="t mono" text-anchor="middle">①</text>
+      <text x="98" y="12" class="t ptrlab" text-anchor="middle">L</text>
+      <text x="266" y="12" class="t newlab" text-anchor="middle">mid</text>
+      <text x="490" y="12" class="t ptrlab" text-anchor="middle">R</text>
+      <g>
+        <rect x="70" y="18" width="56" height="40" class="nd"/><text x="98" y="43" class="t" text-anchor="middle">1</text>
+        <rect x="126" y="18" width="56" height="40" class="nd"/><text x="154" y="43" class="t" text-anchor="middle">2</text>
+        <rect x="182" y="18" width="56" height="40" class="nd"/><text x="210" y="43" class="t" text-anchor="middle">3</text>
+        <rect x="238" y="18" width="56" height="40" class="nd newnd"/><text x="266" y="43" class="t" text-anchor="middle">4</text>
+        <rect x="294" y="18" width="56" height="40" class="nd"/><text x="322" y="43" class="t" text-anchor="middle">5</text>
+        <rect x="350" y="18" width="56" height="40" class="nd"/><text x="378" y="43" class="t" text-anchor="middle">6</text>
+        <rect x="406" y="18" width="56" height="40" class="nd"/><text x="434" y="43" class="t" text-anchor="middle">7</text>
+        <rect x="462" y="18" width="56" height="40" class="nd"/><text x="490" y="43" class="t" text-anchor="middle">8</text>
+        <text x="98" y="70" class="t small" text-anchor="middle">0</text><text x="154" y="70" class="t small" text-anchor="middle">1</text><text x="210" y="70" class="t small" text-anchor="middle">2</text><text x="266" y="70" class="t small" text-anchor="middle">3</text><text x="322" y="70" class="t small" text-anchor="middle">4</text><text x="378" y="70" class="t small" text-anchor="middle">5</text><text x="434" y="70" class="t small" text-anchor="middle">6</text><text x="490" y="70" class="t small" text-anchor="middle">7</text>
+      </g>
+      <text x="530" y="38" class="t small">mid = 3, arr[3] = 4 &lt; 9</text>
+      <text x="530" y="54" class="t small">→ L = 4</text>
+
+      <!-- ===== turn 2 ===== -->
+      <text x="30" y="127" class="t mono" text-anchor="middle">②</text>
+      <text x="322" y="96" class="t ptrlab" text-anchor="middle">L</text>
+      <text x="378" y="96" class="t newlab" text-anchor="middle">mid</text>
+      <text x="490" y="96" class="t ptrlab" text-anchor="middle">R</text>
+      <g>
+        <rect x="70" y="102" width="56" height="40" class="nd dim"/><text x="98" y="127" class="t" text-anchor="middle" opacity=".35">1</text>
+        <rect x="126" y="102" width="56" height="40" class="nd dim"/><text x="154" y="127" class="t" text-anchor="middle" opacity=".35">2</text>
+        <rect x="182" y="102" width="56" height="40" class="nd dim"/><text x="210" y="127" class="t" text-anchor="middle" opacity=".35">3</text>
+        <rect x="238" y="102" width="56" height="40" class="nd dim"/><text x="266" y="127" class="t" text-anchor="middle" opacity=".35">4</text>
+        <rect x="294" y="102" width="56" height="40" class="nd"/><text x="322" y="127" class="t" text-anchor="middle">5</text>
+        <rect x="350" y="102" width="56" height="40" class="nd newnd"/><text x="378" y="127" class="t" text-anchor="middle">6</text>
+        <rect x="406" y="102" width="56" height="40" class="nd"/><text x="434" y="127" class="t" text-anchor="middle">7</text>
+        <rect x="462" y="102" width="56" height="40" class="nd"/><text x="490" y="127" class="t" text-anchor="middle">8</text>
+        <text x="98" y="154" class="t small" text-anchor="middle">0</text><text x="154" y="154" class="t small" text-anchor="middle">1</text><text x="210" y="154" class="t small" text-anchor="middle">2</text><text x="266" y="154" class="t small" text-anchor="middle">3</text><text x="322" y="154" class="t small" text-anchor="middle">4</text><text x="378" y="154" class="t small" text-anchor="middle">5</text><text x="434" y="154" class="t small" text-anchor="middle">6</text><text x="490" y="154" class="t small" text-anchor="middle">7</text>
+      </g>
+      <text x="530" y="122" class="t small">mid = 5, arr[5] = 6 &lt; 9</text>
+      <text x="530" y="138" class="t small">→ L = 6</text>
+
+      <!-- ===== turn 3 ===== -->
+      <text x="30" y="211" class="t mono" text-anchor="middle">③</text>
+      <text x="434" y="180" class="t newlab" text-anchor="middle">L = mid</text>
+      <text x="490" y="180" class="t ptrlab" text-anchor="middle">R</text>
+      <g>
+        <rect x="70" y="186" width="56" height="40" class="nd dim"/><text x="98" y="211" class="t" text-anchor="middle" opacity=".35">1</text>
+        <rect x="126" y="186" width="56" height="40" class="nd dim"/><text x="154" y="211" class="t" text-anchor="middle" opacity=".35">2</text>
+        <rect x="182" y="186" width="56" height="40" class="nd dim"/><text x="210" y="211" class="t" text-anchor="middle" opacity=".35">3</text>
+        <rect x="238" y="186" width="56" height="40" class="nd dim"/><text x="266" y="211" class="t" text-anchor="middle" opacity=".35">4</text>
+        <rect x="294" y="186" width="56" height="40" class="nd dim"/><text x="322" y="211" class="t" text-anchor="middle" opacity=".35">5</text>
+        <rect x="350" y="186" width="56" height="40" class="nd dim"/><text x="378" y="211" class="t" text-anchor="middle" opacity=".35">6</text>
+        <rect x="406" y="186" width="56" height="40" class="nd newnd"/><text x="434" y="211" class="t" text-anchor="middle">7</text>
+        <rect x="462" y="186" width="56" height="40" class="nd"/><text x="490" y="211" class="t" text-anchor="middle">8</text>
+        <text x="98" y="238" class="t small" text-anchor="middle">0</text><text x="154" y="238" class="t small" text-anchor="middle">1</text><text x="210" y="238" class="t small" text-anchor="middle">2</text><text x="266" y="238" class="t small" text-anchor="middle">3</text><text x="322" y="238" class="t small" text-anchor="middle">4</text><text x="378" y="238" class="t small" text-anchor="middle">5</text><text x="434" y="238" class="t small" text-anchor="middle">6</text><text x="490" y="238" class="t small" text-anchor="middle">7</text>
+      </g>
+      <text x="530" y="206" class="t small">mid = 6, arr[6] = 7 &lt; 9</text>
+      <text x="530" y="222" class="t small">→ L = 7</text>
+
+      <!-- ===== turn 4 ===== -->
+      <text x="30" y="295" class="t mono" text-anchor="middle">④</text>
+      <text x="490" y="264" class="t newlab" text-anchor="middle">L = mid = R</text>
+      <g>
+        <rect x="70" y="270" width="56" height="40" class="nd dim"/><text x="98" y="295" class="t" text-anchor="middle" opacity=".35">1</text>
+        <rect x="126" y="270" width="56" height="40" class="nd dim"/><text x="154" y="295" class="t" text-anchor="middle" opacity=".35">2</text>
+        <rect x="182" y="270" width="56" height="40" class="nd dim"/><text x="210" y="295" class="t" text-anchor="middle" opacity=".35">3</text>
+        <rect x="238" y="270" width="56" height="40" class="nd dim"/><text x="266" y="295" class="t" text-anchor="middle" opacity=".35">4</text>
+        <rect x="294" y="270" width="56" height="40" class="nd dim"/><text x="322" y="295" class="t" text-anchor="middle" opacity=".35">5</text>
+        <rect x="350" y="270" width="56" height="40" class="nd dim"/><text x="378" y="295" class="t" text-anchor="middle" opacity=".35">6</text>
+        <rect x="406" y="270" width="56" height="40" class="nd dim"/><text x="434" y="295" class="t" text-anchor="middle" opacity=".35">7</text>
+        <rect x="462" y="270" width="56" height="40" class="nd newnd"/><text x="490" y="295" class="t" text-anchor="middle">8</text>
+        <text x="98" y="322" class="t small" text-anchor="middle">0</text><text x="154" y="322" class="t small" text-anchor="middle">1</text><text x="210" y="322" class="t small" text-anchor="middle">2</text><text x="266" y="322" class="t small" text-anchor="middle">3</text><text x="322" y="322" class="t small" text-anchor="middle">4</text><text x="378" y="322" class="t small" text-anchor="middle">5</text><text x="434" y="322" class="t small" text-anchor="middle">6</text><text x="490" y="322" class="t small" text-anchor="middle">7</text>
+      </g>
+      <text x="530" y="290" class="t small">mid = 7, arr[7] = 8 &lt; 9</text>
+      <text x="530" y="306" class="t small">→ L = 8</text>
+
+      <!-- ===== after turn 4: L crossed R ===== -->
+      <text x="30" y="379" class="t mono" text-anchor="middle">⑤</text>
+      <text x="490" y="348" class="t ptrlab" text-anchor="middle">R</text>
+      <path d="M502,344 L534,344" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="546" y="348" class="t newlab" text-anchor="middle">L</text>
+      <g>
+        <rect x="70" y="354" width="56" height="40" class="nd dim"/><text x="98" y="379" class="t" text-anchor="middle" opacity=".35">1</text>
+        <rect x="126" y="354" width="56" height="40" class="nd dim"/><text x="154" y="379" class="t" text-anchor="middle" opacity=".35">2</text>
+        <rect x="182" y="354" width="56" height="40" class="nd dim"/><text x="210" y="379" class="t" text-anchor="middle" opacity=".35">3</text>
+        <rect x="238" y="354" width="56" height="40" class="nd dim"/><text x="266" y="379" class="t" text-anchor="middle" opacity=".35">4</text>
+        <rect x="294" y="354" width="56" height="40" class="nd dim"/><text x="322" y="379" class="t" text-anchor="middle" opacity=".35">5</text>
+        <rect x="350" y="354" width="56" height="40" class="nd dim"/><text x="378" y="379" class="t" text-anchor="middle" opacity=".35">6</text>
+        <rect x="406" y="354" width="56" height="40" class="nd dim"/><text x="434" y="379" class="t" text-anchor="middle" opacity=".35">7</text>
+        <rect x="462" y="354" width="56" height="40" class="nd dim"/><text x="490" y="379" class="t" text-anchor="middle" opacity=".35">8</text>
+        <rect x="518" y="354" width="56" height="40" class="mem"/><text x="546" y="379" class="t nulltxt" text-anchor="middle">?</text>
+        <text x="98" y="406" class="t small" text-anchor="middle">0</text><text x="154" y="406" class="t small" text-anchor="middle">1</text><text x="210" y="406" class="t small" text-anchor="middle">2</text><text x="266" y="406" class="t small" text-anchor="middle">3</text><text x="322" y="406" class="t small" text-anchor="middle">4</text><text x="378" y="406" class="t small" text-anchor="middle">5</text><text x="434" y="406" class="t small" text-anchor="middle">6</text><text x="490" y="406" class="t small" text-anchor="middle">7</text><text x="546" y="406" class="t small" text-anchor="middle">8 (out of bounds)</text>
+      </g>
+      <text x="590" y="374" class="t nulltxt" font-size="12">L = 8 &gt; R = 7</text>
+      <text x="590" y="390" class="t small">loop ends, return -1</text>
+      <text x="340" y="432" class="t small" text-anchor="middle">4 comparisons for n = 8, which is floor(log2 8) + 1. The search space never gets a 5th chance.</text>
+    </svg>
+    <figcaption><b>The loop ends when L crosses R.</b> In turn ④ the search space is a single cell (index 7). It is not the target, so <code>L = mid + 1 = 8</code>. Now nothing is left between L and R (the dashed cell does not exist), <code>L &lt;= R</code> is false, and the function returns <code>-1</code>. The "out of bounds" pointer is not a bug; it is the signal that the array was exhausted.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Turn</th><th>L</th><th>R</th><th><code>L &lt;= R</code>?</th><th>mid</th><th>arr[mid]</th><th>compare to 9</th><th>action</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>0</td><td>7</td><td>yes</td><td>3</td><td>4</td><td>9 &gt; 4</td><td><code>L = 4</code></td></tr>
+      <tr><td>2</td><td>4</td><td>7</td><td>yes</td><td>5</td><td>6</td><td>9 &gt; 6</td><td><code>L = 6</code></td></tr>
+      <tr><td>3</td><td>6</td><td>7</td><td>yes</td><td>6</td><td>7</td><td>9 &gt; 7</td><td><code>L = 7</code></td></tr>
+      <tr><td>4</td><td>7</td><td>7</td><td>yes</td><td>7</td><td>8</td><td>9 &gt; 8</td><td><code>L = 8</code></td></tr>
+      <tr><td>5</td><td>8</td><td>7</td><td><strong>no</strong></td><td>-</td><td>-</td><td>-</td><td><code>return -1</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Why <code>L &lt;= R</code> and not <code>L &lt; R</code></h3>
+  <p>Look at turn 3 of case 1 and turn 4 of case 2. Both have <code>L == R</code>: the search space is exactly one cell, and that cell has not been checked yet. With <code>while L &lt; R</code> the loop would skip it. A target that sits in the last remaining cell would be reported as "not found". The smallest example: <code>binarySearch([7], 7)</code> returns <code>-1</code> with <code>L &lt; R</code>, because the loop body never runs.</p>
+  <p>Rule: when <code>R = len(arr) - 1</code> (R is a real index that may hold the answer), the loop is <code>while L &lt;= R</code>. Section 3 shows the other convention, where <code>R = len(arr)</code> and the loop is <code>while L &lt; R</code>. Both are correct; mixing them is the number one binary search bug.</p>
+
+  <h3>The overflow note: <code>mid = L + (R - L) // 2</code></h3>
+  <p>NeetCode mentions a better formula for the middle: <code>L + (R - L) // 2</code>. It gives the same number as <code>(L + R) // 2</code>, but it never computes <code>L + R</code>. In languages with fixed-size integers (Java, C++, Go) <code>L + R</code> can exceed the largest 32-bit int (about 2.1 billion) and wrap around to a negative number. This exact bug sat in Java's own library binary search for years; a Google Research blog post famously wrote it up. Python integers grow as large as needed, so <code>(L + R) // 2</code> cannot overflow here. Interviewers still like to see the safe form, and it costs nothing, so use it.</p>
+
+<pre><code><span class="c"># same value, no L + R anywhere</span>
+mid = L + (R - L) // <span class="s">2</span>
+
+<span class="c"># Python ints do not overflow; this would be a bug in Java with 32-bit ints</span>
+big = <span class="s">2</span>**<span class="s">31</span> - <span class="s">1</span>
+(big + big) // <span class="s">2</span>            <span class="c"># 2147483647 in Python, negative garbage in Java</span></code></pre>
+
+  <h3>Time and space: why log n</h3>
+  <p>The same idea as merge sort's split: divide the size in half until you reach size 1. If you start with <code>n</code> cells and halve <code>x</code> times, you have <code>n / 2^x</code> left. The search ends when that equals 1:</p>
+  <p><code>1 = n / 2^x</code> &nbsp;→&nbsp; <code>2^x = n</code> &nbsp;→&nbsp; <code>x = log2(n)</code>.</p>
+  <p>So the number of comparisons is about <code>log2(n)</code>, and time is <strong>O(log n)</strong>. The iterative version keeps only L, R and mid, so space is <strong>O(1)</strong>. (A recursive version costs O(log n) stack frames.)</p>
+
+  <figure>
+    <svg viewBox="0 0 760 235" role="img" aria-label="Halving picture: a search space of 8 cells becomes 4, then 2, then 1 after three steps. Solving n over 2 to the x equals 1 gives x equals log2 of n.">
+      <text x="118" y="40" class="t mono" text-anchor="end">n = 8</text>
+      <g>
+        <rect x="130" y="20" width="36" height="30" class="nd"/><rect x="166" y="20" width="36" height="30" class="nd"/><rect x="202" y="20" width="36" height="30" class="nd"/><rect x="238" y="20" width="36" height="30" class="nd"/>
+        <rect x="274" y="20" width="36" height="30" class="nd"/><rect x="310" y="20" width="36" height="30" class="nd"/><rect x="346" y="20" width="36" height="30" class="nd"/><rect x="382" y="20" width="36" height="30" class="nd"/>
+      </g>
+      <text x="440" y="40" class="t small">start: 8 cells could hold the target</text>
+
+      <text x="118" y="84" class="t mono" text-anchor="end">n / 2 = 4</text>
+      <g>
+        <rect x="130" y="64" width="36" height="30" class="nd"/><rect x="166" y="64" width="36" height="30" class="nd"/><rect x="202" y="64" width="36" height="30" class="nd"/><rect x="238" y="64" width="36" height="30" class="nd"/>
+        <rect x="274" y="64" width="36" height="30" class="nd dim"/><rect x="310" y="64" width="36" height="30" class="nd dim"/><rect x="346" y="64" width="36" height="30" class="nd dim"/><rect x="382" y="64" width="36" height="30" class="nd dim"/>
+      </g>
+      <text x="440" y="84" class="t small">step ①: one compare drops 4</text>
+
+      <text x="118" y="128" class="t mono" text-anchor="end">n / 4 = 2</text>
+      <g>
+        <rect x="130" y="108" width="36" height="30" class="nd"/><rect x="166" y="108" width="36" height="30" class="nd"/>
+        <rect x="202" y="108" width="36" height="30" class="nd dim"/><rect x="238" y="108" width="36" height="30" class="nd dim"/><rect x="274" y="108" width="36" height="30" class="nd dim"/><rect x="310" y="108" width="36" height="30" class="nd dim"/><rect x="346" y="108" width="36" height="30" class="nd dim"/><rect x="382" y="108" width="36" height="30" class="nd dim"/>
+      </g>
+      <text x="440" y="128" class="t small">step ②: one compare drops 2</text>
+
+      <text x="118" y="172" class="t mono" text-anchor="end">n / 8 = 1</text>
+      <g>
+        <rect x="130" y="152" width="36" height="30" class="nd newnd"/>
+        <rect x="166" y="152" width="36" height="30" class="nd dim"/><rect x="202" y="152" width="36" height="30" class="nd dim"/><rect x="238" y="152" width="36" height="30" class="nd dim"/><rect x="274" y="152" width="36" height="30" class="nd dim"/><rect x="310" y="152" width="36" height="30" class="nd dim"/><rect x="346" y="152" width="36" height="30" class="nd dim"/><rect x="382" y="152" width="36" height="30" class="nd dim"/>
+      </g>
+      <text x="440" y="172" class="t small">step ③: size 1, last compare decides</text>
+
+      <text x="320" y="215" class="t mono" text-anchor="middle">1 = n / 2^x   →   2^x = n   →   x = log2(n)      (n = 8 → x = 3)</text>
+    </svg>
+    <figcaption><b>Every comparison halves what is left, so the number of comparisons is the number of halvings.</b> Doubling <code>n</code> adds only one more step. That is why binary search on a billion sorted items takes about 30 comparisons.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>n (size of search space)</th><th>log2(n), rounded up</th><th>Linear scan worst case</th></tr></thead>
+    <tbody>
+      <tr><td>8</td><td class="big fast">3</td><td class="big slow">8</td></tr>
+      <tr><td>1,024</td><td class="big fast">10</td><td class="big slow">1,024</td></tr>
+      <tr><td>1,000,000</td><td class="big fast">20</td><td class="big slow">1,000,000</td></tr>
+      <tr><td>1,000,000,000</td><td class="big fast">30</td><td class="big slow">1,000,000,000</td></tr>
+    </tbody>
+  </table></div>
+
+<pre><code><span class="c"># the recursive shape, to see the merge-sort-style halving directly</span>
+<span class="k">def</span> binary_search_rec(arr, target, L, R):
+    <span class="k">if</span> L &gt; R:
+        <span class="k">return</span> -<span class="s">1</span>                                   <span class="c"># search space is empty</span>
+    mid = L + (R - L) // <span class="s">2</span>
+    <span class="k">if</span> arr[mid] == target:
+        <span class="k">return</span> mid
+    <span class="k">if</span> target &gt; arr[mid]:
+        <span class="k">return</span> binary_search_rec(arr, target, mid + <span class="s">1</span>, R)
+    <span class="k">return</span> binary_search_rec(arr, target, L, mid - <span class="s">1</span>)</code></pre>
+
+  <div class="callout">
+    <span class="lab">About the two 3s</span>
+    <p>NeetCode's code block uses <code>arr = [1, 3, 3, 4, 5, 6, 7, 8]</code> while the walkthrough uses <code>[1,2,3,4,5,6,7,8]</code>. Binary search still works with duplicates; it just returns <em>some</em> index holding the target, not necessarily the first one. <code>binarySearch(arr, 3)</code> here returns 1 (mid lands on index 3, then 1). If you need the first or last copy, use the boundary template in section 3.</p>
+  </div>
+</section>
+
+<!-- ============================ SEARCH A RANGE ============================ -->
+<section id="range">
+  <h2><span class="num">2</span>Search a range (lesson 15)</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>Pick a number from 1 to 100 and ask a friend to guess it. After each guess you say one of three things: <strong>correct</strong>, <strong>too small</strong>, or <strong>too big</strong>. A smart friend guesses 50 first, then 25 or 75, and needs at most 7 guesses. There is no array anywhere in this game, but it is binary search.</p>
+  </div>
+
+  <p>This is the second variation. You are not given an array. You are given a <em>range</em> of numbers and a way to check a guess. At its core it is still binary search: as long as there is some way to tell whether a guess is too big, too small, or correct, you can adjust the search space in the same way. Often the comparison is done by a predefined function or a math equation instead of <code>arr[mid]</code>.</p>
+
+  <h3>The black box: isCorrect(n)</h3>
+  <p>NeetCode's example is a function <code>isCorrect(n)</code> that returns <code>1</code> if <code>n</code> is too big, <code>-1</code> if too small, and <code>0</code> if correct. In the lesson it is hardcoded with 10 as the secret number. In a real problem you do not see the inside; you are given the function as an <dfn>API</dfn> (a method you can call but not read) and you treat it as a black box inside your own binary search.</p>
+
+<pre><code><span class="c"># Return 1 if n is too big, -1 if too small, 0 if correct</span>
+<span class="k">def</span> isCorrect(n):
+    <span class="k">if</span> n &gt; <span class="s">10</span>:
+        <span class="k">return</span> <span class="s">1</span>
+    <span class="k">elif</span> n &lt; <span class="s">10</span>:
+        <span class="k">return</span> -<span class="s">1</span>
+    <span class="k">else</span>:
+        <span class="k">return</span> <span class="s">0</span></code></pre>
+
+  <h3>Binary search over the range</h3>
+  <p>Compare with the array version line by line. <code>L</code> and <code>R</code> became <code>low</code> and <code>high</code>, and they are <em>values</em>, not indices. <code>arr[mid]</code> became a call to the black box. Everything else is identical, including the <code>low &lt;= high</code> loop and the <code>mid ± 1</code> moves.</p>
+
+<pre><code><span class="c"># Binary search on some range of values</span>
+<span class="k">def</span> binarySearch(low, high):
+
+    <span class="k">while</span> low &lt;= high:
+        mid = (low + high) // <span class="s">2</span>
+
+        <span class="k">if</span> isCorrect(mid) &gt; <span class="s">0</span>:      <span class="c"># mid is too big  → answer is below mid</span>
+            high = mid - <span class="s">1</span>
+        <span class="k">elif</span> isCorrect(mid) &lt; <span class="s">0</span>:    <span class="c"># mid is too small → answer is above mid</span>
+            low = mid + <span class="s">1</span>
+        <span class="k">else</span>:
+            <span class="k">return</span> mid              <span class="c"># correct</span>
+    <span class="k">return</span> -<span class="s">1</span>
+
+binarySearch(<span class="s">1</span>, <span class="s">100</span>)   <span class="c"># → 10 after 6 guesses</span></code></pre>
+
+  <p>NeetCode warns that these questions can be confusing and subtle: the hard part is figuring out how to modify the typical binary search so that the black box replaces the array comparison. Notice one small trap in the code above: <code>isCorrect(mid)</code> is called twice per turn. That is fine for a cheap function, but if the check is expensive, call it once and store the result.</p>
+
+  <figure>
+    <svg viewBox="0 0 700 325" role="img" aria-label="Guessing the secret number 10 in the range 1 to 100. Guess 50 too big, high becomes 49. Guess 25 too big, high 24. Guess 12 too big, high 11. Zooming in: guess 6 too small, low 7. Guess 9 too small, low 10. Guess 10 correct.">
+      <text x="60" y="12" class="t small">guesses 1-3 on the 1..100 line (bar = still possible)</text>
+      <!-- row 1: 1..100, guess 50 -->
+      <rect x="60" y="26" width="400" height="16" class="nd"/>
+      <text x="60" y="56" class="t small" text-anchor="middle">1</text>
+      <text x="460" y="56" class="t small" text-anchor="middle">100</text>
+      <path d="M258,18 L258,48" class="ptr newp"/>
+      <text x="258" y="28" class="t newlab" text-anchor="middle" font-size="11">guess 50</text>
+      <text x="480" y="39" class="t small">① 50 is too big  →  high = 49</text>
+
+      <!-- row 2: 1..49, guess 25 -->
+      <rect x="60" y="72" width="400" height="16" class="nd dim"/>
+      <rect x="60" y="72" width="194" height="16" class="nd"/>
+      <text x="60" y="102" class="t small" text-anchor="middle">1</text>
+      <text x="254" y="102" class="t small" text-anchor="middle">49</text>
+      <path d="M157,64 L157,94" class="ptr newp"/>
+      <text x="157" y="61" class="t newlab" text-anchor="middle" font-size="11">guess 25</text>
+      <text x="480" y="85" class="t small">② 25 is too big  →  high = 24</text>
+
+      <!-- row 3: 1..24, guess 12 -->
+      <rect x="60" y="118" width="400" height="16" class="nd dim"/>
+      <rect x="60" y="118" width="93" height="16" class="nd"/>
+      <text x="60" y="148" class="t small" text-anchor="middle">1</text>
+      <text x="153" y="148" class="t small" text-anchor="middle">24</text>
+      <path d="M104,110 L104,140" class="ptr newp"/>
+      <text x="104" y="107" class="t newlab" text-anchor="middle" font-size="11">guess 12</text>
+      <text x="480" y="131" class="t small">③ 12 is too big  →  high = 11</text>
+
+      <!-- zoom panel -->
+      <text x="60" y="176" class="t small">zoom in: last 3 guesses inside 1..11 (9× bigger)</text>
+      <!-- row 4: 1..11, guess 6 -->
+      <rect x="60" y="190" width="400" height="16" class="nd"/>
+      <text x="60" y="220" class="t small" text-anchor="middle">1</text>
+      <text x="460" y="220" class="t small" text-anchor="middle">11</text>
+      <path d="M260,182 L260,212" class="ptr newp"/>
+      <text x="300" y="192" class="t newlab" text-anchor="middle" font-size="11">guess 6</text>
+      <text x="480" y="203" class="t small">④ 6 is too small  →  low = 7</text>
+
+      <!-- row 5: 7..11, guess 9 -->
+      <rect x="60" y="236" width="400" height="16" class="nd dim"/>
+      <rect x="300" y="236" width="160" height="16" class="nd"/>
+      <text x="300" y="266" class="t small" text-anchor="middle">7</text>
+      <text x="460" y="266" class="t small" text-anchor="middle">11</text>
+      <path d="M380,228 L380,258" class="ptr newp"/>
+      <text x="380" y="225" class="t newlab" text-anchor="middle" font-size="11">guess 9</text>
+      <text x="480" y="249" class="t small">⑤ 9 is too small  →  low = 10</text>
+
+      <!-- row 6: 10..11, guess 10 -->
+      <rect x="60" y="282" width="400" height="16" class="nd dim"/>
+      <rect x="420" y="282" width="40" height="16" class="nd newnd"/>
+      <text x="420" y="312" class="t small" text-anchor="middle">10</text>
+      <text x="460" y="312" class="t small" text-anchor="middle">11</text>
+      <path d="M420,274 L420,304" class="ptr newp"/>
+      <text x="420" y="271" class="t newlab" text-anchor="middle" font-size="11">guess 10</text>
+      <text x="480" y="295" class="t newlab" font-size="11">⑥ correct  →  return 10</text>
+    </svg>
+    <figcaption><b>Same shrinking search space, no array.</b> "Too big" moves <code>high</code> down to <code>mid - 1</code>; "too small" moves <code>low</code> up to <code>mid + 1</code>. The three answers from the friend play the role of <code>arr[mid] &gt; target</code>, <code>&lt;</code>, and <code>==</code>.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Guess</th><th>low</th><th>high</th><th>mid = (low+high)//2</th><th>isCorrect(mid)</th><th>meaning</th><th>action</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>1</td><td>100</td><td>50</td><td>1</td><td>too big</td><td><code>high = 49</code></td></tr>
+      <tr><td>2</td><td>1</td><td>49</td><td>25</td><td>1</td><td>too big</td><td><code>high = 24</code></td></tr>
+      <tr><td>3</td><td>1</td><td>24</td><td>12</td><td>1</td><td>too big</td><td><code>high = 11</code></td></tr>
+      <tr><td>4</td><td>1</td><td>11</td><td>6</td><td>-1</td><td>too small</td><td><code>low = 7</code></td></tr>
+      <tr><td>5</td><td>7</td><td>11</td><td>9</td><td>-1</td><td>too small</td><td><code>low = 10</code></td></tr>
+      <tr><td>6</td><td>10</td><td>11</td><td>10</td><td>0</td><td>correct</td><td><code>return 10</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Time and space</h3>
+  <p>O(log n), where <code>n</code> is the <em>size of the search space</em> (100 here, so at most 7 guesses), not the size of any array. No extra memory is used: O(1) space.</p>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>The range version is the one that shows up disguised. "Find the first bad version", "guess the number", "minimum speed to finish in time", "square root of x": none of them hand you an array, all of them hand you a range plus a yes/no or too-big/too-small check. When you see a range and a check, think binary search.</p>
+  </div>
+</section>
+
+<!-- ============================ TEMPLATES ============================ -->
+<section id="templates">
+  <h2><span class="num">3</span>The three templates</h2>
+  <p>Almost every binary search problem is one of three shapes. Memorize the three as separate templates and do not mix their loop conditions.</p>
+
+  <h3>Template 1: exact match (<code>while L &lt;= R</code>)</h3>
+  <p>The lesson's version, tidied. Use it when you want <em>one</em> index holding the target and <code>-1</code> otherwise. <code>R</code> is a real index. Both pointers skip past <code>mid</code>.</p>
+
+<pre><code><span class="k">def</span> exact_match(nums, target):
+    L, R = <span class="s">0</span>, len(nums) - <span class="s">1</span>
+    <span class="k">while</span> L &lt;= R:
+        mid = L + (R - L) // <span class="s">2</span>
+        <span class="k">if</span> nums[mid] == target:
+            <span class="k">return</span> mid
+        <span class="k">if</span> nums[mid] &lt; target:
+            L = mid + <span class="s">1</span>
+        <span class="k">else</span>:
+            R = mid - <span class="s">1</span>
+    <span class="k">return</span> -<span class="s">1</span></code></pre>
+
+  <h3>Template 2: boundary, also called lower bound or "first True" (<code>while L &lt; R</code>)</h3>
+  <p>Many problems do not ask "is the target here?" but "where does the answer <em>start</em>?": the first index with value ≥ target, the first bad version, the first speed that is fast enough. Picture the array as answers to a yes/no question. Because the data is sorted, the answers look like <code>F F F T T T</code>: all False, then all True. The word for that is <dfn>monotonic</dfn> (it never goes back from True to False). The boundary template finds the first True.</p>
+  <p>Three things change compared to template 1:</p>
+  <ul>
+    <li><code>R = len(nums)</code>, one past the end. That lets "no True at all" be a valid answer (<code>len(nums)</code>).</li>
+    <li>When <code>mid</code> is True, do <code>R = mid</code>, not <code>mid - 1</code>. <code>mid</code> might be the first True, so keep it.</li>
+    <li>Loop <code>while L &lt; R</code>. The loop ends when they meet, and the meeting point is the answer. There is no <code>return -1</code> inside.</li>
+  </ul>
+
+<pre><code><span class="k">def</span> lower_bound(nums, target):
+    <span class="s">"""First index i with nums[i] &gt;= target. Returns len(nums) if none."""</span>
+    L, R = <span class="s">0</span>, len(nums)            <span class="c"># R is one past the end</span>
+    <span class="k">while</span> L &lt; R:
+        mid = L + (R - L) // <span class="s">2</span>
+        <span class="k">if</span> nums[mid] &lt; target:
+            L = mid + <span class="s">1</span>            <span class="c"># mid is too small: answer is to the right</span>
+        <span class="k">else</span>:
+            R = mid                <span class="c"># mid could be the answer: keep it</span>
+    <span class="k">return</span> L                       <span class="c"># L == R here</span>
+
+<span class="k">def</span> upper_bound(nums, target):
+    <span class="s">"""First index i with nums[i] &gt; target."""</span>
+    L, R = <span class="s">0</span>, len(nums)
+    <span class="k">while</span> L &lt; R:
+        mid = L + (R - L) // <span class="s">2</span>
+        <span class="k">if</span> nums[mid] &lt;= target:
+            L = mid + <span class="s">1</span>
+        <span class="k">else</span>:
+            R = mid
+    <span class="k">return</span> L
+
+<span class="c"># the same template with any yes/no check</span>
+<span class="k">def</span> first_true(n, is_true):
+    <span class="s">"""Smallest i in [0, n) with is_true(i) True, given F..F T..T. Returns n if none."""</span>
+    L, R = <span class="s">0</span>, n
+    <span class="k">while</span> L &lt; R:
+        mid = L + (R - L) // <span class="s">2</span>
+        <span class="k">if</span> is_true(mid):
+            R = mid
+        <span class="k">else</span>:
+            L = mid + <span class="s">1</span>
+    <span class="k">return</span> L</code></pre>
+
+  <figure>
+    <svg viewBox="0 0 680 335" role="img" aria-label="Boundary template on the flags F F F T T T. Turn 1: L=0, R=6, mid=3 is True so R becomes 3. Turn 2: mid=1 is False so L becomes 2. Turn 3: mid=2 is False so L becomes 3. Now L equals R equals 3, the first True.">
+      <!-- turn 1 -->
+      <text x="30" y="43" class="t mono" text-anchor="middle">①</text>
+      <text x="98" y="12" class="t ptrlab" text-anchor="middle">L</text>
+      <text x="266" y="12" class="t newlab" text-anchor="middle">mid</text>
+      <text x="434" y="12" class="t ptrlab" text-anchor="middle">R = len</text>
+      <g>
+        <rect x="70" y="18" width="56" height="40" class="nd"/><text x="98" y="43" class="t nulltxt" text-anchor="middle">F</text>
+        <rect x="126" y="18" width="56" height="40" class="nd"/><text x="154" y="43" class="t nulltxt" text-anchor="middle">F</text>
+        <rect x="182" y="18" width="56" height="40" class="nd"/><text x="210" y="43" class="t nulltxt" text-anchor="middle">F</text>
+        <rect x="238" y="18" width="56" height="40" class="nd newnd"/><text x="266" y="43" class="t ptrlab" text-anchor="middle">T</text>
+        <rect x="294" y="18" width="56" height="40" class="nd"/><text x="322" y="43" class="t ptrlab" text-anchor="middle">T</text>
+        <rect x="350" y="18" width="56" height="40" class="nd"/><text x="378" y="43" class="t ptrlab" text-anchor="middle">T</text>
+        <rect x="406" y="18" width="56" height="40" class="mem"/>
+        <text x="98" y="70" class="t small" text-anchor="middle">0</text><text x="154" y="70" class="t small" text-anchor="middle">1</text><text x="210" y="70" class="t small" text-anchor="middle">2</text><text x="266" y="70" class="t small" text-anchor="middle">3</text><text x="322" y="70" class="t small" text-anchor="middle">4</text><text x="378" y="70" class="t small" text-anchor="middle">5</text><text x="434" y="70" class="t small" text-anchor="middle">6</text>
+      </g>
+      <text x="500" y="38" class="t small">mid = 3 is True</text>
+      <text x="500" y="54" class="t small">→ R = mid = 3 (keep it)</text>
+
+      <!-- turn 2 -->
+      <text x="30" y="127" class="t mono" text-anchor="middle">②</text>
+      <text x="98" y="96" class="t ptrlab" text-anchor="middle">L</text>
+      <text x="154" y="96" class="t newlab" text-anchor="middle">mid</text>
+      <text x="266" y="96" class="t ptrlab" text-anchor="middle">R</text>
+      <g>
+        <rect x="70" y="102" width="56" height="40" class="nd"/><text x="98" y="127" class="t nulltxt" text-anchor="middle">F</text>
+        <rect x="126" y="102" width="56" height="40" class="nd newnd"/><text x="154" y="127" class="t nulltxt" text-anchor="middle">F</text>
+        <rect x="182" y="102" width="56" height="40" class="nd"/><text x="210" y="127" class="t nulltxt" text-anchor="middle">F</text>
+        <rect x="238" y="102" width="56" height="40" class="nd"/><text x="266" y="127" class="t ptrlab" text-anchor="middle">T</text>
+        <rect x="294" y="102" width="56" height="40" class="nd dim"/><text x="322" y="127" class="t ptrlab" text-anchor="middle" opacity=".35">T</text>
+        <rect x="350" y="102" width="56" height="40" class="nd dim"/><text x="378" y="127" class="t ptrlab" text-anchor="middle" opacity=".35">T</text>
+        <rect x="406" y="102" width="56" height="40" class="mem" opacity=".35"/>
+        <text x="98" y="154" class="t small" text-anchor="middle">0</text><text x="154" y="154" class="t small" text-anchor="middle">1</text><text x="210" y="154" class="t small" text-anchor="middle">2</text><text x="266" y="154" class="t small" text-anchor="middle">3</text><text x="322" y="154" class="t small" text-anchor="middle">4</text><text x="378" y="154" class="t small" text-anchor="middle">5</text><text x="434" y="154" class="t small" text-anchor="middle">6</text>
+      </g>
+      <text x="500" y="122" class="t small">mid = 1 is False</text>
+      <text x="500" y="138" class="t small">→ L = mid + 1 = 2</text>
+
+      <!-- turn 3 -->
+      <text x="30" y="211" class="t mono" text-anchor="middle">③</text>
+      <text x="210" y="180" class="t newlab" text-anchor="middle">L = mid</text>
+      <text x="266" y="180" class="t ptrlab" text-anchor="middle">R</text>
+      <g>
+        <rect x="70" y="186" width="56" height="40" class="nd dim"/><text x="98" y="211" class="t nulltxt" text-anchor="middle" opacity=".35">F</text>
+        <rect x="126" y="186" width="56" height="40" class="nd dim"/><text x="154" y="211" class="t nulltxt" text-anchor="middle" opacity=".35">F</text>
+        <rect x="182" y="186" width="56" height="40" class="nd newnd"/><text x="210" y="211" class="t nulltxt" text-anchor="middle">F</text>
+        <rect x="238" y="186" width="56" height="40" class="nd"/><text x="266" y="211" class="t ptrlab" text-anchor="middle">T</text>
+        <rect x="294" y="186" width="56" height="40" class="nd dim"/><text x="322" y="211" class="t ptrlab" text-anchor="middle" opacity=".35">T</text>
+        <rect x="350" y="186" width="56" height="40" class="nd dim"/><text x="378" y="211" class="t ptrlab" text-anchor="middle" opacity=".35">T</text>
+        <rect x="406" y="186" width="56" height="40" class="mem" opacity=".35"/>
+        <text x="98" y="238" class="t small" text-anchor="middle">0</text><text x="154" y="238" class="t small" text-anchor="middle">1</text><text x="210" y="238" class="t small" text-anchor="middle">2</text><text x="266" y="238" class="t small" text-anchor="middle">3</text><text x="322" y="238" class="t small" text-anchor="middle">4</text><text x="378" y="238" class="t small" text-anchor="middle">5</text><text x="434" y="238" class="t small" text-anchor="middle">6</text>
+      </g>
+      <text x="500" y="206" class="t small">mid = 2 is False</text>
+      <text x="500" y="222" class="t small">→ L = mid + 1 = 3</text>
+
+      <!-- final -->
+      <text x="30" y="295" class="t mono" text-anchor="middle">④</text>
+      <text x="266" y="264" class="t newlab" text-anchor="middle">L = R</text>
+      <g>
+        <rect x="70" y="270" width="56" height="40" class="nd dim"/><text x="98" y="295" class="t nulltxt" text-anchor="middle" opacity=".35">F</text>
+        <rect x="126" y="270" width="56" height="40" class="nd dim"/><text x="154" y="295" class="t nulltxt" text-anchor="middle" opacity=".35">F</text>
+        <rect x="182" y="270" width="56" height="40" class="nd dim"/><text x="210" y="295" class="t nulltxt" text-anchor="middle" opacity=".35">F</text>
+        <rect x="238" y="270" width="56" height="40" class="nd newnd"/><text x="266" y="295" class="t ptrlab" text-anchor="middle">T</text>
+        <rect x="294" y="270" width="56" height="40" class="nd dim"/><text x="322" y="295" class="t ptrlab" text-anchor="middle" opacity=".35">T</text>
+        <rect x="350" y="270" width="56" height="40" class="nd dim"/><text x="378" y="295" class="t ptrlab" text-anchor="middle" opacity=".35">T</text>
+        <rect x="406" y="270" width="56" height="40" class="mem" opacity=".35"/>
+        <text x="98" y="322" class="t small" text-anchor="middle">0</text><text x="154" y="322" class="t small" text-anchor="middle">1</text><text x="210" y="322" class="t small" text-anchor="middle">2</text><text x="266" y="322" class="t small" text-anchor="middle">3</text><text x="322" y="322" class="t small" text-anchor="middle">4</text><text x="378" y="322" class="t small" text-anchor="middle">5</text><text x="434" y="322" class="t small" text-anchor="middle">6</text>
+      </g>
+      <text x="500" y="290" class="t small">L == R → loop stops</text>
+      <text x="500" y="306" class="t newlab" font-size="11">→ return 3, the first True</text>
+    </svg>
+    <figcaption><b>The invariant: everything left of L is False, everything from R on is True.</b> Each turn moves one of them without breaking that rule. When they meet, the meeting index is the boundary. Note turn ①: <code>mid</code> was True, so <code>R</code> moved <em>onto</em> it, not past it. With <code>R = mid - 1</code> you would lose the answer.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Turn</th><th>L</th><th>R</th><th><code>L &lt; R</code>?</th><th>mid</th><th>is_true(mid)</th><th>action</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>0</td><td>6</td><td>yes</td><td>3</td><td>True</td><td><code>R = mid = 3</code></td></tr>
+      <tr><td>2</td><td>0</td><td>3</td><td>yes</td><td>1</td><td>False</td><td><code>L = mid + 1 = 2</code></td></tr>
+      <tr><td>3</td><td>2</td><td>3</td><td>yes</td><td>2</td><td>False</td><td><code>L = mid + 1 = 3</code></td></tr>
+      <tr><td>4</td><td>3</td><td>3</td><td><strong>no</strong></td><td>-</td><td>-</td><td><code>return 3</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout">
+    <span class="lab">Why this loop cannot spin forever</span>
+    <p>In the boundary template, <code>mid = L + (R - L) // 2</code> rounds <em>down</em>, so <code>mid &lt; R</code> always. <code>R = mid</code> therefore always shrinks the space, and <code>L = mid + 1</code> always grows <code>L</code>. If you ever write <code>L = mid</code> in a <code>while L &lt; R</code> loop, then with <code>L = 2, R = 3</code> you get <code>mid = 2</code>, <code>L = 2</code> again, forever. That is the classic infinite loop. (The fix for a "last True" search is to round <em>up</em>: <code>mid = L + (R - L + 1) // 2</code>.)</p>
+  </div>
+
+  <h3>Template 3: binary search on the answer</h3>
+  <p>This is lesson 15 in interview clothing. The question asks for a <em>number</em> (a speed, a capacity, a number of days), and checking whether a given number works is easy. Then:</p>
+  <ol>
+    <li>Write the check, <code>can(x)</code>, that returns True if answer <code>x</code> is good enough. This is your <code>isCorrect</code>.</li>
+    <li>Make sure it is monotonic: if <code>x</code> works, every bigger <code>x</code> works too (or every smaller, depending on the problem). Then the answers look like <code>F F F T T T</code> over the range.</li>
+    <li>Set <code>L</code> and <code>R</code> to the smallest and largest possible answers.</li>
+    <li>Run the boundary template to find the first True. That is the minimum answer.</li>
+  </ol>
+  <p>Example, Koko Eating Bananas (LeetCode 875): piles <code>[3, 6, 7, 11]</code>, <code>h = 8</code> hours. Koko eats <code>k</code> bananas per hour, one pile per hour, and finishes a pile of size <code>p</code> in <code>ceil(p / k)</code> hours. Find the smallest <code>k</code> that finishes in time.</p>
+
+<pre><code><span class="k">def</span> min_eating_speed(piles, h):
+    <span class="k">def</span> can_finish(k):                       <span class="c"># the "isCorrect" black box</span>
+        hours = <span class="s">0</span>
+        <span class="k">for</span> p <span class="k">in</span> piles:
+            hours += (p + k - <span class="s">1</span>) // k        <span class="c"># ceil(p / k) with integers</span>
+        <span class="k">return</span> hours &lt;= h
+
+    L, R = <span class="s">1</span>, max(piles)                     <span class="c"># answer space: speeds 1..max pile</span>
+    <span class="k">while</span> L &lt; R:
+        mid = L + (R - L) // <span class="s">2</span>
+        <span class="k">if</span> can_finish(mid):
+            R = mid                          <span class="c"># mid works: try slower</span>
+        <span class="k">else</span>:
+            L = mid + <span class="s">1</span>                      <span class="c"># too slow: need faster</span>
+    <span class="k">return</span> L
+
+min_eating_speed([<span class="s">3</span>, <span class="s">6</span>, <span class="s">7</span>, <span class="s">11</span>], <span class="s">8</span>)   <span class="c"># → 4</span></code></pre>
+
+  <figure>
+    <svg viewBox="-20 0 860 150" role="img" aria-label="The answer space for Koko: speeds 1 to 11. Hours needed are 27, 15, 10, 8, 8, 6, 5, 5, 5, 5, 4. With h equals 8 the checks read F F F T T T T T T T T, and the first True is speed 4.">
+      <text x="208" y="12" class="t newlab" text-anchor="middle" font-size="11">first True = answer</text>
+      <path d="M208,16 L208,28" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="40" y="22" class="t small">hours needed</text>
+      <g>
+        <rect x="40" y="30" width="48" height="40" class="nd"/><text x="64" y="55" class="t" text-anchor="middle">27</text>
+        <rect x="88" y="30" width="48" height="40" class="nd"/><text x="112" y="55" class="t" text-anchor="middle">15</text>
+        <rect x="136" y="30" width="48" height="40" class="nd"/><text x="160" y="55" class="t" text-anchor="middle">10</text>
+        <rect x="184" y="30" width="48" height="40" class="nd newnd"/><text x="208" y="55" class="t" text-anchor="middle">8</text>
+        <rect x="232" y="30" width="48" height="40" class="nd"/><text x="256" y="55" class="t" text-anchor="middle">8</text>
+        <rect x="280" y="30" width="48" height="40" class="nd"/><text x="304" y="55" class="t" text-anchor="middle">6</text>
+        <rect x="328" y="30" width="48" height="40" class="nd"/><text x="352" y="55" class="t" text-anchor="middle">5</text>
+        <rect x="376" y="30" width="48" height="40" class="nd"/><text x="400" y="55" class="t" text-anchor="middle">5</text>
+        <rect x="424" y="30" width="48" height="40" class="nd"/><text x="448" y="55" class="t" text-anchor="middle">5</text>
+        <rect x="472" y="30" width="48" height="40" class="nd"/><text x="496" y="55" class="t" text-anchor="middle">5</text>
+        <rect x="520" y="30" width="48" height="40" class="nd"/><text x="544" y="55" class="t" text-anchor="middle">4</text>
+      </g>
+      <text x="64" y="90" class="t nulltxt" text-anchor="middle">F</text><text x="112" y="90" class="t nulltxt" text-anchor="middle">F</text><text x="160" y="90" class="t nulltxt" text-anchor="middle">F</text>
+      <text x="208" y="90" class="t ptrlab" text-anchor="middle">T</text><text x="256" y="90" class="t ptrlab" text-anchor="middle">T</text><text x="304" y="90" class="t ptrlab" text-anchor="middle">T</text><text x="352" y="90" class="t ptrlab" text-anchor="middle">T</text><text x="400" y="90" class="t ptrlab" text-anchor="middle">T</text><text x="448" y="90" class="t ptrlab" text-anchor="middle">T</text><text x="496" y="90" class="t ptrlab" text-anchor="middle">T</text><text x="544" y="90" class="t ptrlab" text-anchor="middle">T</text>
+      <text x="580" y="90" class="t small">≤ 8 hours?</text>
+      <text x="64" y="108" class="t small" text-anchor="middle">k=1</text><text x="112" y="108" class="t small" text-anchor="middle">2</text><text x="160" y="108" class="t small" text-anchor="middle">3</text><text x="208" y="108" class="t small" text-anchor="middle">4</text><text x="256" y="108" class="t small" text-anchor="middle">5</text><text x="304" y="108" class="t small" text-anchor="middle">6</text><text x="352" y="108" class="t small" text-anchor="middle">7</text><text x="400" y="108" class="t small" text-anchor="middle">8</text><text x="448" y="108" class="t small" text-anchor="middle">9</text><text x="496" y="108" class="t small" text-anchor="middle">10</text><text x="544" y="108" class="t small" text-anchor="middle">11</text>
+      <text x="580" y="108" class="t small">speed k</text>
+      <text x="320" y="138" class="t small" text-anchor="middle">nobody builds this row; binary search only calls can_finish at mid = 6, 3, 5, 4 and never looks at the rest</text>
+    </svg>
+    <figcaption><b>Search the answers, not the input.</b> The piles are not sorted and never need to be. The thing that is sorted is the row of yes/no answers over the speeds, F F F T T T T T T T T, and that is where binary search runs. Hours needed only go down as speed goes up, so the row is monotonic.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Turn</th><th>L</th><th>R</th><th>mid</th><th>hours at speed mid</th><th>can_finish(mid)</th><th>action</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>1</td><td>11</td><td>6</td><td>1+1+2+2 = 6</td><td>True</td><td><code>R = 6</code></td></tr>
+      <tr><td>2</td><td>1</td><td>6</td><td>3</td><td>1+2+3+4 = 10</td><td>False</td><td><code>L = 4</code></td></tr>
+      <tr><td>3</td><td>4</td><td>6</td><td>5</td><td>1+2+2+3 = 8</td><td>True</td><td><code>R = 5</code></td></tr>
+      <tr><td>4</td><td>4</td><td>5</td><td>4</td><td>1+2+2+3 = 8</td><td>True</td><td><code>R = 4</code></td></tr>
+      <tr><td>5</td><td>4</td><td>4</td><td>-</td><td>-</td><td>-</td><td><code>return 4</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <p>The mirror image is "largest x that still works" (last True). Sqrt(x) (LeetCode 69) wants the largest <code>k</code> with <code>k * k &lt;= x</code>. With the <code>L &lt;= R</code> template, <code>R</code> ends up sitting on the last value that passed:</p>
+
+<pre><code><span class="k">def</span> my_sqrt(x):
+    L, R = <span class="s">0</span>, x
+    <span class="k">while</span> L &lt;= R:
+        mid = L + (R - L) // <span class="s">2</span>
+        <span class="k">if</span> mid * mid &lt;= x:
+            L = mid + <span class="s">1</span>                       <span class="c"># mid fits: look for a bigger one</span>
+        <span class="k">else</span>:
+            R = mid - <span class="s">1</span>
+    <span class="k">return</span> R                                  <span class="c"># R stops on the last mid that fit</span>
+
+my_sqrt(<span class="s">8</span>)    <span class="c"># → 2   (2*2 = 4 ≤ 8, 3*3 = 9 &gt; 8)</span></code></pre>
+
+  <h3>Python's <code>bisect</code> module</h3>
+  <p>Templates 1 and 2 are built into the standard library. <code>bisect_left</code> is exactly <code>lower_bound</code>; <code>bisect_right</code> is exactly <code>upper_bound</code>; <code>insort</code> finds the spot with binary search and inserts there (the insert itself shifts elements, so it is O(n)). In an interview, say "I would use bisect in production" and then still write the loop by hand, because that is what is being tested.</p>
+
+<pre><code><span class="k">import</span> bisect
+
+a = [<span class="s">1</span>, <span class="s">2</span>, <span class="s">2</span>, <span class="s">2</span>, <span class="s">5</span>]
+bisect.bisect_left(a, <span class="s">2</span>)     <span class="c"># 1   first index with a[i] &gt;= 2  (= lower_bound)</span>
+bisect.bisect_right(a, <span class="s">2</span>)    <span class="c"># 4   first index with a[i] &gt; 2   (= upper_bound)</span>
+bisect.bisect_left(a, <span class="s">3</span>)     <span class="c"># 4   where 3 would go</span>
+bisect.bisect_left(a, <span class="s">9</span>)     <span class="c"># 5   == len(a): bigger than everything</span>
+bisect.insort(a, <span class="s">3</span>)          <span class="c"># a is now [1, 2, 2, 2, 3, 5]; O(log n) to find, O(n) to shift</span>
+
+<span class="c"># "is target in the sorted list?" with bisect (exact match, template 1)</span>
+nums = [<span class="s">1</span>, <span class="s">2</span>, <span class="s">3</span>, <span class="s">4</span>, <span class="s">5</span>, <span class="s">6</span>, <span class="s">7</span>, <span class="s">8</span>]
+i = bisect.bisect_left(nums, <span class="s">5</span>)
+found = i &lt; len(nums) <span class="k">and</span> nums[i] == <span class="s">5</span>    <span class="c"># True; both checks are needed</span></code></pre>
+</section>
+
+<!-- ============================ PATTERNS ============================ -->
+<section id="patterns">
+  <h2><span class="num">4</span>Moves that solve most binary search problems</h2>
+  <p>The lessons teach two variations. Interviews dress them up. These three moves undress them.</p>
+
+  <h3>Move 1: "Is it monotonic? Then binary search."</h3>
+  <p>Before you write any code, ask one question about the problem: is there a yes/no test that is <strong>all False then all True</strong> (or all True then all False) across some range? If yes, the boundary lives there, and binary search finds it in O(log n). The range can be array indices, a range of numbers, or version numbers. The test can be <code>nums[i] &gt;= target</code>, <code>isBadVersion(i)</code>, or "can I finish with speed k". If the answers flip back and forth (<code>F T F T</code>), binary search is wrong and you need a scan.</p>
+  <p>First Bad Version (LeetCode 278) is the cleanest example: versions <code>1..n</code>, a black-box <code>isBadVersion(v)</code>, and once a version is bad every later one is bad. That is <code>F F F T T T</code> over <code>1..n</code>.</p>
+
+<pre><code><span class="k">def</span> first_bad_version(n, isBadVersion):
+    L, R = <span class="s">1</span>, n                     <span class="c"># answer is guaranteed to exist, so R = n is enough</span>
+    <span class="k">while</span> L &lt; R:
+        mid = L + (R - L) // <span class="s">2</span>
+        <span class="k">if</span> isBadVersion(mid):
+            R = mid                 <span class="c"># mid is bad: it could be the first one</span>
+        <span class="k">else</span>:
+            L = mid + <span class="s">1</span>             <span class="c"># mid is good: first bad is after it</span>
+    <span class="k">return</span> L</code></pre>
+
+  <p>The monotonic test can be less obvious. In Find Minimum in Rotated Sorted Array (LeetCode 153), <code>[4,5,6,7,0,1,2]</code> is not sorted, but the test <code>nums[mid] &gt; nums[R]</code> reads <code>T T T T F F F</code>, and the minimum is the first False.</p>
+
+<pre><code><span class="k">def</span> find_min_rotated(nums):
+    L, R = <span class="s">0</span>, len(nums) - <span class="s">1</span>
+    <span class="k">while</span> L &lt; R:
+        mid = L + (R - L) // <span class="s">2</span>
+        <span class="k">if</span> nums[mid] &gt; nums[R]:
+            L = mid + <span class="s">1</span>                       <span class="c"># mid is in the big part: min is to the right</span>
+        <span class="k">else</span>:
+            R = mid                           <span class="c"># mid could be the min</span>
+    <span class="k">return</span> nums[L]
+
+find_min_rotated([<span class="s">4</span>, <span class="s">5</span>, <span class="s">6</span>, <span class="s">7</span>, <span class="s">0</span>, <span class="s">1</span>, <span class="s">2</span>])   <span class="c"># → 0</span></code></pre>
+
+  <h3>Move 2: Search on the answer space</h3>
+  <p>When the question asks "what is the minimum X such that..." or "the maximum X such that...", and X is a number with a clear smallest and largest possible value, do not search the input. Search X.</p>
+  <ol class="steps">
+    <li>Name the answer variable and its range: <code>L = smallest possible</code>, <code>R = largest possible</code>. For Koko: <code>1</code> to <code>max(piles)</code>. For "ship packages within D days": <code>max(weights)</code> to <code>sum(weights)</code>.</li>
+    <li>Write <code>can(x)</code>: a plain loop that says whether answer <code>x</code> is good enough. Usually O(n).</li>
+    <li>Check the direction: does <code>can</code> go from False to True as <code>x</code> grows (minimize) or True to False (maximize)?</li>
+    <li>Run the boundary template. Total time: O(n log(range)).</li>
+  </ol>
+  <p>The template is <code>min_eating_speed</code> in section 3. Copy it and change only <code>can</code>, <code>L</code>, and <code>R</code>.</p>
+
+  <h3>Move 3: The boundary template for first and last position</h3>
+  <p>Two boundary searches give you the whole run of a value. Find First and Last Position (LeetCode 34): the first index of <code>target</code> is <code>lower_bound(target)</code>; the last index is <code>upper_bound(target) - 1</code>. Search Insert Position (LeetCode 35) is <code>lower_bound</code> by itself.</p>
+
+<pre><code><span class="k">def</span> search_range(nums, target):
+    lo = lower_bound(nums, target)              <span class="c"># first i with nums[i] &gt;= target</span>
+    <span class="k">if</span> lo == len(nums) <span class="k">or</span> nums[lo] != target:
+        <span class="k">return</span> [-<span class="s">1</span>, -<span class="s">1</span>]                        <span class="c"># target is not there at all</span>
+    <span class="k">return</span> [lo, upper_bound(nums, target) - <span class="s">1</span>]  <span class="c"># last i with nums[i] == target</span>
+
+search_range([<span class="s">5</span>, <span class="s">7</span>, <span class="s">7</span>, <span class="s">8</span>, <span class="s">8</span>, <span class="s">10</span>], <span class="s">8</span>)   <span class="c"># → [3, 4]</span>
+
+<span class="k">def</span> search_insert(nums, target):            <span class="c"># LeetCode 35</span>
+    <span class="k">return</span> lower_bound(nums, target)</code></pre>
+
+  <p>One more disguise: a 2D matrix whose rows are sorted and each row starts after the previous row ends (LeetCode 74) is just a sorted 1D array folded into rows. Binary search on the index <code>0 .. rows*cols - 1</code> and translate with <code>row = mid // cols</code>, <code>col = mid % cols</code>.</p>
+
+<pre><code><span class="k">def</span> search_matrix(matrix, target):
+    rows, cols = len(matrix), len(matrix[<span class="s">0</span>])
+    L, R = <span class="s">0</span>, rows * cols - <span class="s">1</span>
+    <span class="k">while</span> L &lt;= R:
+        mid = L + (R - L) // <span class="s">2</span>
+        val = matrix[mid // cols][mid % cols]  <span class="c"># unfold the flat index</span>
+        <span class="k">if</span> val == target:
+            <span class="k">return True</span>
+        <span class="k">if</span> val &lt; target:
+            L = mid + <span class="s">1</span>
+        <span class="k">else</span>:
+            R = mid - <span class="s">1</span>
+    <span class="k">return False</span></code></pre>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>Pick the template <em>before</em> you type. "Is it there?" → template 1, <code>L &lt;= R</code>, return inside the loop. "Where does it start / smallest x that works?" → template 2, <code>L &lt; R</code>, return <code>L</code> after the loop. "Largest x that works?" → template 1 shape and return <code>R</code>, or template 2 with <code>mid</code> rounded up.</p>
+  </div>
+</section>
+
+<!-- ============================ COMPLEXITY ============================ -->
+<section id="complexity">
+  <h2><span class="num">5</span>Big-O summary</h2>
+  <p>In every row, <code>n</code> is the size of the search space: the array length, or the number of possible answers in the range.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Task</th><th>Binary search</th><th>Linear scan</th><th>Extra space</th></tr></thead>
+    <tbody>
+      <tr><td>Find a target in a sorted array</td><td class="big fast">O(log n)</td><td class="big slow">O(n)</td><td class="big fast">O(1)</td></tr>
+      <tr><td>Find a target in an <em>unsorted</em> array</td><td class="big slow">not possible*</td><td class="big slow">O(n)</td><td>-</td></tr>
+      <tr><td>Sort first, then binary search once</td><td class="big slow">O(n log n)</td><td class="big slow">O(n)</td><td>depends on sort</td></tr>
+      <tr><td>Sort once, then search k times</td><td class="big fast">O(n log n + k log n)</td><td class="big slow">O(k · n)</td><td>depends on sort</td></tr>
+      <tr><td>Guess a number in a range of size n</td><td class="big fast">O(log n)</td><td class="big slow">O(n)</td><td class="big fast">O(1)</td></tr>
+      <tr><td>Lower bound / first True</td><td class="big fast">O(log n)</td><td class="big slow">O(n)</td><td class="big fast">O(1)</td></tr>
+      <tr><td>Binary search on the answer, check costs O(n)</td><td class="big fast">O(n log(range))</td><td class="big slow">O(n · range)</td><td class="big fast">O(1)</td></tr>
+      <tr><td>Recursive binary search</td><td class="big fast">O(log n)</td><td>-</td><td class="big slow">O(log n) stack</td></tr>
+      <tr><td><code>bisect.bisect_left</code></td><td class="big fast">O(log n)</td><td>-</td><td class="big fast">O(1)</td></tr>
+      <tr><td><code>bisect.insort</code></td><td class="big slow">O(n)**</td><td>-</td><td class="big fast">O(1)</td></tr>
+    </tbody>
+  </table></div>
+  <p>* Binary search on unsorted data gives wrong answers, not slow answers. Sorting costs O(n log n), so it pays off only when you will search many times. ** <code>insort</code> finds the position in O(log n), but inserting into a Python list shifts everything after it, which is O(n).</p>
+</section>
+
+<!-- ============================ MISTAKES ============================ -->
+<section id="mistakes">
+  <h2><span class="num">6</span>Mistakes to watch for</h2>
+  <div class="mistake">
+    <div>
+      <div class="bad">while L &lt; R with R = len - 1</div>
+      <p>The last remaining cell is never checked. <code>binarySearch([7], 7)</code> returns <code>-1</code>. If <code>R</code> is a real index, the loop is <code>while L &lt;= R</code>.</p>
+<pre><code>L, R = <span class="s">0</span>, len(arr) - <span class="s">1</span>
+<span class="k">while</span> L &lt; R:        <span class="c"># BUG: skips the case L == R</span></code></pre>
+    </div>
+    <div>
+      <div class="bad">Mixing the two templates</div>
+      <p><code>R = len(arr)</code> with <code>while L &lt;= R</code> reads <code>arr[len(arr)]</code> and crashes with <code>IndexError</code>. <code>R = len(arr) - 1</code> with <code>R = mid</code> and <code>L &lt; R</code> can miss the answer at the last index. Choose one template and keep all three of its parts together.</p>
+    </div>
+    <div>
+      <div class="bad">L = mid in a while L &lt; R loop</div>
+      <p>When <code>R = L + 1</code>, <code>mid</code> rounds down to <code>L</code>, and <code>L = mid</code> changes nothing. Infinite loop. In the boundary template the moves are <code>R = mid</code> and <code>L = mid + 1</code>, never <code>L = mid</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Forgetting the array must be sorted</div>
+      <p>Binary search on unsorted data returns confident garbage: it may say <code>-1</code> for a value that is there. If the input is not sorted and you may sort it, sort first (O(n log n)). If you may not, the answer is a linear scan.</p>
+    </div>
+    <div>
+      <div class="bad">mid = (L + R) / 2 in Python 3</div>
+      <p>A single slash gives a float: <code>(0 + 7) / 2</code> is <code>3.5</code>, and <code>arr[3.5]</code> raises <code>TypeError</code>. Use <code>//</code>. NeetCode's slides write <code>/</code> and mean integer division.</p>
+    </div>
+    <div>
+      <div class="bad">Returning L when you needed R (or the reverse)</div>
+      <p>After the <code>L &lt;= R</code> loop ends without a match, <code>L</code> is the insert position (first bigger value) and <code>R = L - 1</code> is the last smaller value. For "largest k with k*k &lt;= x" you want <code>R</code>. Trace a two-element example on paper before you decide.</p>
+    </div>
+    <div>
+      <div class="bad">Trusting bisect_left's index without checking it</div>
+      <p><code>bisect_left(nums, 9)</code> on <code>[1..8]</code> returns 8, a valid-looking number that is out of bounds. Always check <code>i &lt; len(nums) and nums[i] == target</code> before you call it "found".</p>
+    </div>
+    <div>
+      <div class="bad">Searching the input instead of the answer</div>
+      <p>Koko's piles are unsorted and sorting them does not help. The monotonic thing is the speed. When the question says "minimum X such that", set <code>L</code> and <code>R</code> to the smallest and largest X and write <code>can(X)</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Calling the black box twice per turn</div>
+      <p>NeetCode's range code calls <code>isCorrect(mid)</code> in both the <code>if</code> and the <code>elif</code>. If the check is an O(n) loop, that doubles the work. Store it once: <code>r = isCorrect(mid)</code>.</p>
+    </div>
+  </div>
+
+  <div class="cheat">
+    <h3>Interview one-liners</h3>
+    <ul>
+      <li>"The array is sorted, so one comparison at the middle tells me which half to drop. That halves the search space each step: O(log n) time, O(1) space."</li>
+      <li>"Halving n down to 1 takes x steps where n / 2^x = 1, so x = log2 n."</li>
+      <li>"I keep L and R as the inclusive bounds of the search space and loop while L &lt;= R; when L crosses R the target is not there."</li>
+      <li>"I compute mid as L + (R - L) // 2 to avoid overflow in fixed-width languages; Python ints do not overflow, but it is a habit."</li>
+      <li>"This asks for the first index where a condition becomes true, so I use the boundary form: R = len, while L &lt; R, R = mid on true, L = mid + 1 on false, return L."</li>
+      <li>"The check is monotonic in X, so I binary search on the answer: L and R are the smallest and largest X, and can(mid) replaces the array comparison."</li>
+      <li>"In production I would reach for <code>bisect.bisect_left</code>, which is the same lower-bound loop."</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================ PRACTICE ============================ -->
+<section id="practice">
+  <h2><span class="num">7</span>Practice, in this order</h2>
+  <p>Solve these on LeetCode with the notes closed. Before each one, say which template you will use and why, then write it.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Problem</th><th>Move it trains</th><th>Level</th></tr></thead>
+    <tbody>
+      <tr><td>704</td><td>Binary Search</td><td>template 1, exact match, the lesson's code</td><td>Easy</td></tr>
+      <tr><td>35</td><td>Search Insert Position</td><td>template 2, lower bound</td><td>Easy</td></tr>
+      <tr><td>374</td><td>Guess Number Higher or Lower</td><td>search a range with a black-box API (lesson 15)</td><td>Easy</td></tr>
+      <tr><td>278</td><td>First Bad Version</td><td>first True over versions 1..n</td><td>Easy</td></tr>
+      <tr><td>69</td><td>Sqrt(x)</td><td>last True over a numeric range</td><td>Easy</td></tr>
+      <tr><td>74</td><td>Search a 2D Matrix</td><td>flat index math, template 1</td><td>Medium</td></tr>
+      <tr><td>875</td><td>Koko Eating Bananas</td><td>binary search on the answer, minimize</td><td>Medium</td></tr>
+      <tr><td>1011</td><td>Capacity To Ship Packages Within D Days</td><td>binary search on the answer, minimize capacity</td><td>Medium</td></tr>
+      <tr><td>153</td><td>Find Minimum in Rotated Sorted Array</td><td>hidden monotonic test: nums[mid] &gt; nums[R]</td><td>Medium</td></tr>
+      <tr><td>33</td><td>Search in Rotated Sorted Array</td><td>decide which half is sorted, then template 1</td><td>Medium</td></tr>
+      <tr><td>34</td><td>Find First and Last Position of Element in Sorted Array</td><td>lower bound + upper bound</td><td>Medium</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Your next step today:</strong> LeetCode 704. Write it from memory with <code>L &lt;= R</code>, then test it on <code>[1,2,3,4,5,6,7,8]</code> with targets 5 and 9 and compare with the two trace tables above.</p>
+</section>
+
+<!-- ============================ QUIZ ============================ -->
+<section id="quiz">
+  <h2><span class="num">8</span>Self-check</h2>
+  <p>Answer out loud before opening. If you cannot answer in one breath, reread that section.</p>
+
+  <details><summary><span class="q">Q1</span>What single property of the input makes binary search possible, and why?</summary><div><p>The array is sorted. Sorted means one comparison with the middle value tells you which side every other value is on, so you can throw away half without looking at it.</p></div></details>
+
+  <details><summary><span class="q">Q2</span>What are the three outcomes of comparing <code>arr[mid]</code> with the target, and what do you do for each?</summary><div><p>Target greater: <code>L = mid + 1</code> (search right). Target smaller: <code>R = mid - 1</code> (search left). Equal: return <code>mid</code>.</p></div></details>
+
+  <details><summary><span class="q">Q3</span>Trace it: arr = [1,2,3,4,5,6,7,8], target = 5. Give L, R, mid and arr[mid] for each loop turn.</summary><div><p>Turn 1: L=0, R=7, mid=3, arr[3]=4, 5 &gt; 4 so L=4. Turn 2: L=4, R=7, mid=5, arr[5]=6, 5 &lt; 6 so R=4. Turn 3: L=4, R=4, mid=4, arr[4]=5, found, return 4.</p></div></details>
+
+  <details><summary><span class="q">Q4</span>Trace it: same array, target = 9. What are L and R when the loop stops, and what is returned?</summary><div><p>L moves 0 → 4 → 6 → 7 → 8 while R stays 7. The loop stops at L=8, R=7 because <code>L &lt;= R</code> is false. Return -1. L is out of bounds; that is expected.</p></div></details>
+
+  <details><summary><span class="q">Q5</span>Why is the loop condition <code>L &lt;= R</code> and not <code>L &lt; R</code> in the lesson's code?</summary><div><p>When L == R the search space still holds one unchecked cell. <code>L &lt; R</code> would stop before checking it, so a target in that cell would be reported missing. Example: <code>binarySearch([7], 7)</code>.</p></div></details>
+
+  <details><summary><span class="q">Q6</span>Why does NeetCode prefer <code>L + (R - L) // 2</code> over <code>(L + R) // 2</code>? Does it matter in Python?</summary><div><p>In languages with fixed-size integers, <code>L + R</code> can overflow when both are large. <code>L + (R - L) // 2</code> never adds two large numbers. Python integers cannot overflow, so both are correct there, but interviewers expect the safe form.</p></div></details>
+
+  <details><summary><span class="q">Q7</span>Derive the time complexity. Start from "the search space halves each step".</summary><div><p>After x steps the size is n / 2^x. The search ends at size 1: 1 = n / 2^x, so 2^x = n and x = log2(n). Time O(log n). Iterative space O(1).</p></div></details>
+
+  <details><summary><span class="q">Q8</span>In the "guess 1 to 100" version, what replaces <code>arr[mid]</code>, and what do <code>low</code> and <code>high</code> hold?</summary><div><p>A black-box check such as <code>isCorrect(mid)</code> that says too big (1), too small (-1), or correct (0). <code>low</code> and <code>high</code> are values in the range, not array indices. "Too big" does <code>high = mid - 1</code>; "too small" does <code>low = mid + 1</code>.</p></div></details>
+
+  <details><summary><span class="q">Q9</span>Trace it: secret number 10, range 1..100. List the guesses.</summary><div><p>50 (too big, high=49), 25 (too big, high=24), 12 (too big, high=11), 6 (too small, low=7), 9 (too small, low=10), 10 (correct). Six guesses; log2(100) is about 6.6.</p></div></details>
+
+  <details><summary><span class="q">Q10</span>What three things change between the exact-match template and the boundary (lower bound) template?</summary><div><p><code>R = len(nums)</code> instead of <code>len(nums) - 1</code>; on a True/match-or-bigger result do <code>R = mid</code> instead of <code>mid - 1</code>; loop <code>while L &lt; R</code> and return <code>L</code> after the loop instead of returning inside it.</p></div></details>
+
+  <details><summary><span class="q">Q11</span>Why can <code>L = mid</code> inside a <code>while L &lt; R</code> loop hang forever, and what is the fix?</summary><div><p>When R = L + 1, mid rounds down to L, so <code>L = mid</code> does not move. The fix is <code>L = mid + 1</code> (first-True search) or rounding mid up with <code>L + (R - L + 1) // 2</code> (last-True search).</p></div></details>
+
+  <details><summary><span class="q">Q12</span>Koko has piles [3,6,7,11] and 8 hours. What is the search space, what is the check, and what is the answer?</summary><div><p>Search space: speeds 1 to 11 (max pile). Check: <code>sum(ceil(p / k)) &lt;= 8</code>, which is monotonic (F F F T T T T T T T T). First True is k = 4, so the answer is 4.</p></div></details>
+
+  <details><summary><span class="q">Q13</span>Which <code>bisect</code> function equals lower bound, which equals upper bound, and what extra check do you need after <code>bisect_left</code> to say "found"?</summary><div><p><code>bisect_left</code> is lower bound (first index with value ≥ target). <code>bisect_right</code> is upper bound (first index with value &gt; target). After <code>i = bisect_left(a, t)</code>, "found" means <code>i &lt; len(a) and a[i] == t</code>.</p></div></details>
+</section>
+
+<nav class="pager" aria-label="Previous and next topic">
+  <a class="prev" href="04-sorting.html"><small>Previous</small>Sorting</a>
+  <a class="next" href="06-trees.html"><small>Next</small>Trees</a>
+</nav>
+
+<footer>
+  Source: NeetCode "Algorithms and Data Structures for Beginners", lessons 14 (Binary Search: Search an Array) and 15 (Binary Search: Search a Range). All Python in these notes was run and tested. Orange in every diagram marks the cell being tested or the pointer that moved.
+</footer>
+</div>
+</body>
+</html>

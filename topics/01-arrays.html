@@ -1,0 +1,1159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arrays · DSA Field Notes</title>
+<meta name="description" content="RAM, static arrays, dynamic arrays, and stacks - byte-level diagrams, shifting traces, amortized resize math, tested Python, Big-O, mistakes, practice, self-check.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arr"/></marker>
+    <marker id="arrNew" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrNew"/></marker>
+    <marker id="arrOld" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrOld"/></marker>
+    <marker id="arrCur" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrCur"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="site-head">
+  <a class="brand" href="../index.html">DSA <span>Field Notes</span></a>
+  <div class="crumbs"><a href="../index.html">Course map</a> <span>/</span> <span>01 Arrays</span></div>
+</header>
+<header class="top">
+  <div class="eyebrow">NeetCode · DSA for Beginners · Lessons 1-4</div>
+  <h1>Array Field Notes</h1>
+  <p class="lede">RAM, static arrays, dynamic arrays, and stacks. Every diagram shows which cells moved and why the cost is what it is. Read the notes, then close them and rebuild the code from memory.</p>
+</header>
+
+<nav class="sections" aria-label="Sections">
+  <a href="#why">Why</a>
+  <a href="#ram">RAM</a>
+  <a href="#static">Static</a>
+  <a href="#dynamic">Dynamic</a>
+  <a href="#stack">Stack</a>
+  <a href="#patterns">Patterns</a>
+  <a href="#complexity">Big-O</a>
+  <a href="#mistakes">Mistakes</a>
+  <a href="#practice">Practice</a>
+  <a href="#quiz">Self-check</a>
+</nav>
+
+<!-- ============================ WHY ============================ -->
+<section id="why">
+  <h2><span class="num">0</span>Why arrays are the first data structure</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>A street of identical houses, numbered 0, 4, 8, 12 ... An <strong>array</strong> is three houses in a row on that street. If you know where the first house is and how wide each house is, you can walk straight to house number 2 without knocking on any door. That is the whole trick: <em>position becomes arithmetic</em>.</p>
+  </div>
+
+  <p>A <dfn>data structure</dfn> is a way to store data efficiently inside <dfn>RAM</dfn> (Random Access Memory, usually just called "memory"). An array is the simplest one: an ordered collection of <dfn>contiguous</dfn> elements. Contiguous means "side by side in memory, with no gaps". Everything else on this page - reading, inserting, deleting, growing, stacking - follows from that one property.</p>
+
+  <figure>
+    <svg viewBox="0 0 680 170" role="img" aria-label="RAM drawn as one long row of slots with addresses. The array 1, 3, 5 occupies three neighboring slots at addresses 12, 16 and 20.">
+      <text x="20" y="20" class="t ptrlab">RAM</text>
+      <text x="62" y="20" class="t small">one long row of numbered slots; the number is the address</text>
+      <rect x="20" y="36" width="56" height="44" class="nd dim"/>
+      <rect x="76" y="36" width="56" height="44" class="nd dim"/>
+      <rect x="132" y="36" width="56" height="44" class="nd dim"/>
+      <rect x="188" y="36" width="56" height="44" class="nd"/><text x="216" y="63" class="t" text-anchor="middle">1</text>
+      <rect x="244" y="36" width="56" height="44" class="nd"/><text x="272" y="63" class="t" text-anchor="middle">3</text>
+      <rect x="300" y="36" width="56" height="44" class="nd"/><text x="328" y="63" class="t" text-anchor="middle">5</text>
+      <rect x="356" y="36" width="56" height="44" class="nd dim"/>
+      <rect x="412" y="36" width="56" height="44" class="nd dim"/>
+      <rect x="468" y="36" width="56" height="44" class="nd dim"/>
+      <rect x="524" y="36" width="56" height="44" class="nd dim"/>
+      <rect x="580" y="36" width="56" height="44" class="nd dim"/>
+      <text x="48" y="96" class="t small" text-anchor="middle">$0</text>
+      <text x="104" y="96" class="t small" text-anchor="middle">$4</text>
+      <text x="160" y="96" class="t small" text-anchor="middle">$8</text>
+      <text x="216" y="96" class="t small" text-anchor="middle">$12</text>
+      <text x="272" y="96" class="t small" text-anchor="middle">$16</text>
+      <text x="328" y="96" class="t small" text-anchor="middle">$20</text>
+      <text x="384" y="96" class="t small" text-anchor="middle">$24</text>
+      <text x="440" y="96" class="t small" text-anchor="middle">$28</text>
+      <text x="496" y="96" class="t small" text-anchor="middle">$32</text>
+      <text x="552" y="96" class="t small" text-anchor="middle">$36</text>
+      <text x="608" y="96" class="t small" text-anchor="middle">$40</text>
+      <rect x="184" y="30" width="176" height="56" class="mem"/>
+      <text x="272" y="120" class="t ptrlab" text-anchor="middle">myArray = [1, 3, 5] starts at $12</text>
+      <text x="340" y="152" class="t small" text-anchor="middle">myArray[2] lives at $12 + 2 × 4 = $20  →  one multiply, one add, no searching</text>
+    </svg>
+    <figcaption><b>The array is a slice of RAM.</b> Its elements sit at neighboring addresses, so the address of any index is <code>start + i × size</code>. That formula is why reading <code>myArray[i]</code> costs the same whether the array has 3 items or 3 million.</figcaption>
+  </figure>
+
+  <p>The four lessons build on each other: lesson 1 shows what RAM looks like, lesson 2 does the four operations on a fixed-size array, lesson 3 makes the array grow, and lesson 4 restricts it to one end and calls it a stack.</p>
+</section>
+
+<!-- ============================ RAM ============================ -->
+<section id="ram">
+  <h2><span class="num">1</span>RAM: where the array lives</h2>
+
+  <h3>Bits, bytes, gigabytes</h3>
+  <p>Computers only understand <dfn>bits</dfn>: 0s and 1s. A <dfn>byte</dfn> is 8 bits. A laptop may have 8 GB of RAM, which is 8 × 1024 × 1024 × 1024 bytes (about 8.6 billion slots). Each integer has a <dfn>binary representation</dfn>: the same number written with only 0s and 1s. Using one byte each:</p>
+
+<pre><code>format(1, <span class="s">"08b"</span>)   <span class="c"># '00000001'</span>
+format(3, <span class="s">"08b"</span>)   <span class="c"># '00000011'</span>
+format(5, <span class="s">"08b"</span>)   <span class="c"># '00000101'</span>
+bin(5)             <span class="c"># '0b101'  (Python drops the leading zeros)</span></code></pre>
+
+  <h3>Addresses: every value has a location</h3>
+  <p>When we store <code>[1, 3, 5]</code> in RAM, each element is stored contiguously (continuously, in order). Each value gets an <dfn>address</dfn>: a distinct location, written here as <code>$0</code>, <code>$4</code>, <code>$8</code>. Integers commonly occupy 4 bytes (32 bits), so integer addresses are 4 bytes apart. Characters occupy 1 byte each, so a char array has addresses 1 byte apart.</p>
+
+  <figure>
+    <svg viewBox="0 0 680 250" role="img" aria-label="An int array 1, 3, 5 drawn as three 4-byte blocks at addresses 0, 4 and 8, with the binary of each value in the last byte. Below it a char array a, b, c drawn as three 1-byte cells at addresses 0, 1 and 2.">
+      <text x="20" y="18" class="t ptrlab">INT ARRAY [1, 3, 5]</text>
+      <text x="186" y="18" class="t small">one int = 4 bytes = 32 bits, so addresses are 4 apart</text>
+      <!-- element 0 -->
+      <rect x="20" y="30" width="208" height="44" class="nd"/>
+      <line x1="72" y1="30" x2="72" y2="74" class="cell"/><line x1="124" y1="30" x2="124" y2="74" class="cell"/><line x1="176" y1="30" x2="176" y2="74" class="cell"/>
+      <text x="46" y="57" class="t small" font-size="7" text-anchor="middle">00000000</text>
+      <text x="98" y="57" class="t small" font-size="7" text-anchor="middle">00000000</text>
+      <text x="150" y="57" class="t small" font-size="7" text-anchor="middle">00000000</text>
+      <text x="202" y="57" class="t" font-size="10" text-anchor="middle">00000001</text>
+      <!-- element 1 -->
+      <rect x="228" y="30" width="208" height="44" class="nd"/>
+      <line x1="280" y1="30" x2="280" y2="74" class="cell"/><line x1="332" y1="30" x2="332" y2="74" class="cell"/><line x1="384" y1="30" x2="384" y2="74" class="cell"/>
+      <text x="254" y="57" class="t small" font-size="7" text-anchor="middle">00000000</text>
+      <text x="306" y="57" class="t small" font-size="7" text-anchor="middle">00000000</text>
+      <text x="358" y="57" class="t small" font-size="7" text-anchor="middle">00000000</text>
+      <text x="410" y="57" class="t" font-size="10" text-anchor="middle">00000011</text>
+      <!-- element 2 -->
+      <rect x="436" y="30" width="208" height="44" class="nd"/>
+      <line x1="488" y1="30" x2="488" y2="74" class="cell"/><line x1="540" y1="30" x2="540" y2="74" class="cell"/><line x1="592" y1="30" x2="592" y2="74" class="cell"/>
+      <text x="462" y="57" class="t small" font-size="7" text-anchor="middle">00000000</text>
+      <text x="514" y="57" class="t small" font-size="7" text-anchor="middle">00000000</text>
+      <text x="566" y="57" class="t small" font-size="7" text-anchor="middle">00000000</text>
+      <text x="618" y="57" class="t" font-size="10" text-anchor="middle">00000101</text>
+      <text x="20" y="92" class="t mono">$0</text>
+      <text x="124" y="92" class="t small" text-anchor="middle">value 1 (index 0)</text>
+      <text x="228" y="92" class="t mono">$4</text>
+      <text x="332" y="92" class="t small" text-anchor="middle">value 3 (index 1)</text>
+      <text x="436" y="92" class="t mono">$8</text>
+      <text x="540" y="92" class="t small" text-anchor="middle">value 5 (index 2)</text>
+
+      <text x="20" y="126" class="t ptrlab">CHAR ARRAY ['a', 'b', 'c']</text>
+      <text x="230" y="126" class="t small">one char = 1 byte, so addresses are 1 apart</text>
+      <rect x="20" y="138" width="52" height="44" class="nd"/><text x="46" y="165" class="t" text-anchor="middle">a</text>
+      <rect x="72" y="138" width="52" height="44" class="nd"/><text x="98" y="165" class="t" text-anchor="middle">b</text>
+      <rect x="124" y="138" width="52" height="44" class="nd"/><text x="150" y="165" class="t" text-anchor="middle">c</text>
+      <rect x="176" y="138" width="52" height="44" class="nd dim"/>
+      <rect x="228" y="138" width="52" height="44" class="nd dim"/>
+      <rect x="280" y="138" width="52" height="44" class="nd dim"/>
+      <rect x="332" y="138" width="52" height="44" class="nd dim"/>
+      <rect x="384" y="138" width="52" height="44" class="nd dim"/>
+      <text x="46" y="200" class="t mono" text-anchor="middle">$0</text>
+      <text x="98" y="200" class="t mono" text-anchor="middle">$1</text>
+      <text x="150" y="200" class="t mono" text-anchor="middle">$2</text>
+      <text x="202" y="200" class="t small" text-anchor="middle">$3</text>
+      <text x="254" y="200" class="t small" text-anchor="middle">$4</text>
+      <text x="306" y="200" class="t small" text-anchor="middle">$5</text>
+      <text x="358" y="200" class="t small" text-anchor="middle">$6</text>
+      <text x="410" y="200" class="t small" text-anchor="middle">$7</text>
+      <text x="460" y="165" class="t small">free RAM</text>
+      <text x="340" y="236" class="t small" text-anchor="middle">same rule both times:  address(i) = start + i × (bytes per element)  -  only the step changes</text>
+    </svg>
+    <figcaption><b>The size of the type sets the step between addresses.</b> Ints step by 4, chars step by 1. The data type does not matter as long as the address is incremented relative to the size of the type. Each 4-byte int holds its value in binary across 32 bits; the first three bytes of a small number are all zero.</figcaption>
+  </figure>
+
+  <p>The address formula in Python, tested on both arrays:</p>
+<pre><code><span class="k">def</span> address_of(start, i, size):
+    <span class="c"># address of element i when each element takes `size` bytes</span>
+    <span class="k">return</span> start + i * size
+
+[address_of(0, i, 4) <span class="k">for</span> i <span class="k">in</span> range(3)]   <span class="c"># [0, 4, 8]   int array</span>
+[address_of(0, i, 1) <span class="k">for</span> i <span class="k">in</span> range(3)]   <span class="c"># [0, 1, 2]   char array</span>
+address_of(100, 2, 4)                       <span class="c"># 108: works from any start</span></code></pre>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>This is usually abstracted away from you as a developer: Python never shows you an address. It is still worth knowing, because it is what makes O(1) indexing possible, it is relevant to many algorithms and data structures, and it is extremely important in system design (caches, memory layout, why arrays beat linked lists in practice).</p>
+  </div>
+
+  <p>Lesson 1 is mostly theory. The next three lessons cover the operations, their efficiency, and where you use them.</p>
+</section>
+
+<!-- ============================ STATIC ============================ -->
+<section id="static">
+  <h2><span class="num">2</span>Static arrays: fixed size, four operations</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>An egg carton with 12 cups. You choose the carton size when you buy it. You can put eggs in, take eggs out, and slide eggs around, but you cannot make the carton hold 13 eggs. When it is full, it is full.</p>
+  </div>
+
+  <p>In <dfn>statically typed</dfn> languages (Java, C++, C#) an array must be given a size and a type when it is created. That is a <dfn>static array</dfn>: its size cannot change once declared, and once it is full you cannot store more. Python and JavaScript do not have static arrays; their default array is a <em>dynamic</em> array (section 3). We still use Python here and simulate the fixed size with two extra numbers: <code>length</code> and <code>capacity</code>.</p>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p><code>length</code> = how many real values are inside. <code>capacity</code> = the maximum the array can hold (the memory that was allocated). In a static array the capacity is fixed; the length moves between 0 and capacity.</p>
+  </div>
+
+  <h3>Reading: O(1)</h3>
+<pre><code>myArray = [1, 3, 5]
+myArray[i]      <span class="c"># access the element at index i</span>
+myArray[0]      <span class="c"># 1</span>
+myArray[2]      <span class="c"># 5</span></code></pre>
+
+  <p>Accessing a single element is always instant, because each index maps to an address in RAM (section 1). Regardless of the array's size, the time is the same: <strong>O(1)</strong>, "constant time".</p>
+
+  <figure>
+    <svg viewBox="0 0 640 150" role="img" aria-label="Reading myArray at index 2: the cursor jumps straight to the third cell because its address is start plus 2 times 4.">
+      <text x="260" y="22" class="t mono" text-anchor="middle">myArray[2]</text>
+      <path d="M260,28 L260,38" class="cur" marker-end="url(#arrCur)"/>
+      <rect x="60" y="40" width="80" height="44" class="nd"/><text x="100" y="67" class="t" text-anchor="middle">1</text>
+      <rect x="140" y="40" width="80" height="44" class="nd"/><text x="180" y="67" class="t" text-anchor="middle">3</text>
+      <rect x="220" y="40" width="80" height="44" class="nd"/><text x="260" y="67" class="t" text-anchor="middle">5</text>
+      <text x="100" y="102" class="t small" text-anchor="middle">index 0</text>
+      <text x="180" y="102" class="t small" text-anchor="middle">index 1</text>
+      <text x="260" y="102" class="t small" text-anchor="middle">index 2</text>
+      <text x="100" y="120" class="t mono" text-anchor="middle">$0</text>
+      <text x="180" y="120" class="t mono" text-anchor="middle">$4</text>
+      <text x="260" y="120" class="t mono" text-anchor="middle">$8</text>
+      <text x="330" y="50" class="t mono">address = start + i × 4</text>
+      <text x="330" y="70" class="t mono">        = $0 + 2 × 4 = $8</text>
+      <text x="330" y="92" class="t small">one multiply and one add</text>
+      <text x="330" y="108" class="t small">same cost for n = 3 or n = 3,000,000 → O(1)</text>
+    </svg>
+    <figcaption><b>No walking, no searching.</b> The computer computes the address and jumps there. The size of the array never enters the calculation.</figcaption>
+  </figure>
+
+  <div class="callout">
+    <span class="lab">Common confusion</span>
+    <p>O(1) does not mean "fast". It means "does not grow with the input". A step could take 1000 operations and still be O(1), as long as that number stays 1000 when the array gets bigger. Ask "does the work grow with n?", not "is it quick?".</p>
+  </div>
+
+  <h3>Traversing: O(n)</h3>
+  <p><dfn>Traverse</dfn> means "visit every element from first to last". Two equivalent loops:</p>
+
+<pre><code><span class="k">for</span> i <span class="k">in</span> range(len(myArray)):
+    print(myArray[i])
+
+<span class="c"># OR</span>
+i = 0
+<span class="k">while</span> i &lt; len(myArray):
+    print(myArray[i])
+    i += 1</code></pre>
+
+  <p>The last element is at index <code>n - 1</code>, where <code>n</code> is the size. Size 3 → last index 2. Both loops stop before index 3, because <code>range(3)</code> gives 0, 1, 2 and <code>i &lt; 3</code> fails at 3. Traversal is <strong>O(n)</strong>: the number of operations grows linearly with the size. 10 elements → 10 operations, 100 elements → 100 operations.</p>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Loop turn</th><th><code>i</code></th><th><code>i &lt; 3</code>?</th><th>prints</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>0</td><td>True</td><td>1</td></tr>
+      <tr><td>2</td><td>1</td><td>True</td><td>3</td></tr>
+      <tr><td>3</td><td>2</td><td>True</td><td>5</td></tr>
+      <tr><td>4</td><td>3</td><td>False</td><td>- (exit)</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Deleting from the end: O(1)</h3>
+  <p>In statically typed languages every index is filled with 0 (or some default value like <code>null</code> or -1) when the array is created. So "removing" the last element is a <dfn>soft delete</dfn>: overwrite it with the default and consider the length reduced by 1. The slot still exists; we simply stop counting it.</p>
+
+<pre><code><span class="c"># Remove from the last position in the array if the array</span>
+<span class="c"># is not empty (i.e. length is non-zero).</span>
+<span class="k">def</span> removeEnd(arr, length):
+    <span class="k">if</span> length &gt; 0:
+        <span class="c"># Overwrite last element with some default value.</span>
+        <span class="c"># We would also consider the length to be decreased by 1.</span>
+        arr[length - 1] = 0
+
+arr = [4, 5, 6]
+removeEnd(arr, 3)     <span class="c"># arr is now [4, 5, 0], length is treated as 2</span>
+removeEnd(arr, 0)     <span class="c"># empty: nothing happens</span></code></pre>
+
+  <p>NeetCode's version does not return the new length, so a version that does (this is what "we would consider the length decreased" means in practice):</p>
+
+<pre><code><span class="k">def</span> removeEnd2(arr, length):
+    <span class="k">if</span> length &gt; 0:
+        arr[length - 1] = 0
+        length -= 1
+    <span class="k">return</span> length          <span class="c"># removeEnd2([4,5,6], 3) → 2</span></code></pre>
+
+  <h3>Deleting at index i: shift left, O(n)</h3>
+  <p>Naively writing 0 into the middle would break the contiguous nature of the array: you would have a hole, and every later read would have to skip it. Deleting from the end keeps the array contiguous; deleting from the middle does not. The fix is to close the hole by moving everything after it one step left:</p>
+
+  <ol class="steps">
+    <li>Given the deletion index <code>i</code>.</li>
+    <li>Iterate from <code>i + 1</code> to the end.</li>
+    <li>Shift each element 1 position to the left.</li>
+    <li>(Optional) replace the last element with 0 / <code>None</code> and decrement the length.</li>
+  </ol>
+
+<pre><code><span class="c"># Remove value at index i before shifting elements to the left.</span>
+<span class="c"># Assuming i is a valid index.</span>
+<span class="k">def</span> removeMiddle(arr, i, length):
+    <span class="c"># Shift starting from i + 1 to end.</span>
+    <span class="k">for</span> index <span class="k">in</span> range(i + 1, length):
+        arr[index - 1] = arr[index]
+    <span class="c"># No need to 'remove' arr[i], since we already shifted</span>
+
+arr = [4, 5, 6, 7, 8]
+removeMiddle(arr, 1, 5)    <span class="c"># arr is now [4, 6, 7, 8, 8]; length is treated as 4</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 640 236" role="img" aria-label="Removing index 1 from the array 4, 5, 6, 7, 8. The values 6, 7 and 8 each move one cell to the left, in that order, producing 4, 6, 7, 8 with a stale 8 left in the last slot.">
+      <text x="136" y="14" class="t nulltxt" text-anchor="middle">remove index 1</text>
+      <text x="72" y="30" class="t mono" text-anchor="middle">0</text>
+      <text x="136" y="30" class="t mono" text-anchor="middle">1</text>
+      <text x="200" y="30" class="t mono" text-anchor="middle">2</text>
+      <text x="264" y="30" class="t mono" text-anchor="middle">3</text>
+      <text x="328" y="30" class="t mono" text-anchor="middle">4</text>
+      <!-- before -->
+      <rect x="40" y="40" width="64" height="44" class="nd"/><text x="72" y="67" class="t" text-anchor="middle">4</text>
+      <rect x="104" y="40" width="64" height="44" class="nd"/><text x="136" y="67" class="t nulltxt" text-anchor="middle" style="text-decoration:line-through">5</text>
+      <rect x="168" y="40" width="64" height="44" class="nd"/><text x="200" y="67" class="t" text-anchor="middle">6</text>
+      <rect x="232" y="40" width="64" height="44" class="nd"/><text x="264" y="67" class="t" text-anchor="middle">7</text>
+      <rect x="296" y="40" width="64" height="44" class="nd"/><text x="328" y="67" class="t" text-anchor="middle">8</text>
+      <text x="380" y="67" class="t ptrlab">before  (length 5)</text>
+      <!-- shifts -->
+      <path d="M200,88 L138,146" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M264,88 L202,146" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M328,88 L266,146" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="184" y="117" class="t newlab" font-size="11">①</text>
+      <text x="248" y="117" class="t newlab" font-size="11">②</text>
+      <text x="312" y="117" class="t newlab" font-size="11">③</text>
+      <text x="380" y="121" class="t small">arr[index - 1] = arr[index]</text>
+      <!-- after -->
+      <rect x="40" y="150" width="64" height="44" class="nd"/><text x="72" y="177" class="t" text-anchor="middle">4</text>
+      <rect x="104" y="150" width="64" height="44" class="nd"/><text x="136" y="177" class="t" text-anchor="middle">6</text>
+      <rect x="168" y="150" width="64" height="44" class="nd"/><text x="200" y="177" class="t" text-anchor="middle">7</text>
+      <rect x="232" y="150" width="64" height="44" class="nd"/><text x="264" y="177" class="t" text-anchor="middle">8</text>
+      <rect x="296" y="150" width="64" height="44" class="nd dim"/><text x="328" y="177" class="t" text-anchor="middle" opacity=".35">8</text>
+      <text x="380" y="177" class="t ptrlab">after  (length 4)</text>
+      <text x="72" y="210" class="t mono" text-anchor="middle">0</text>
+      <text x="136" y="210" class="t mono" text-anchor="middle">1</text>
+      <text x="200" y="210" class="t mono" text-anchor="middle">2</text>
+      <text x="264" y="210" class="t mono" text-anchor="middle">3</text>
+      <text x="328" y="210" class="t mono" text-anchor="middle">4</text>
+      <text x="328" y="228" class="t small" text-anchor="middle">stale copy, ignored</text>
+    </svg>
+    <figcaption><b>The 5 is never "erased"; it is overwritten by the 6.</b> Each orange arrow is one <code>arr[index - 1] = arr[index]</code>. The last slot keeps a stale 8, which the length now hides. Three moves here; deleting index 0 would need four. Worst case (target index 0) shifts every element: O(n).</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Step</th><th><code>index</code></th><th>does</th><th><code>arr</code> after</th></tr></thead>
+    <tbody>
+      <tr><td>start</td><td>-</td><td>call <code>removeMiddle(arr, 1, 5)</code>; loop is <code>range(2, 5)</code></td><td>[4, 5, 6, 7, 8]</td></tr>
+      <tr><td>①</td><td>2</td><td><code>arr[1] = arr[2]</code></td><td>[4, 6, 6, 7, 8]</td></tr>
+      <tr><td>②</td><td>3</td><td><code>arr[2] = arr[3]</code></td><td>[4, 6, 7, 7, 8]</td></tr>
+      <tr><td>③</td><td>4</td><td><code>arr[3] = arr[4]</code></td><td>[4, 6, 7, 8, 8]</td></tr>
+      <tr><td>end</td><td>-</td><td>length is now 4; index 4 is stale</td><td>[4, 6, 7, 8, <em>8</em>]</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Inserting at the end: O(1)</h3>
+  <p>The next open position is always index <code>length</code>. If there is room (length is below capacity), write there.</p>
+
+<pre><code><span class="c"># Insert n into arr at the next open position.</span>
+<span class="c"># Length is the number of 'real' values in arr, and capacity</span>
+<span class="c"># is the size (aka memory allocated for the fixed size array).</span>
+<span class="k">def</span> insertEnd(arr, n, length, capacity):
+    <span class="k">if</span> length &lt; capacity:
+        arr[length] = n
+
+arr = [4, 5, 0, 0]           <span class="c"># length 2, capacity 4</span>
+insertEnd(arr, 6, 2, 4)      <span class="c"># [4, 5, 6, 0]</span>
+insertEnd(arr, 7, 3, 4)      <span class="c"># [4, 5, 6, 7]</span>
+insertEnd(arr, 8, 4, 4)      <span class="c"># full: nothing happens</span></code></pre>
+
+  <h3>Inserting at index i: shift right, O(n)</h3>
+  <p>Consider <code>[4, 5, 6]</code> and insert at <code>i = 1</code> or <code>i = 0</code>. You cannot simply overwrite <code>arr[i]</code>: that value would be lost. Instead, shift every value from index <code>i</code> onward one position to the right, <em>starting from the end</em>, then write the new value at <code>i</code>.</p>
+
+<pre><code><span class="c"># Insert n into index i after shifting elements to the right.</span>
+<span class="c"># Assuming i is a valid index and arr is not full.</span>
+<span class="k">def</span> insertMiddle(arr, i, n, length):
+    <span class="c"># Shift starting from the end to i.</span>
+    <span class="k">for</span> index <span class="k">in</span> range(length - 1, i - 1, -1):
+        arr[index + 1] = arr[index]
+    <span class="c"># Insert at i</span>
+    arr[i] = n
+
+arr = [4, 5, 6, 0]           <span class="c"># length 3, one spare slot</span>
+insertMiddle(arr, 1, 8, 3)   <span class="c"># [4, 8, 5, 6]</span>
+arr = [4, 5, 6, 0]
+insertMiddle(arr, 0, 8, 3)   <span class="c"># [8, 4, 5, 6]  worst case: every element moved</span></code></pre>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Step</th><th><code>index</code></th><th>does</th><th><code>arr</code> after</th></tr></thead>
+    <tbody>
+      <tr><td>start</td><td>-</td><td><code>insertMiddle([4,5,6,_], 1, 8, 3)</code>; loop is <code>range(2, 0, -1)</code> → 2, 1</td><td>[4, 5, 6, _]</td></tr>
+      <tr><td>①</td><td>2</td><td><code>arr[3] = arr[2]</code></td><td>[4, 5, 6, 6]</td></tr>
+      <tr><td>②</td><td>1</td><td><code>arr[2] = arr[1]</code></td><td>[4, 5, 5, 6]</td></tr>
+      <tr><td>③</td><td>-</td><td><code>arr[1] = 8</code></td><td>[4, 8, 5, 6]</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>NeetCode's example goes one step further: insert 8 at index 1 into <code>[4, 5, 6]</code> when there is <em>no spare capacity</em>. The shifting still happens before the insert, so no value is overwritten by the 8, but the last element 6 has nowhere to go. It falls off the end and is lost.</p>
+
+  <figure>
+    <svg viewBox="0 0 640 236" role="img" aria-label="Inserting 8 at index 1 into the full array 4, 5, 6. The 6 is shifted off the end and lost, the 5 moves right into index 2, then 8 is written at index 1. Result: 4, 8, 5.">
+      <text x="136" y="14" class="t newlab" text-anchor="middle">insert 8 at index 1</text>
+      <text x="72" y="30" class="t mono" text-anchor="middle">0</text>
+      <text x="136" y="30" class="t mono" text-anchor="middle">1</text>
+      <text x="200" y="30" class="t mono" text-anchor="middle">2</text>
+      <rect x="36" y="34" width="200" height="56" class="mem"/>
+      <!-- before -->
+      <rect x="40" y="40" width="64" height="44" class="nd"/><text x="72" y="67" class="t" text-anchor="middle">4</text>
+      <rect x="104" y="40" width="64" height="44" class="nd"/><text x="136" y="67" class="t" text-anchor="middle">5</text>
+      <rect x="168" y="40" width="64" height="44" class="nd"/><text x="200" y="67" class="t" text-anchor="middle">6</text>
+      <text x="330" y="60" class="t ptrlab">before</text>
+      <text x="330" y="78" class="t small">capacity 3, length 3: full (dashed box)</text>
+      <!-- shifts -->
+      <path d="M200,88 L262,146" class="ptr old" marker-end="url(#arrOld)"/>
+      <path d="M136,88 L198,146" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="152" y="121" class="t newlab" font-size="11">②</text>
+      <text x="248" y="113" class="t small">① 6 → index 3: no such slot</text>
+      <!-- after -->
+      <rect x="40" y="150" width="64" height="44" class="nd"/><text x="72" y="177" class="t" text-anchor="middle">4</text>
+      <rect x="104" y="150" width="64" height="44" class="nd newnd"/><text x="136" y="177" class="t" text-anchor="middle">8</text>
+      <rect x="168" y="150" width="64" height="44" class="nd"/><text x="200" y="177" class="t" text-anchor="middle">5</text>
+      <rect x="232" y="150" width="64" height="44" class="nd dim"/><text x="264" y="177" class="t nulltxt" text-anchor="middle" style="text-decoration:line-through">6</text>
+      <text x="330" y="170" class="t ptrlab">after</text>
+      <text x="330" y="188" class="t small">[4, 8, 5]  -  the 6 is gone</text>
+      <text x="72" y="210" class="t mono" text-anchor="middle">0</text>
+      <text x="136" y="210" class="t mono" text-anchor="middle">1</text>
+      <text x="200" y="210" class="t mono" text-anchor="middle">2</text>
+      <text x="136" y="228" class="t newlab" text-anchor="middle" font-size="11">③ arr[1] = 8</text>
+      <text x="264" y="228" class="t nulltxt" text-anchor="middle" font-size="11">lost</text>
+    </svg>
+    <figcaption><b>Shift from the end, then insert.</b> Going right to left is what keeps the 5 from being overwritten before it is copied. With one spare slot the result is <code>[4, 8, 5, 6]</code>; with no spare slot the 6 drops off, which is why a static array must check capacity before inserting.</figcaption>
+  </figure>
+
+  <div class="callout">
+    <span class="lab">Why the loop runs backwards</span>
+    <p>If you shift from the left (<code>arr[2] = arr[1]</code> first), the 6 at index 2 is overwritten before anyone copied it, and you end with <code>[4, 5, 5, 5]</code>. Shifting from the right copies each value into an empty (or already-copied) slot. Same rule as moving boxes down a hallway: move the last box first.</p>
+  </div>
+
+  <h3>In real Python</h3>
+  <p>Python's <code>list</code> does the shifting for you, but the cost is the same. Know which methods hide an O(n) shift:</p>
+
+<pre><code>lst = [4, 5, 6]
+lst.insert(1, 8)    <span class="c"># [4, 8, 5, 6]   shift right: O(n)</span>
+lst.pop(1)          <span class="c"># [4, 5, 6]      shift left:  O(n)</span>
+lst.pop()           <span class="c"># [4, 5]         end: O(1)</span>
+<span class="k">del</span> lst[0]          <span class="c"># [5]            shift left:  O(n)</span>
+lst.append(9)       <span class="c"># [5, 9]         end: O(1)*  (star explained in section 3)</span></code></pre>
+
+  <h3>Time complexity of a static array</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Operation</th><th>Big-O</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Reading</td><td class="big fast">O(1)</td><td>index → address, one jump</td></tr>
+      <tr><td>Insertion</td><td class="big slow">O(n)*</td><td>O(1) if inserting at the end</td></tr>
+      <tr><td>Deletion</td><td class="big slow">O(n)*</td><td>O(1) if deleting at the end</td></tr>
+    </tbody>
+  </table></div>
+  <p>These operations are critical for many interview problems. The key to a lot of them is doing insert-middle and delete-middle efficiently, usually by avoiding the shift entirely (see the two-pointer pattern in section 5).</p>
+</section>
+
+<!-- ============================ DYNAMIC ============================ -->
+<section id="dynamic">
+  <h2><span class="num">3</span>Dynamic arrays: the array that grows</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>You rent a storage unit. When it fills up, you rent a unit twice the size, carry every box over, and return the old key. Moving day is expensive, but it happens rarely, and each time it happens you get twice as long before the next one.</p>
+  </div>
+
+  <p>A <dfn>dynamic array</dfn> grows as elements are added. It is much more common than a static array, and it is the default array in Python and JavaScript: no size needed when you create it. Some languages assign a default starting size (Java 10, C# 4) and resize automatically at runtime. Under the hood a dynamic array is a static array plus a rule for what to do when it is full.</p>
+
+  <h3>Insertion at the end: pushback</h3>
+<pre><code><span class="c"># Insert n in the last position of the array</span>
+<span class="k">def</span> pushback(self, n):
+    <span class="k">if</span> self.length == self.capacity:
+        self.resize()
+    <span class="c"># insert at next empty position</span>
+    self.arr[self.length] = n
+    self.length += 1</code></pre>
+
+  <h3>Resize: copy into a bigger static array</h3>
+  <p>Resizing means allocating a <em>new</em> static array that is double the size of the original (size 3 → size 6), copying every value across, and pointing <code>self.arr</code> at the new one. After the copy, the first static array is <dfn>deallocated</dfn> (its memory is given back).</p>
+
+<pre><code><span class="k">def</span> resize(self):
+    <span class="c"># Create new array of double capacity</span>
+    self.capacity = 2 * self.capacity
+    newArr = [0] * self.capacity
+    <span class="c"># Copy elements to newArr</span>
+    <span class="k">for</span> i <span class="k">in</span> range(self.length):
+        newArr[i] = self.arr[i]
+    self.arr = newArr</code></pre>
+
+  <figure>
+    <svg viewBox="0 0 680 230" role="img" aria-label="A full array of capacity 3 holding 1, 3, 5 is resized: a new array of capacity 6 is created, the three values are copied across, then 7 is inserted at index 3 and the old array is freed.">
+      <text x="20" y="18" class="t ptrlab">arr  (capacity 3, length 3 → full)</text>
+      <rect x="40" y="30" width="64" height="44" class="nd"/><text x="72" y="57" class="t" text-anchor="middle">1</text>
+      <rect x="104" y="30" width="64" height="44" class="nd"/><text x="136" y="57" class="t" text-anchor="middle">3</text>
+      <rect x="168" y="30" width="64" height="44" class="nd"/><text x="200" y="57" class="t" text-anchor="middle">5</text>
+      <text x="72" y="90" class="t small" text-anchor="middle">0</text>
+      <text x="136" y="90" class="t small" text-anchor="middle">1</text>
+      <text x="200" y="90" class="t small" text-anchor="middle">2</text>
+      <text x="250" y="50" class="t small">pushback(7): length == capacity → resize()</text>
+      <text x="250" y="68" class="t small">③ after the copy, this array is deallocated</text>
+      <!-- copies -->
+      <path d="M72,78 L72,136" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M136,78 L136,136" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M200,78 L200,136" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="240" y="112" class="t newlab" font-size="11">① copy 3 values  (O(n))</text>
+      <!-- new array -->
+      <rect x="40" y="140" width="64" height="44" class="nd"/><text x="72" y="167" class="t" text-anchor="middle">1</text>
+      <rect x="104" y="140" width="64" height="44" class="nd"/><text x="136" y="167" class="t" text-anchor="middle">3</text>
+      <rect x="168" y="140" width="64" height="44" class="nd"/><text x="200" y="167" class="t" text-anchor="middle">5</text>
+      <rect x="232" y="140" width="64" height="44" class="nd newnd"/><text x="264" y="167" class="t" text-anchor="middle">7</text>
+      <rect x="296" y="140" width="64" height="44" class="nd dim"/><text x="328" y="167" class="t" text-anchor="middle" opacity=".35">0</text>
+      <rect x="360" y="140" width="64" height="44" class="nd dim"/><text x="392" y="167" class="t" text-anchor="middle" opacity=".35">0</text>
+      <text x="440" y="167" class="t ptrlab">newArr  (capacity 6, length 4)</text>
+      <text x="72" y="200" class="t small" text-anchor="middle">0</text>
+      <text x="136" y="200" class="t small" text-anchor="middle">1</text>
+      <text x="200" y="200" class="t small" text-anchor="middle">2</text>
+      <text x="264" y="200" class="t small" text-anchor="middle">3</text>
+      <text x="328" y="200" class="t small" text-anchor="middle">4</text>
+      <text x="392" y="200" class="t small" text-anchor="middle">5</text>
+      <text x="264" y="220" class="t newlab" text-anchor="middle" font-size="11">② arr[3] = 7</text>
+    </svg>
+    <figcaption><b>One expensive step buys three cheap ones.</b> The copy touches every element (O(n)), but the new array has room for 3 more pushes before the next copy. The two empty slots hold 0 by default and are hidden by <code>length</code>.</figcaption>
+  </figure>
+
+  <h3>The full class (NeetCode's "Design Dynamic Array")</h3>
+<pre><code><span class="k">class</span> DynamicArray:
+    <span class="k">def</span> __init__(self, capacity=1):
+        self.capacity = capacity
+        self.length = 0
+        self.arr = [0] * capacity
+
+    <span class="k">def</span> get(self, i):
+        <span class="k">return</span> self.arr[i]
+
+    <span class="k">def</span> set(self, i, n):
+        self.arr[i] = n
+
+    <span class="c"># Insert n in the last position of the array</span>
+    <span class="k">def</span> pushback(self, n):
+        <span class="k">if</span> self.length == self.capacity:
+            self.resize()
+        <span class="c"># insert at next empty position</span>
+        self.arr[self.length] = n
+        self.length += 1
+
+    <span class="k">def</span> popback(self):
+        <span class="k">if</span> self.length &gt; 0:
+            self.length -= 1          <span class="c"># soft delete: the value stays, length hides it</span>
+        <span class="k">return</span> self.arr[self.length]
+
+    <span class="k">def</span> resize(self):
+        <span class="c"># Create new array of double capacity</span>
+        self.capacity = 2 * self.capacity
+        newArr = [0] * self.capacity
+        <span class="c"># Copy elements to newArr</span>
+        <span class="k">for</span> i <span class="k">in</span> range(self.length):
+            newArr[i] = self.arr[i]
+        self.arr = newArr
+
+    <span class="k">def</span> getSize(self):
+        <span class="k">return</span> self.length
+
+    <span class="k">def</span> getCapacity(self):
+        <span class="k">return</span> self.capacity
+
+d = DynamicArray(3)
+<span class="k">for</span> v <span class="k">in</span> [1, 3, 5]:
+    d.pushback(v)              <span class="c"># size 3, capacity 3</span>
+d.pushback(7)                  <span class="c"># full → resize to 6, then insert: size 4, capacity 6</span></code></pre>
+
+  <h3>Amortized O(1): the honest average</h3>
+  <p>Adding an element runs in <strong>O(1) amortized</strong> time. <dfn>Amortized</dfn> means "averaged over a whole sequence of operations". A single resize is O(n), but a resize is not performed on every push, so the average cost per push works out to O(1). This is only true because we <em>double</em> the size when we run out of space. Grow by a fixed amount (say +1 or +10) and you would resize almost every time, and the average would become O(n).</p>
+
+  <h3>Why double? Count the operations</h3>
+  <p>Start with capacity 1 and push until the array has size 8. The capacities go 1 → 2 → 4 → 8. Count every write, both the pushes and the copies during resizes:</p>
+
+  <figure>
+    <svg viewBox="0 0 680 232" role="img" aria-label="Four rows showing the array at capacity 1, 2, 4 and 8. In each row the left half is copied from the previous array and the right half is newly pushed. Row writes are 1, 2, 4, 8, total 15.">
+      <text x="20" y="44" class="t mono">cap 1</text>
+      <rect x="120" y="24" width="40" height="30" class="nd newnd"/><text x="140" y="44" class="t mono" text-anchor="middle">0</text>
+      <text x="460" y="44" class="t small">1 write   (1 push)</text>
+
+      <text x="20" y="90" class="t mono">cap 2</text>
+      <rect x="120" y="70" width="40" height="30" class="nd"/><text x="140" y="90" class="t mono" text-anchor="middle">0</text>
+      <rect x="160" y="70" width="40" height="30" class="nd newnd"/><text x="180" y="90" class="t mono" text-anchor="middle">1</text>
+      <text x="460" y="90" class="t small">2 writes  (1 copy + 1 push)</text>
+
+      <text x="20" y="136" class="t mono">cap 4</text>
+      <rect x="120" y="116" width="40" height="30" class="nd"/><text x="140" y="136" class="t mono" text-anchor="middle">0</text>
+      <rect x="160" y="116" width="40" height="30" class="nd"/><text x="180" y="136" class="t mono" text-anchor="middle">1</text>
+      <rect x="200" y="116" width="40" height="30" class="nd newnd"/><text x="220" y="136" class="t mono" text-anchor="middle">2</text>
+      <rect x="240" y="116" width="40" height="30" class="nd newnd"/><text x="260" y="136" class="t mono" text-anchor="middle">3</text>
+      <text x="460" y="136" class="t small">4 writes  (2 copies + 2 pushes)</text>
+
+      <text x="20" y="182" class="t mono">cap 8</text>
+      <rect x="120" y="162" width="40" height="30" class="nd"/><text x="140" y="182" class="t mono" text-anchor="middle">0</text>
+      <rect x="160" y="162" width="40" height="30" class="nd"/><text x="180" y="182" class="t mono" text-anchor="middle">1</text>
+      <rect x="200" y="162" width="40" height="30" class="nd"/><text x="220" y="182" class="t mono" text-anchor="middle">2</text>
+      <rect x="240" y="162" width="40" height="30" class="nd"/><text x="260" y="182" class="t mono" text-anchor="middle">3</text>
+      <rect x="280" y="162" width="40" height="30" class="nd newnd"/><text x="300" y="182" class="t mono" text-anchor="middle">4</text>
+      <rect x="320" y="162" width="40" height="30" class="nd newnd"/><text x="340" y="182" class="t mono" text-anchor="middle">5</text>
+      <rect x="360" y="162" width="40" height="30" class="nd newnd"/><text x="380" y="182" class="t mono" text-anchor="middle">6</text>
+      <rect x="400" y="162" width="40" height="30" class="nd newnd"/><text x="420" y="182" class="t mono" text-anchor="middle">7</text>
+      <text x="460" y="182" class="t small">8 writes  (4 copies + 4 pushes)</text>
+
+      <text x="340" y="208" class="t small" text-anchor="middle">plain = copied from the previous array      orange = newly pushed</text>
+      <text x="340" y="226" class="t newlab" text-anchor="middle" font-size="12">1 + 2 + 4 + 8 = 15 writes for 8 pushes. Earlier rows sum to 7 &lt; 8: the last row wins.</text>
+    </svg>
+    <figcaption><b>The last term dominates.</b> Each row is one capacity level: the left half is copied in from the old array, the right half is new pushes. The sum of every earlier row (7) is less than the last row (8), so the total is less than 2 × 8. In general, building an array of size n takes at most 2n operations. 2n is O(n), so n pushes cost O(n), and one push costs O(n) / n = O(1) amortized.</figcaption>
+  </figure>
+
+<pre><code><span class="k">def</span> build_cost(n):
+    <span class="c"># count every write (pushes + copies) while pushing n items,</span>
+    <span class="c"># starting from capacity 1 and doubling</span>
+    cap, length, writes = 1, 0, 0
+    <span class="k">for</span> _ <span class="k">in</span> range(n):
+        <span class="k">if</span> length == cap:
+            writes += length        <span class="c"># copy every existing element</span>
+            cap *= 2
+        writes += 1                 <span class="c"># the push itself</span>
+        length += 1
+    <span class="k">return</span> writes
+
+build_cost(8)        <span class="c"># 15  = 8 pushes + (1 + 2 + 4) copies</span>
+build_cost(1024)     <span class="c"># 2047 = 2n - 1, still under 2n</span></code></pre>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Push #</th><th>capacity before</th><th>resize?</th><th>cost of this push</th><th>capacity after</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>1</td><td>no</td><td>1</td><td>1</td></tr>
+      <tr><td>2</td><td>1</td><td>yes: copy 1</td><td>1 + 1 = 2</td><td>2</td></tr>
+      <tr><td>3</td><td>2</td><td>yes: copy 2</td><td>2 + 1 = 3</td><td>4</td></tr>
+      <tr><td>4</td><td>4</td><td>no</td><td>1</td><td>4</td></tr>
+      <tr><td>5</td><td>4</td><td>yes: copy 4</td><td>4 + 1 = 5</td><td>8</td></tr>
+      <tr><td>6, 7, 8</td><td>8</td><td>no</td><td>1 each</td><td>8</td></tr>
+      <tr><td><strong>total</strong></td><td></td><td></td><td><strong>15</strong>, average 15 / 8 &lt; 2 per push</td><td></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout keep">
+    <span class="lab">Asymptotic analysis</span>
+    <p>We care how the run time <em>grows</em> as the input grows, not the exact count. O(2n) and O(n) are the same thing (both linear), so we drop constants and coefficients: 2n → n, n/2 → n, 3n + 5 → n. That is why "at most 2n operations" is reported as O(n).</p>
+  </div>
+
+  <h3>Other operations</h3>
+  <p>Insert or remove in the middle of a dynamic array works exactly like the static array: shift elements, O(n). Growing does not help you there; the shift is about keeping the array contiguous, not about space.</p>
+
+  <h3>Time complexity of a dynamic array</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Operation</th><th>Big-O</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Access</td><td class="big fast">O(1)</td><td></td></tr>
+      <tr><td>Insertion</td><td class="big fast">O(1)*</td><td>O(n) if in the middle (shifting); the end is amortized O(1)</td></tr>
+      <tr><td>Deletion</td><td class="big fast">O(1)*</td><td>O(n) if in the middle (shifting)</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>In Python, <code>list</code> <em>is</em> a dynamic array. <code>append</code> is the pushback, <code>pop()</code> is the popback, and the resize happens inside the interpreter (CPython over-allocates by roughly 12.5% instead of doubling, which keeps the same amortized O(1) result).</p>
+</section>
+
+<!-- ============================ STACK ============================ -->
+<section id="stack">
+  <h2><span class="num">4</span>Stacks: a dynamic array with one door</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>A stack of plates in a cafeteria. You take a plate from the top. You put a clean plate on the top. You never pull one from the middle. The last plate put on is the first plate taken off.</p>
+  </div>
+
+  <p>A <dfn>stack</dfn> supports a subset of the dynamic array operations: add and remove only from one end, called the <dfn>top</dfn>. Stacks are dynamic (they grow) and <dfn>LIFO</dfn>: Last In, First Out. The last element added is the first one out. There are exactly three operations: <strong>push</strong>, <strong>pop</strong>, <strong>peek</strong>. Compare with a queue (next topic), which is FIFO.</p>
+
+  <h3>Push: append to the end</h3>
+  <p>Adding to the top is the same as appending to the end of a dynamic array. O(1). Visualize the stack as a vertical array; the <code>top</code> pointer always moves to the item added most recently.</p>
+
+<pre><code><span class="k">def</span> push(self, n):
+    <span class="c"># using the pushback function from dynamic arrays to add to the stack</span>
+    self.stack.append(n)</code></pre>
+
+  <h3>Pop: read and remove the end</h3>
+  <p>Removing from the top is reading and removing the last element of the dynamic array. O(1). Check that the stack is not empty before popping, or Python raises <code>IndexError: pop from empty list</code>.</p>
+
+<pre><code><span class="k">def</span> pop(self):
+    <span class="k">return</span> self.stack.pop()</code></pre>
+
+  <h3>Peek: look, do not remove</h3>
+  <p>Returns the top element without removing it. O(1). Some languages call it <code>top()</code>.</p>
+
+<pre><code><span class="k">def</span> peek(self):
+    <span class="k">return</span> self.stack[-1]</code></pre>
+
+  <figure>
+    <svg viewBox="0 0 680 250" role="img" aria-label="Three vertical stacks. Left: after pushing 1, 2, 3, 4 the top pointer is at 4. Middle: peek returns 4 and nothing moves. Right: pop returns 4, the 4 is removed, and the top pointer moves down to 3.">
+      <!-- column A: push -->
+      <text x="92" y="30" class="t mono" text-anchor="middle">push 1, 2, 3, 4</text>
+      <rect x="60" y="164" width="64" height="36" class="nd"/><text x="92" y="187" class="t" text-anchor="middle">1</text>
+      <rect x="60" y="128" width="64" height="36" class="nd"/><text x="92" y="151" class="t" text-anchor="middle">2</text>
+      <rect x="60" y="92" width="64" height="36" class="nd"/><text x="92" y="115" class="t" text-anchor="middle">3</text>
+      <rect x="60" y="56" width="64" height="36" class="nd newnd"/><text x="92" y="79" class="t" text-anchor="middle">4</text>
+      <text x="50" y="187" class="t small" text-anchor="end">0</text>
+      <text x="50" y="151" class="t small" text-anchor="end">1</text>
+      <text x="50" y="115" class="t small" text-anchor="end">2</text>
+      <text x="50" y="79" class="t small" text-anchor="end">3</text>
+      <path d="M186,74 L128,74" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="192" y="78" class="t newlab">top</text>
+      <text x="92" y="222" class="t small" text-anchor="middle">bottom = index 0</text>
+      <text x="92" y="238" class="t small" text-anchor="middle">top moves up on every push</text>
+
+      <!-- column B: peek -->
+      <text x="302" y="30" class="t mono" text-anchor="middle">peek() → 4</text>
+      <rect x="270" y="164" width="64" height="36" class="nd"/><text x="302" y="187" class="t" text-anchor="middle">1</text>
+      <rect x="270" y="128" width="64" height="36" class="nd"/><text x="302" y="151" class="t" text-anchor="middle">2</text>
+      <rect x="270" y="92" width="64" height="36" class="nd"/><text x="302" y="115" class="t" text-anchor="middle">3</text>
+      <rect x="270" y="56" width="64" height="36" class="nd"/><text x="302" y="79" class="t" text-anchor="middle">4</text>
+      <path d="M396,74 L338,74" class="ptr" marker-end="url(#arr)"/>
+      <text x="402" y="78" class="t ptrlab">top</text>
+      <text x="302" y="222" class="t small" text-anchor="middle">returns 4</text>
+      <text x="302" y="238" class="t small" text-anchor="middle">nothing moves</text>
+
+      <!-- column C: pop -->
+      <text x="512" y="30" class="t mono" text-anchor="middle">pop() → 4</text>
+      <rect x="480" y="164" width="64" height="36" class="nd"/><text x="512" y="187" class="t" text-anchor="middle">1</text>
+      <rect x="480" y="128" width="64" height="36" class="nd"/><text x="512" y="151" class="t" text-anchor="middle">2</text>
+      <rect x="480" y="92" width="64" height="36" class="nd"/><text x="512" y="115" class="t" text-anchor="middle">3</text>
+      <rect x="480" y="56" width="64" height="36" class="nd dim"/><text x="512" y="79" class="t" text-anchor="middle" opacity=".35">4</text>
+      <path d="M606,74 L548,74" class="ptr old" marker-end="url(#arrOld)"/>
+      <text x="612" y="78" class="t small" style="text-decoration:line-through">top</text>
+      <path d="M606,110 L548,110" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="612" y="114" class="t newlab">top ①</text>
+      <text x="512" y="222" class="t small" text-anchor="middle">returns 4 and removes it</text>
+      <text x="512" y="238" class="t small" text-anchor="middle">length 4 → 3</text>
+    </svg>
+    <figcaption><b>Only the top cell is ever touched.</b> Push writes at index <code>length</code>, peek reads index <code>length - 1</code>, pop reads index <code>length - 1</code> and lowers the length. No shifting, so every operation is O(1). The stack is the same array drawn vertically.</figcaption>
+  </figure>
+
+  <h3>The full class</h3>
+  <p>Many languages have no built-in stack type, so a dynamic array is used directly. In Python a plain <code>list</code> is the standard stack. A class makes the three operations explicit:</p>
+
+<pre><code><span class="k">class</span> Stack:
+    <span class="k">def</span> __init__(self):
+        self.stack = []
+
+    <span class="k">def</span> push(self, n):
+        <span class="c"># using the pushback function from dynamic arrays to add to the stack</span>
+        self.stack.append(n)
+
+    <span class="k">def</span> pop(self):
+        <span class="k">return</span> self.stack.pop()
+
+    <span class="k">def</span> peek(self):
+        <span class="k">return</span> self.stack[-1]
+
+    <span class="k">def</span> isEmpty(self):
+        <span class="k">return</span> len(self.stack) == 0
+
+s = Stack()
+<span class="k">for</span> v <span class="k">in</span> [1, 2, 3, 4]:
+    s.push(v)                <span class="c"># stack is [1, 2, 3, 4], top is 4</span>
+s.peek()                     <span class="c"># 4, stack unchanged</span>
+s.pop()                      <span class="c"># 4, stack is [1, 2, 3]</span>
+s.pop()                      <span class="c"># 3</span>
+s.peek()                     <span class="c"># 2</span></code></pre>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Call</th><th>returns</th><th><code>stack</code> after</th><th>top</th></tr></thead>
+    <tbody>
+      <tr><td><code>push(1)</code></td><td>-</td><td>[1]</td><td>1</td></tr>
+      <tr><td><code>push(2)</code></td><td>-</td><td>[1, 2]</td><td>2</td></tr>
+      <tr><td><code>push(3)</code></td><td>-</td><td>[1, 2, 3]</td><td>3</td></tr>
+      <tr><td><code>push(4)</code></td><td>-</td><td>[1, 2, 3, 4]</td><td>4</td></tr>
+      <tr><td><code>peek()</code></td><td>4</td><td>[1, 2, 3, 4]</td><td>4</td></tr>
+      <tr><td><code>pop()</code></td><td>4</td><td>[1, 2, 3]</td><td>3</td></tr>
+      <tr><td><code>pop()</code></td><td>3</td><td>[1, 2]</td><td>2</td></tr>
+      <tr><td><code>pop()</code> twice more, then <code>pop()</code></td><td>2, 1, then <code>IndexError</code></td><td>[]</td><td>none</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout">
+    <span class="lab">Check before you pop</span>
+    <p><code>[].pop()</code> and <code>[][-1]</code> both crash. Guard with <code>if stack:</code> (a non-empty list is truthy) or <code>if not s.isEmpty():</code>. In interview code write the guard first; it is the line reviewers look for.</p>
+  </div>
+
+<pre><code><span class="k">def</span> safe_pop(stack):
+    <span class="k">if not</span> stack:          <span class="c"># empty list is falsy</span>
+        <span class="k">return None</span>
+    <span class="k">return</span> stack.pop()</code></pre>
+
+  <h3>A stack reverses things</h3>
+  <p>Because a stack removes in the reverse order of insertion, it can be used to reverse any sequence. Push every character of a string, then pop until empty: the characters come back out backwards.</p>
+
+<pre><code><span class="k">def</span> reverse_string(s):
+    stack = []
+    <span class="k">for</span> ch <span class="k">in</span> s:
+        stack.append(ch)          <span class="c"># push: "n", "e", "e", "t"</span>
+    out = []
+    <span class="k">while</span> stack:
+        out.append(stack.pop())   <span class="c"># pop:  "t", "e", "e", "n"</span>
+    <span class="k">return</span> <span class="s">""</span>.join(out)
+
+reverse_string(<span class="s">"neet"</span>)     <span class="c"># 'teen'</span>
+reverse_string(<span class="s">"abc"</span>)      <span class="c"># 'cba'</span></code></pre>
+
+  <h3>Time complexity of a stack</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Operation</th><th>Big-O</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Push</td><td class="big fast">O(1)</td><td>amortized, like pushback</td></tr>
+      <tr><td>Pop</td><td class="big fast">O(1)*</td><td>check if the stack is empty first</td></tr>
+      <tr><td>Peek / Top</td><td class="big fast">O(1)*</td><td>retrieves without removing; also needs the empty check</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============================ PATTERNS ============================ -->
+<section id="patterns">
+  <h2><span class="num">5</span>Four moves that solve most array problems</h2>
+  <p>The lessons teach the structure. Interviews test these moves on top of it. Each one exists to avoid an O(n) shift or an O(n²) double loop.</p>
+
+  <h3>Move 1: Two pointers (a slow writer and a fast reader)</h3>
+  <p><strong>When to use:</strong> "remove / keep / compact elements in place, O(1) extra space". <code>L</code> marks where the next kept value goes; <code>R</code> scans every element. Nothing shifts, because you overwrite as you go.</p>
+
+<pre><code><span class="c"># LeetCode 26: Remove Duplicates from Sorted Array</span>
+<span class="k">def</span> removeDuplicates(nums):
+    <span class="k">if not</span> nums:
+        <span class="k">return</span> 0
+    L = 0                               <span class="c"># index of the last unique value written</span>
+    <span class="k">for</span> R <span class="k">in</span> range(1, len(nums)):
+        <span class="k">if</span> nums[R] != nums[L]:          <span class="c"># found a new value</span>
+            L += 1
+            nums[L] = nums[R]           <span class="c"># write it right after the last unique</span>
+    <span class="k">return</span> L + 1                        <span class="c"># count of unique values; nums[:L+1] is the answer</span>
+
+nums = [0, 0, 1, 1, 1, 2, 2, 3, 3, 4]
+removeDuplicates(nums)      <span class="c"># 5, and nums[:5] == [0, 1, 2, 3, 4]</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 640 150" role="img" aria-label="Two pointers on the sorted array 0 0 1 1 1 2 2 3 3 4 at the moment R reaches index 5. L has just moved to index 2 and the value 2 was written there. Everything left of L is the compacted answer.">
+      <text x="170" y="24" class="t newlab" text-anchor="middle">L = 2</text>
+      <path d="M170,30 L170,48" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="326" y="24" class="t mono" text-anchor="middle">R = 5</text>
+      <path d="M326,30 L326,48" class="cur" marker-end="url(#arrCur)"/>
+      <rect x="40" y="50" width="52" height="40" class="nd"/><text x="66" y="75" class="t" text-anchor="middle">0</text>
+      <rect x="92" y="50" width="52" height="40" class="nd"/><text x="118" y="75" class="t" text-anchor="middle">1</text>
+      <rect x="144" y="50" width="52" height="40" class="nd newnd"/><text x="170" y="75" class="t" text-anchor="middle">2</text>
+      <rect x="196" y="50" width="52" height="40" class="nd dim"/><text x="222" y="75" class="t" text-anchor="middle" opacity=".35">1</text>
+      <rect x="248" y="50" width="52" height="40" class="nd dim"/><text x="274" y="75" class="t" text-anchor="middle" opacity=".35">1</text>
+      <rect x="300" y="50" width="52" height="40" class="nd"/><text x="326" y="75" class="t" text-anchor="middle">2</text>
+      <rect x="352" y="50" width="52" height="40" class="nd"/><text x="378" y="75" class="t" text-anchor="middle">2</text>
+      <rect x="404" y="50" width="52" height="40" class="nd"/><text x="430" y="75" class="t" text-anchor="middle">3</text>
+      <rect x="456" y="50" width="52" height="40" class="nd"/><text x="482" y="75" class="t" text-anchor="middle">3</text>
+      <rect x="508" y="50" width="52" height="40" class="nd"/><text x="534" y="75" class="t" text-anchor="middle">4</text>
+      <text x="66" y="108" class="t small" text-anchor="middle">0</text>
+      <text x="118" y="108" class="t small" text-anchor="middle">1</text>
+      <text x="170" y="108" class="t small" text-anchor="middle">2</text>
+      <text x="222" y="108" class="t small" text-anchor="middle">3</text>
+      <text x="274" y="108" class="t small" text-anchor="middle">4</text>
+      <text x="326" y="108" class="t small" text-anchor="middle">5</text>
+      <text x="378" y="108" class="t small" text-anchor="middle">6</text>
+      <text x="430" y="108" class="t small" text-anchor="middle">7</text>
+      <text x="482" y="108" class="t small" text-anchor="middle">8</text>
+      <text x="534" y="108" class="t small" text-anchor="middle">9</text>
+      <text x="320" y="136" class="t small" text-anchor="middle">nums[5] = 2 ≠ nums[1] = 1 → L becomes 2, nums[2] = 2. Cells 0..L are the answer.</text>
+    </svg>
+    <figcaption><b>The write pointer never passes the read pointer.</b> So every overwrite lands on a cell <code>R</code> has already read, and no value is lost. One pass, O(n) time, no extra array.</figcaption>
+  </figure>
+
+  <p>The same move from both ends reverses an array in place, which is the array version of what the stack did to the string:</p>
+
+<pre><code><span class="k">def</span> reverse_in_place(arr):
+    L, R = 0, len(arr) - 1
+    <span class="k">while</span> L &lt; R:
+        arr[L], arr[R] = arr[R], arr[L]   <span class="c"># Python swap, no temp variable</span>
+        L += 1
+        R -= 1
+    <span class="k">return</span> arr
+
+reverse_in_place([1, 3, 5])     <span class="c"># [5, 3, 1]</span></code></pre>
+
+  <h3>Move 2: Sliding window</h3>
+  <p><strong>When to use:</strong> "best / longest / sum of a contiguous run". Keep a window <code>[L, R]</code>; when <code>R</code> moves right, update the answer with one add and one drop instead of re-summing the whole window.</p>
+
+<pre><code><span class="c"># fixed-size window: largest sum of any k neighbors</span>
+<span class="k">def</span> max_sum_window(arr, k):
+    window = sum(arr[:k])
+    best = window
+    <span class="k">for</span> R <span class="k">in</span> range(k, len(arr)):
+        window += arr[R] - arr[R - k]   <span class="c"># add the new right cell, drop the old left cell</span>
+        best = max(best, window)
+    <span class="k">return</span> best
+
+max_sum_window([2, 1, 5, 1, 3, 2], 3)    <span class="c"># 9  (5 + 1 + 3)</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 640 160" role="img" aria-label="Sliding a window of size 3 over the array 2 1 5 1 3 2. The old window 1 5 1 with sum 7 becomes the new window 5 1 3 with sum 9 by dropping the 1 at index 1 and adding the 3 at index 4.">
+      <text x="200" y="20" class="t small" text-anchor="middle" style="text-decoration:line-through">old window [1, 5, 1] = 7</text>
+      <text x="300" y="38" class="t newlab" text-anchor="middle" font-size="12">new window [5, 1, 3] = 9</text>
+      <rect x="40" y="50" width="64" height="44" class="nd"/><text x="72" y="77" class="t" text-anchor="middle">2</text>
+      <rect x="104" y="50" width="64" height="44" class="nd"/><text x="136" y="77" class="t" text-anchor="middle">1</text>
+      <rect x="168" y="50" width="64" height="44" class="nd"/><text x="200" y="77" class="t" text-anchor="middle">5</text>
+      <rect x="232" y="50" width="64" height="44" class="nd"/><text x="264" y="77" class="t" text-anchor="middle">1</text>
+      <rect x="296" y="50" width="64" height="44" class="nd newnd"/><text x="328" y="77" class="t" text-anchor="middle">3</text>
+      <rect x="360" y="50" width="64" height="44" class="nd"/><text x="392" y="77" class="t" text-anchor="middle">2</text>
+      <rect x="100" y="44" width="200" height="56" class="ptr old"/>
+      <rect x="166" y="48" width="196" height="48" class="ptr newp"/>
+      <text x="72" y="112" class="t small" text-anchor="middle">0</text>
+      <text x="136" y="112" class="t small" text-anchor="middle">1</text>
+      <text x="200" y="112" class="t small" text-anchor="middle">2</text>
+      <text x="264" y="112" class="t small" text-anchor="middle">3</text>
+      <text x="328" y="112" class="t small" text-anchor="middle">4</text>
+      <text x="392" y="112" class="t small" text-anchor="middle">5</text>
+      <text x="136" y="130" class="t nulltxt" text-anchor="middle" font-size="11">drop arr[1]</text>
+      <text x="328" y="130" class="t newlab" text-anchor="middle" font-size="11">add arr[4]</text>
+      <text x="320" y="152" class="t small" text-anchor="middle">7 - 1 + 3 = 9. One subtract, one add per slide: O(1) per step, O(n) total.</text>
+    </svg>
+    <figcaption><b>Do not re-sum the window.</b> The dashed box is the old window, the orange box is the new one. They share two cells, so only two numbers change.</figcaption>
+  </figure>
+
+  <p>The window can also have a variable size. LeetCode 121 keeps <code>L</code> at the cheapest day seen so far and slides it forward only when a cheaper day appears:</p>
+
+<pre><code><span class="c"># LeetCode 121: Best Time to Buy and Sell Stock</span>
+<span class="k">def</span> maxProfit(prices):
+    L, best = 0, 0                      <span class="c"># L = cheapest day so far</span>
+    <span class="k">for</span> R <span class="k">in</span> range(1, len(prices)):
+        <span class="k">if</span> prices[R] &lt; prices[L]:
+            L = R                       <span class="c"># found a cheaper buy day: slide the window start</span>
+        <span class="k">else</span>:
+            best = max(best, prices[R] - prices[L])
+    <span class="k">return</span> best
+
+maxProfit([7, 1, 5, 3, 6, 4])    <span class="c"># 5  (buy at 1, sell at 6)</span>
+maxProfit([7, 6, 4, 3, 1])       <span class="c"># 0  (never profitable)</span></code></pre>
+
+  <h3>Move 3: Prefix sum</h3>
+  <p><strong>When to use:</strong> "sum of a range, asked many times". Precompute <code>prefix[i]</code> = sum of the first <code>i</code> elements. Then any range sum is one subtraction. O(n) to build, O(1) per query.</p>
+
+<pre><code><span class="c"># LeetCode 303: Range Sum Query - Immutable</span>
+<span class="k">class</span> NumArray:
+    <span class="k">def</span> __init__(self, nums):
+        self.prefix = [0]                   <span class="c"># prefix[i] = nums[0] + ... + nums[i-1]</span>
+        <span class="k">for</span> n <span class="k">in</span> nums:
+            self.prefix.append(self.prefix[-1] + n)
+
+    <span class="k">def</span> sumRange(self, left, right):
+        <span class="k">return</span> self.prefix[right + 1] - self.prefix[left]
+
+na = NumArray([-2, 0, 3, -5, 2, -1])
+na.prefix              <span class="c"># [0, -2, -2, 1, -4, -2, -3]</span>
+na.sumRange(0, 2)      <span class="c"># 1   = prefix[3] - prefix[0]</span>
+na.sumRange(2, 5)      <span class="c"># -1  = prefix[6] - prefix[2]</span></code></pre>
+
+  <div class="tbl"><table>
+    <thead><tr><th>i</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr></thead>
+    <tbody>
+      <tr><td><code>nums[i]</code></td><td>-2</td><td>0</td><td>3</td><td>-5</td><td>2</td><td>-1</td><td>-</td></tr>
+      <tr><td><code>prefix[i]</code></td><td>0</td><td>-2</td><td>-2</td><td>1</td><td>-4</td><td>-2</td><td>-3</td></tr>
+    </tbody>
+  </table></div>
+  <p>The leading 0 is what makes <code>sumRange(0, r)</code> work without a special case. Always start the prefix array with it.</p>
+
+  <h3>Move 4: A stack for matching and reversal</h3>
+  <p><strong>When to use:</strong> "does this close what was most recently opened?" (brackets, tags, undo) or "process things in reverse order". The stack holds the open items; the top is always the most recent one.</p>
+
+<pre><code><span class="c"># LeetCode 20: Valid Parentheses</span>
+<span class="k">def</span> isValid(s):
+    stack = []
+    close_to_open = {<span class="s">")"</span>: <span class="s">"("</span>, <span class="s">"]"</span>: <span class="s">"["</span>, <span class="s">"}"</span>: <span class="s">"{"</span>}
+    <span class="k">for</span> ch <span class="k">in</span> s:
+        <span class="k">if</span> ch <span class="k">in</span> close_to_open:                     <span class="c"># a closing bracket</span>
+            <span class="k">if</span> stack <span class="k">and</span> stack[-1] == close_to_open[ch]:
+                stack.pop()                         <span class="c"># it matches the most recent open</span>
+            <span class="k">else</span>:
+                <span class="k">return False</span>                        <span class="c"># wrong type, or nothing open</span>
+        <span class="k">else</span>:                                       <span class="c"># an opening bracket</span>
+            stack.append(ch)
+    <span class="k">return not</span> stack                                <span class="c"># valid only if everything was closed</span>
+
+isValid(<span class="s">"{[]}"</span>)     <span class="c"># True</span>
+isValid(<span class="s">"([)]"</span>)     <span class="c"># False</span>
+isValid(<span class="s">"("</span>)        <span class="c"># False: one bracket left open</span></code></pre>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Input <code>"([)]"</code>, char</th><th>opening or closing?</th><th>top of stack</th><th>action</th><th><code>stack</code> after</th></tr></thead>
+    <tbody>
+      <tr><td><code>(</code></td><td>opening</td><td>-</td><td>push</td><td>[ ( ]</td></tr>
+      <tr><td><code>[</code></td><td>opening</td><td>(</td><td>push</td><td>[ ( [ ]</td></tr>
+      <tr><td><code>)</code></td><td>closing, needs <code>(</code></td><td>[</td><td>mismatch → return False</td><td>[ ( [ ]</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>A second stack that remembers the minimum at every level turns "what is the smallest thing in the stack?" into an O(1) peek:</p>
+
+<pre><code><span class="c"># LeetCode 155: Min Stack</span>
+<span class="k">class</span> MinStack:
+    <span class="k">def</span> __init__(self):
+        self.stack = []
+        self.minStack = []          <span class="c"># minStack[-1] is the min of everything in stack</span>
+
+    <span class="k">def</span> push(self, val):
+        self.stack.append(val)
+        val = min(val, self.minStack[-1] <span class="k">if</span> self.minStack <span class="k">else</span> val)
+        self.minStack.append(val)
+
+    <span class="k">def</span> pop(self):
+        self.stack.pop()
+        self.minStack.pop()         <span class="c"># both stacks always have the same height</span>
+
+    <span class="k">def</span> top(self):
+        <span class="k">return</span> self.stack[-1]
+
+    <span class="k">def</span> getMin(self):
+        <span class="k">return</span> self.minStack[-1]
+
+ms = MinStack()
+ms.push(-2); ms.push(0); ms.push(-3)
+ms.getMin()      <span class="c"># -3</span>
+ms.pop()
+ms.top()         <span class="c"># 0</span>
+ms.getMin()      <span class="c"># -2</span></code></pre>
+</section>
+
+<!-- ============================ COMPLEXITY ============================ -->
+<section id="complexity">
+  <h2><span class="num">6</span>Big-O summary</h2>
+  <p>Say these out loud in interviews. Every star has a one-line reason; give the reason without being asked.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Operation</th><th>Static array</th><th>Dynamic array</th><th>Stack</th><th>Python <code>list</code></th></tr></thead>
+    <tbody>
+      <tr><td>Read by index</td><td class="big fast">O(1)</td><td class="big fast">O(1)</td><td>-</td><td class="big fast">O(1)</td></tr>
+      <tr><td>Search by value (unsorted)</td><td class="big slow">O(n)</td><td class="big slow">O(n)</td><td>-</td><td class="big slow">O(n)  <code>in</code></td></tr>
+      <tr><td>Insert at end</td><td class="big fast">O(1)</td><td class="big fast">O(1)*</td><td class="big fast">O(1) push</td><td class="big fast">O(1)* <code>append</code></td></tr>
+      <tr><td>Delete at end</td><td class="big fast">O(1)</td><td class="big fast">O(1)</td><td class="big fast">O(1)** pop</td><td class="big fast">O(1) <code>pop()</code></td></tr>
+      <tr><td>Peek at end</td><td class="big fast">O(1)</td><td class="big fast">O(1)</td><td class="big fast">O(1)** peek</td><td class="big fast">O(1) <code>lst[-1]</code></td></tr>
+      <tr><td>Insert at index i</td><td class="big slow">O(n)</td><td class="big slow">O(n)</td><td>-</td><td class="big slow">O(n) <code>insert(i, x)</code></td></tr>
+      <tr><td>Delete at index i</td><td class="big slow">O(n)</td><td class="big slow">O(n)</td><td>-</td><td class="big slow">O(n) <code>pop(i)</code></td></tr>
+      <tr><td>Grow past capacity</td><td>impossible</td><td class="big slow">O(n) per resize</td><td>same as dynamic</td><td>same as dynamic</td></tr>
+      <tr><td>Extra memory</td><td>none</td><td>up to 2× (empty slots)</td><td>same as dynamic</td><td>same as dynamic</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>*</strong> amortized: a single push can cost O(n) when it triggers a resize, but n pushes cost at most 2n writes, so the average is O(1). <strong>**</strong> O(1) only after checking the stack is not empty; an empty pop or peek is an error, not a slow operation. NeetCode writes the static-array table the other way round (Insertion O(n)*, "O(1) if at the end") - same facts, different default.</p>
+</section>
+
+<!-- ============================ MISTAKES ============================ -->
+<section id="mistakes">
+  <h2><span class="num">7</span>Mistakes to watch for</h2>
+  <div class="mistake">
+    <div>
+      <div class="bad">Off by one at the end</div>
+      <p>The last index is <code>n - 1</code>, not <code>n</code>. <code>arr[len(arr)]</code> raises <code>IndexError</code>. Loop with <code>range(len(arr))</code> or <code>while i &lt; len(arr)</code>, never <code>&lt;=</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Deleting from the middle by writing 0</div>
+      <p>That leaves a hole and breaks contiguity; every later loop has to know about it. Shift left instead, or use the two-pointer move so you never delete at all.</p>
+    </div>
+    <div>
+      <div class="bad">Shifting right from the wrong end</div>
+      <p><code>for index in range(i, length)</code> copies <code>arr[i]</code> over <code>arr[i+1]</code> before <code>arr[i+1]</code> was saved; you end with repeated values. Start from <code>length - 1</code> and go down.</p>
+    </div>
+    <div>
+      <div class="bad">Confusing length and capacity</div>
+      <p><code>length</code> is how many real values you have; <code>capacity</code> is how many slots exist. Insert at index <code>length</code>, resize when <code>length == capacity</code>, and never read past <code>length - 1</code> even though the slots exist.</p>
+    </div>
+    <div>
+      <div class="bad">Popping an empty stack</div>
+      <p><code>[].pop()</code> and <code>[][-1]</code> raise <code>IndexError</code>. Write <code>if stack:</code> before every pop or peek. In Valid Parentheses this is the difference between a pass and a crash on input <code>")"</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Treating pop(0) and insert(0, x) as O(1)</div>
+      <p>Both shift every element: O(n). For a queue use <code>collections.deque</code>. For a stack use the <em>end</em> of the list: <code>append</code> and <code>pop()</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Thinking O(1) means fast, or that O(2n) beats O(n)</div>
+      <p>O(1) means the cost does not grow with n. O(2n) and O(n) are the same class; drop constants. An interviewer who hears "O(2n)" will ask you to simplify it.</p>
+    </div>
+    <div>
+      <div class="bad">Removing from a list while looping over it</div>
+      <p><code>for x in arr: if bad(x): arr.remove(x)</code> skips the element after every removal, because the shift moves it into the index you already passed. Build a new list, or use the two-pointer write index.</p>
+    </div>
+    <div>
+      <div class="bad">Growing by a constant instead of doubling</div>
+      <p>If <code>resize</code> adds 1 (or 10) slots, you copy on almost every push and the amortized cost becomes O(n). Doubling is what makes the sum 1 + 2 + 4 + ... stay under 2n.</p>
+    </div>
+  </div>
+
+  <div class="cheat">
+    <h3>Interview one-liners</h3>
+    <ul>
+      <li>"Array elements are contiguous in RAM, so index i is at <code>start + i × size</code>: reading is O(1)."</li>
+      <li>"O(1) means the cost does not grow with input size; it does not mean fast."</li>
+      <li>"Insert or delete in the middle shifts everything after it, so O(n); at the end it is O(1)."</li>
+      <li>"A dynamic array doubles when full. One resize is O(n), but n pushes cost at most 2n writes, so push is O(1) amortized."</li>
+      <li>"A stack is a dynamic array where I only touch the end: push, pop, peek are all O(1), and I check for empty before pop."</li>
+      <li>"For in-place removal I use two pointers, for range sums a prefix array, for matching or reversal a stack."</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================ PRACTICE ============================ -->
+<section id="practice">
+  <h2><span class="num">8</span>Practice, in this order</h2>
+  <p>Notes do not make you good at this. Solving does. Do these with no notes open, then compare with the templates above. The first row is NeetCode's own exercise and has no LeetCode number.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Problem</th><th>Move it trains</th><th>Level</th></tr></thead>
+    <tbody>
+      <tr><td>-</td><td>Design Dynamic Array (NeetCode)</td><td>pushback, popback, resize by doubling</td><td>Easy</td></tr>
+      <tr><td>1929</td><td>Concatenation of Array</td><td>index math, build a new array</td><td>Easy</td></tr>
+      <tr><td>26</td><td>Remove Duplicates from Sorted Array</td><td>two pointers, write index</td><td>Easy</td></tr>
+      <tr><td>27</td><td>Remove Element</td><td>two pointers, write index</td><td>Easy</td></tr>
+      <tr><td>283</td><td>Move Zeroes</td><td>two pointers, swap instead of shift</td><td>Easy</td></tr>
+      <tr><td>217</td><td>Contains Duplicate</td><td>traversal; O(n²) vs a set</td><td>Easy</td></tr>
+      <tr><td>121</td><td>Best Time to Buy and Sell Stock</td><td>sliding window, variable size</td><td>Easy</td></tr>
+      <tr><td>303</td><td>Range Sum Query - Immutable</td><td>prefix sum</td><td>Easy</td></tr>
+      <tr><td>20</td><td>Valid Parentheses</td><td>stack for matching</td><td>Easy</td></tr>
+      <tr><td>682</td><td>Baseball Game</td><td>stack you read back into</td><td>Easy</td></tr>
+      <tr><td>155</td><td>Min Stack</td><td>two stacks in step</td><td>Medium</td></tr>
+      <tr><td>150</td><td>Evaluate Reverse Polish Notation</td><td>stack of operands</td><td>Medium</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Your next step today:</strong> LeetCode 26. Write it from memory with <code>L</code> and <code>R</code>, run it on <code>[0,0,1,1,1,2,2,3,3,4]</code>, then reread the two-pointer diagram and compare.</p>
+</section>
+
+<!-- ============================ QUIZ ============================ -->
+<section id="quiz">
+  <h2><span class="num">9</span>Self-check</h2>
+  <p>Answer out loud before opening. If you cannot answer in one breath, reread that section.</p>
+
+  <details><summary><span class="q">Q1</span>Why do the addresses of an int array go $0, $4, $8, but a char array goes $0, $1, $2?</summary><div><p>Elements are contiguous, and the address step equals the size of one element. An int is 4 bytes, a char is 1 byte. The type sets the step; the rule <code>start + i × size</code> is the same.</p></div></details>
+
+  <details><summary><span class="q">Q2</span>Why is <code>myArray[i]</code> O(1) no matter how big the array is?</summary><div><p>The index is converted to an address with one multiply and one add. No element is visited on the way. The size of the array does not appear in that calculation.</p></div></details>
+
+  <details><summary><span class="q">Q3</span>Does O(1) mean the operation is fast?</summary><div><p>No. It means the number of operations does not grow with the input size. A step that always takes 1000 operations is O(1). A step that takes n operations is O(n) even when n is 3.</p></div></details>
+
+  <details><summary><span class="q">Q4</span>What index holds the last element of an array of size n, and what happens if you read index n?</summary><div><p><code>n - 1</code>. Reading index <code>n</code> is out of range: <code>IndexError</code> in Python, garbage or a crash in C.</p></div></details>
+
+  <details><summary><span class="q">Q5</span>Trace it: <code>arr = [4, 5, 6, 7, 8]</code>, call <code>removeMiddle(arr, 1, 5)</code>. What is <code>arr</code> after each loop turn?</summary><div><p>Loop is <code>range(2, 5)</code>. index 2: <code>arr[1] = arr[2]</code> → [4, 6, 6, 7, 8]. index 3: <code>arr[2] = arr[3]</code> → [4, 6, 7, 7, 8]. index 4: <code>arr[3] = arr[4]</code> → [4, 6, 7, 8, 8]. The length is now considered 4; the final 8 is stale.</p></div></details>
+
+  <details><summary><span class="q">Q6</span>Trace it: <code>arr = [4, 5, 6, _]</code> (length 3, capacity 4), call <code>insertMiddle(arr, 1, 8, 3)</code>. What happens step by step, and what if the capacity were only 3?</summary><div><p>Loop is <code>range(2, 0, -1)</code> → index 2, then 1. index 2: <code>arr[3] = arr[2]</code> → [4, 5, 6, 6]. index 1: <code>arr[2] = arr[1]</code> → [4, 5, 5, 6]. Then <code>arr[1] = 8</code> → [4, 8, 5, 6]. With capacity 3 there is no index 3, so the 6 has nowhere to go and is lost: [4, 8, 5].</p></div></details>
+
+  <details><summary><span class="q">Q7</span>Why does <code>insertMiddle</code> loop from the end toward <code>i</code> instead of from <code>i</code> toward the end?</summary><div><p>Each shift writes into the cell to the right. Going right to left, that cell is empty or already copied. Going left to right, you overwrite a value before it has been copied and end with duplicates.</p></div></details>
+
+  <details><summary><span class="q">Q8</span>What is amortized time, and why is pushback O(1) amortized?</summary><div><p>Amortized means averaged over a sequence of operations. A resize costs O(n), but with doubling it happens only at sizes 1, 2, 4, 8, ... so n pushes cost at most 2n writes in total. 2n / n = 2 per push, a constant: O(1).</p></div></details>
+
+  <details><summary><span class="q">Q9</span>Start with capacity 1 and push 8 items. List the capacities and the total number of writes.</summary><div><p>Capacities 1 → 2 → 4 → 8. Writes: 8 pushes + copies of 1 + 2 + 4 = 15, which is also 1 + 2 + 4 + 8. The last term (8) is bigger than everything before it (7), so the total is under 2 × 8.</p></div></details>
+
+  <details><summary><span class="q">Q10</span>Why are O(2n) and O(n) "the same"?</summary><div><p>Asymptotic analysis asks how the cost grows as n grows. Both grow linearly; doubling n doubles both. Constant factors and coefficients are dropped, so 2n, n/2 and 3n + 5 are all O(n).</p></div></details>
+
+  <details><summary><span class="q">Q11</span>Name the three stack operations, their cost, and the one check you must do first.</summary><div><p>push (append to the end), pop (read and remove the end), peek (read the end without removing). All O(1). Before pop or peek, check that the stack is not empty.</p></div></details>
+
+  <details><summary><span class="q">Q12</span>Trace it: push 1, 2, 3, 4 onto a stack, then <code>peek()</code>, <code>pop()</code>, <code>pop()</code>, <code>peek()</code>. What is returned each time and what is the stack at the end?</summary><div><p>After the pushes the stack is [1, 2, 3, 4], top is 4. peek → 4 (unchanged). pop → 4, stack [1, 2, 3]. pop → 3, stack [1, 2]. peek → 2. Final stack [1, 2].</p></div></details>
+
+  <details><summary><span class="q">Q13</span>Why can a stack reverse a string?</summary><div><p>A stack is LIFO: the last character pushed is the first popped. Push all characters in order, then pop until empty, and they come out in reverse order.</p></div></details>
+</section>
+
+<nav class="pager" aria-label="Previous and next topic">
+  <a class="prev" href="../index.html"><small>Previous</small>Course map</a>
+  <a class="next" href="02-linked-lists.html"><small>Next</small>Linked Lists</a>
+</nav>
+
+<footer>
+  Source: NeetCode "Algorithms and Data Structures for Beginners", lessons 1 (RAM), 2 (Static Arrays), 3 (Dynamic Arrays), 4 (Stacks). All Python in these notes was run and tested. Orange in every diagram marks the cell or pointer that changed.
+</footer>
+</div>
+</body>
+</html>

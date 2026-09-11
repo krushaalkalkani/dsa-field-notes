@@ -1,0 +1,1326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Graphs · DSA Field Notes</title>
+<meta name="description" content="Graph vocabulary, the three input formats (matrix, adjacency matrix, adjacency list), matrix DFS with backtracking, matrix BFS for shortest paths, and DFS/BFS on adjacency lists - diagrams, tested Python, Big-O, mistakes, practice, self-check.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arr"/></marker>
+    <marker id="arrNew" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrNew"/></marker>
+    <marker id="arrOld" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrOld"/></marker>
+    <marker id="arrCur" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrCur"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="site-head">
+  <a class="brand" href="../index.html">DSA <span>Field Notes</span></a>
+  <div class="crumbs"><a href="../index.html">Course map</a> <span>/</span> <span>10 Graphs</span></div>
+</header>
+<header class="top">
+  <div class="eyebrow">NeetCode · DSA for Beginners · Lessons 28-31</div>
+  <h1>Graph Field Notes</h1>
+  <p class="lede">Vertices, edges, and the three ways interviewers hand you a graph. Then the two traversals that solve almost every beginner graph problem: DFS with backtracking to count or reach, BFS level by level to find the shortest path. Every diagram uses the same 4x4 grid and the same five-node graph as the NeetCode videos.</p>
+</header>
+
+<nav class="sections" aria-label="Sections">
+  <a href="#why">Why</a>
+  <a href="#intro">Vocabulary</a>
+  <a href="#mdfs">Matrix DFS</a>
+  <a href="#mbfs">Matrix BFS</a>
+  <a href="#adjlist">Adjacency list</a>
+  <a href="#patterns">Patterns</a>
+  <a href="#complexity">Big-O</a>
+  <a href="#mistakes">Mistakes</a>
+  <a href="#practice">Practice</a>
+  <a href="#quiz">Self-check</a>
+</nav>
+
+<!-- ============================ WHY ============================ -->
+<section id="why">
+  <h2><span class="num">0</span>Why graphs are not a new idea</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>A city map. Intersections are dots; streets connect them. Some streets are one-way. Some intersections connect to five streets, some to one, and a parking lot with no road is still on the map. "How many different routes from home to work?" is DFS. "What is the fewest turns from home to work?" is BFS.</p>
+  </div>
+
+  <p>You already know graphs. A linked list is nodes connected by <code>next</code> pointers. A tree is nodes connected by <code>left</code> and <code>right</code> pointers. A <dfn>graph</dfn> is the general case: nodes connected by pointers, with <em>no rules</em> about how many pointers a node has or where they go. Cycles are allowed. Disconnected pieces are allowed.</p>
+
+  <figure>
+    <svg viewBox="0 0 780 180" role="img" aria-label="A linked list, a tree, and a general graph drawn side by side. All three are nodes connected by pointers; the graph simply has no restrictions.">
+      <text x="20" y="24" class="t ptrlab">LINKED LIST</text>
+      <circle cx="50" cy="90" r="16" class="nd"/><text x="50" y="95" class="t" text-anchor="middle">1</text>
+      <circle cx="110" cy="90" r="16" class="nd"/><text x="110" y="95" class="t" text-anchor="middle">2</text>
+      <circle cx="170" cy="90" r="16" class="nd"/><text x="170" y="95" class="t" text-anchor="middle">3</text>
+      <path d="M66,90 L92,90" class="ptr" marker-end="url(#arr)"/>
+      <path d="M126,90 L152,90" class="ptr" marker-end="url(#arr)"/>
+      <text x="110" y="150" class="t small" text-anchor="middle">each node: exactly 1 pointer</text>
+
+      <text x="250" y="24" class="t ptrlab">TREE</text>
+      <circle cx="320" cy="60" r="16" class="nd"/><text x="320" y="65" class="t" text-anchor="middle">1</text>
+      <circle cx="285" cy="120" r="16" class="nd"/><text x="285" y="125" class="t" text-anchor="middle">2</text>
+      <circle cx="355" cy="120" r="16" class="nd"/><text x="355" y="125" class="t" text-anchor="middle">3</text>
+      <path d="M312,74 L293,106" class="ptr" marker-end="url(#arr)"/>
+      <path d="M328,74 L347,106" class="ptr" marker-end="url(#arr)"/>
+      <text x="320" y="160" class="t small" text-anchor="middle">up to 2 pointers, no cycles</text>
+
+      <text x="470" y="24" class="t ptrlab">GRAPH</text>
+      <circle cx="510" cy="60" r="16" class="nd"/><text x="510" y="65" class="t" text-anchor="middle">A</text>
+      <circle cx="600" cy="60" r="16" class="nd"/><text x="600" y="65" class="t" text-anchor="middle">B</text>
+      <circle cx="510" cy="130" r="16" class="nd"/><text x="510" y="135" class="t" text-anchor="middle">C</text>
+      <circle cx="600" cy="130" r="16" class="nd"/><text x="600" y="135" class="t" text-anchor="middle">D</text>
+      <circle cx="670" cy="95" r="16" class="nd"/><text x="670" y="100" class="t" text-anchor="middle">F</text>
+      <path d="M526,60 L584,60" class="ptr" marker-end="url(#arr)"/>
+      <path d="M600,76 L600,114" class="ptr" marker-end="url(#arr)"/>
+      <path d="M584,130 L526,130" class="ptr" marker-end="url(#arr)"/>
+      <path d="M510,114 L510,76" class="ptr" marker-end="url(#arr)"/>
+      <path d="M523,70 L587,120" class="ptr" marker-end="url(#arr)"/>
+      <text x="590" y="170" class="t small" text-anchor="middle">any pointers, cycles allowed, F has none</text>
+    </svg>
+    <figcaption><b>Same building block, fewer rules.</b> A → B → D → C → A is a cycle; a tree can never do that. F has no edges and is still part of the graph. Linked lists and trees are just graphs with extra restrictions.</figcaption>
+  </figure>
+
+  <p>What you will be able to do after this page: read a graph in any of its three input formats, write matrix DFS and matrix BFS from memory, build an adjacency list from an edge list, and choose DFS or BFS on purpose instead of by habit.</p>
+</section>
+
+<!-- ============================ INTRO ============================ -->
+<section id="intro">
+  <h2><span class="num">1</span>Vocabulary and the three input formats</h2>
+
+  <h3>Vertices and edges</h3>
+  <p>In graph language, a node is a <dfn>vertex</dfn> (plural: vertices) and a pointer is an <dfn>edge</dfn>. There are no restrictions on where vertices are placed or how edges connect them. A vertex can have any number of edges: zero, one, or one to every other vertex. A set of vertices with no edges at all still counts as a graph.</p>
+
+  <p>How many edges can a graph with V vertices have? Each vertex can point to every vertex, <em>including itself</em>. With A, B, C: A can point to A, B, C; so can B; so can C. That is 3 × 3 = 9. In general <strong>E ≤ V²</strong> (assuming no duplicate edges). A graph that actually has V² edges is called a <dfn>complete graph</dfn>.</p>
+
+  <p>An edge with a direction (A → B, but not B → A) makes a <dfn>directed graph</dfn>. An edge without direction (A and B are simply connected) makes an <dfn>undirected graph</dfn>. Trees and linked lists are directed graphs: <code>prev</code>, <code>next</code>, <code>left_child</code>, <code>right_child</code> all point one way.</p>
+
+  <figure>
+    <svg viewBox="0 0 700 210" role="img" aria-label="Three panels: an undirected edge between A and B, a directed edge from A to B, and a complete directed graph on three vertices with nine edges including self loops.">
+      <text x="20" y="24" class="t ptrlab">UNDIRECTED</text>
+      <circle cx="60" cy="90" r="16" class="nd"/><text x="60" y="95" class="t" text-anchor="middle">A</text>
+      <circle cx="170" cy="90" r="16" class="nd"/><text x="170" y="95" class="t" text-anchor="middle">B</text>
+      <line x1="76" y1="90" x2="154" y2="90" class="ptr"/>
+      <text x="115" y="140" class="t small" text-anchor="middle">A - B: usable both ways</text>
+
+      <text x="250" y="24" class="t ptrlab">DIRECTED</text>
+      <circle cx="290" cy="90" r="16" class="nd"/><text x="290" y="95" class="t" text-anchor="middle">A</text>
+      <circle cx="400" cy="90" r="16" class="nd"/><text x="400" y="95" class="t" text-anchor="middle">B</text>
+      <path d="M306,90 L384,90" class="ptr" marker-end="url(#arr)"/>
+      <text x="345" y="140" class="t small" text-anchor="middle">A → B only; B cannot reach A</text>
+
+      <text x="470" y="24" class="t ptrlab">COMPLETE, V = 3</text>
+      <circle cx="560" cy="60" r="16" class="nd"/><text x="560" y="65" class="t" text-anchor="middle">A</text>
+      <circle cx="500" cy="140" r="16" class="nd"/><text x="500" y="145" class="t" text-anchor="middle">B</text>
+      <circle cx="620" cy="140" r="16" class="nd"/><text x="620" y="145" class="t" text-anchor="middle">C</text>
+      <path d="M554,76 Q542,108 514,130" class="ptr" marker-end="url(#arr)"/>
+      <path d="M506,124 Q518,92 546,70" class="ptr" marker-end="url(#arr)"/>
+      <path d="M573,70 Q600,93 614,125" class="ptr" marker-end="url(#arr)"/>
+      <path d="M607,130 Q580,107 566,75" class="ptr" marker-end="url(#arr)"/>
+      <path d="M516,135 Q560,128 604,135" class="ptr" marker-end="url(#arr)"/>
+      <path d="M604,145 Q560,152 516,145" class="ptr" marker-end="url(#arr)"/>
+      <path d="M552,46 C542,18 578,18 568,46" class="ptr" marker-end="url(#arr)"/>
+      <path d="M486,132 C458,122 458,158 486,148" class="ptr" marker-end="url(#arr)"/>
+      <path d="M634,132 C662,122 662,158 634,148" class="ptr" marker-end="url(#arr)"/>
+      <text x="560" y="195" class="t small" text-anchor="middle">V = 3 → E = 3² = 9, self loops included</text>
+    </svg>
+    <figcaption><b>Count the arrows in the third panel: nine.</b> Three pairs × two directions = 6, plus three self loops = 9 = V². That is the maximum; any graph on three vertices has E ≤ 9. Undirected edges have no arrowhead because they work both ways.</figcaption>
+  </figure>
+
+  <h3>Formats: how a graph arrives in an interview</h3>
+  <p>A graph is an <dfn>abstract</dfn> concept (an idea, not a specific object). It becomes concrete when stored in a data structure. Three formats cover almost every problem: a <strong>matrix</strong>, an <strong>adjacency matrix</strong>, and an <strong>adjacency list</strong>.</p>
+
+  <h3>Format 1: Matrix (a 2-D grid)</h3>
+  <p>A <dfn>matrix</dfn> is a 2-D array: a list of rows, each row a list of values. It is 0-indexed in both directions. <code>grid[1]</code> is the second row. <code>grid[1][0]</code> is the first column of the second row. Always row first, then column.</p>
+
+<pre><code>grid = [[<span class="s">0</span>, <span class="s">0</span>, <span class="s">0</span>, <span class="s">0</span>],
+        [<span class="s">1</span>, <span class="s">1</span>, <span class="s">0</span>, <span class="s">0</span>],
+        [<span class="s">0</span>, <span class="s">0</span>, <span class="s">0</span>, <span class="s">1</span>],
+        [<span class="s">0</span>, <span class="s">1</span>, <span class="s">0</span>, <span class="s">0</span>]]
+
+grid[<span class="s">1</span>]      <span class="c"># [1, 1, 0, 0]  → the second row</span>
+grid[<span class="s">1</span>][<span class="s">0</span>]   <span class="c"># 1             → row 1, column 0</span></code></pre>
+
+  <p>How is this a graph? Say every <code>0</code> is a vertex and we may move up, down, left, right between neighboring 0s. Drawing those moves as edges gives groups of connected zeros. Each group is a <dfn>connected component</dfn> (a set of vertices where every vertex can reach every other). Walking this graph is called matrix traversal, and it is sections 2 and 3. Space: O(n · m) for n rows and m columns.</p>
+
+  <figure>
+    <svg viewBox="0 0 660 215" role="img" aria-label="Left: the 4 by 4 grid with the 1 cells shaded. Right: the same grid read as a graph, with each 0 as a circle and edges between neighboring 0s.">
+      <text x="40" y="20" class="t ptrlab">THE GRID</text>
+      <text x="58" y="34" class="t small" text-anchor="middle">c0</text>
+      <text x="94" y="34" class="t small" text-anchor="middle">c1</text>
+      <text x="130" y="34" class="t small" text-anchor="middle">c2</text>
+      <text x="166" y="34" class="t small" text-anchor="middle">c3</text>
+      <text x="32" y="62" class="t small" text-anchor="end">r0</text>
+      <text x="32" y="98" class="t small" text-anchor="end">r1</text>
+      <text x="32" y="134" class="t small" text-anchor="end">r2</text>
+      <text x="32" y="170" class="t small" text-anchor="end">r3</text>
+      <rect x="40" y="40" width="36" height="36" class="nd"/><text x="58" y="62" class="t" text-anchor="middle">0</text>
+      <rect x="76" y="40" width="36" height="36" class="nd"/><text x="94" y="62" class="t" text-anchor="middle">0</text>
+      <rect x="112" y="40" width="36" height="36" class="nd"/><text x="130" y="62" class="t" text-anchor="middle">0</text>
+      <rect x="148" y="40" width="36" height="36" class="nd"/><text x="166" y="62" class="t" text-anchor="middle">0</text>
+      <rect x="40" y="76" width="36" height="36" class="nd dim"/><text x="58" y="98" class="t small" text-anchor="middle">1</text>
+      <rect x="76" y="76" width="36" height="36" class="nd dim"/><text x="94" y="98" class="t small" text-anchor="middle">1</text>
+      <rect x="112" y="76" width="36" height="36" class="nd"/><text x="130" y="98" class="t" text-anchor="middle">0</text>
+      <rect x="148" y="76" width="36" height="36" class="nd"/><text x="166" y="98" class="t" text-anchor="middle">0</text>
+      <rect x="40" y="112" width="36" height="36" class="nd"/><text x="58" y="134" class="t" text-anchor="middle">0</text>
+      <rect x="76" y="112" width="36" height="36" class="nd"/><text x="94" y="134" class="t" text-anchor="middle">0</text>
+      <rect x="112" y="112" width="36" height="36" class="nd"/><text x="130" y="134" class="t" text-anchor="middle">0</text>
+      <rect x="148" y="112" width="36" height="36" class="nd dim"/><text x="166" y="134" class="t small" text-anchor="middle">1</text>
+      <rect x="40" y="148" width="36" height="36" class="nd"/><text x="58" y="170" class="t" text-anchor="middle">0</text>
+      <rect x="76" y="148" width="36" height="36" class="nd dim"/><text x="94" y="170" class="t small" text-anchor="middle">1</text>
+      <rect x="112" y="148" width="36" height="36" class="nd"/><text x="130" y="170" class="t" text-anchor="middle">0</text>
+      <rect x="148" y="148" width="36" height="36" class="nd"/><text x="166" y="170" class="t" text-anchor="middle">0</text>
+      <text x="196" y="98" class="t small">← grid[1] = [1, 1, 0, 0]</text>
+      <text x="40" y="204" class="t small">grid[1][0] = 1 : row 1, column 0, a wall</text>
+
+      <text x="400" y="20" class="t ptrlab">READ AS A GRAPH</text>
+      <rect x="404" y="80" width="28" height="28" class="nd dim"/>
+      <rect x="440" y="80" width="28" height="28" class="nd dim"/>
+      <rect x="512" y="116" width="28" height="28" class="nd dim"/>
+      <rect x="440" y="152" width="28" height="28" class="nd dim"/>
+      <line x1="418" y1="58" x2="454" y2="58" class="ptr prevp"/>
+      <line x1="454" y1="58" x2="490" y2="58" class="ptr prevp"/>
+      <line x1="490" y1="58" x2="526" y2="58" class="ptr prevp"/>
+      <line x1="490" y1="58" x2="490" y2="94" class="ptr prevp"/>
+      <line x1="526" y1="58" x2="526" y2="94" class="ptr prevp"/>
+      <line x1="490" y1="94" x2="526" y2="94" class="ptr prevp"/>
+      <line x1="490" y1="94" x2="490" y2="130" class="ptr prevp"/>
+      <line x1="418" y1="130" x2="454" y2="130" class="ptr prevp"/>
+      <line x1="418" y1="130" x2="418" y2="166" class="ptr prevp"/>
+      <line x1="454" y1="130" x2="490" y2="130" class="ptr prevp"/>
+      <line x1="490" y1="130" x2="490" y2="166" class="ptr prevp"/>
+      <line x1="490" y1="166" x2="526" y2="166" class="ptr prevp"/>
+      <circle cx="418" cy="58" r="10" class="nd"/>
+      <circle cx="454" cy="58" r="10" class="nd"/>
+      <circle cx="490" cy="58" r="10" class="nd"/>
+      <circle cx="526" cy="58" r="10" class="nd"/>
+      <circle cx="490" cy="94" r="10" class="nd"/>
+      <circle cx="526" cy="94" r="10" class="nd"/>
+      <circle cx="418" cy="130" r="10" class="nd"/>
+      <circle cx="454" cy="130" r="10" class="nd"/>
+      <circle cx="490" cy="130" r="10" class="nd"/>
+      <circle cx="418" cy="166" r="10" class="nd"/>
+      <circle cx="490" cy="166" r="10" class="nd"/>
+      <circle cx="526" cy="166" r="10" class="nd"/>
+      <text x="472" y="204" class="t small" text-anchor="middle">12 vertices, 12 edges, 1 connected component</text>
+    </svg>
+    <figcaption><b>The 1s are walls, the 0s are vertices, and "next to each other" is the edge.</b> Shaded cells are not vertices at all. In this grid every 0 can reach every other 0, so there is one connected component. Edges have no arrows because you can walk both ways.</figcaption>
+  </figure>
+
+  <h3>Format 2: Adjacency matrix</h3>
+  <p>A less common input format, but you must recognize it. It looks like the grid, but the meaning is different. Here the <em>index</em> is the vertex. <code>adjMatrix[v1][v2] = 1</code> means "there is an edge from vertex <code>v1</code> to vertex <code>v2</code>"; <code>0</code> means no edge. Row = from, column = to. The edges are directed: <code>adjMatrix[1][2] == 0</code> says no edge 1 → 2, and separately <code>adjMatrix[2][1] == 0</code> says no edge 2 → 1.</p>
+
+<pre><code>adjMatrix = [[<span class="s">0</span>, <span class="s">0</span>, <span class="s">0</span>, <span class="s">0</span>],
+             [<span class="s">1</span>, <span class="s">1</span>, <span class="s">0</span>, <span class="s">0</span>],
+             [<span class="s">0</span>, <span class="s">0</span>, <span class="s">0</span>, <span class="s">1</span>],
+             [<span class="s">0</span>, <span class="s">1</span>, <span class="s">0</span>, <span class="s">0</span>]]
+
+<span class="c"># an edge exists from v1 to v2</span>
+adjMatrix[v1][v2] = <span class="s">1</span>
+<span class="c"># an edge exists from v2 to v1</span>
+adjMatrix[v2][v1] = <span class="s">1</span>
+<span class="c"># no edge exists from v1 to v2</span>
+adjMatrix[v1][v2] = <span class="s">0</span>
+<span class="c"># no edge exists from v2 to v1</span>
+adjMatrix[v2][v1] = <span class="s">0</span></code></pre>
+
+  <figure>
+    <svg viewBox="-20 0 700 225" role="img" aria-label="Left: the same numbers read as an adjacency matrix, rows are from-vertices and columns are to-vertices, with cell row 2 column 3 highlighted. Right: the four directed edges that matrix encodes, with edge 2 to 3 highlighted.">
+      <text x="142" y="24" class="t small" text-anchor="middle">column = to</text>
+      <text x="88" y="44" class="t small" text-anchor="middle">0</text>
+      <text x="124" y="44" class="t small" text-anchor="middle">1</text>
+      <text x="160" y="44" class="t small" text-anchor="middle">2</text>
+      <text x="196" y="44" class="t small" text-anchor="middle">3</text>
+      <text x="14" y="30" class="t small">row = from</text>
+      <text x="62" y="72" class="t small" text-anchor="end">0</text>
+      <text x="62" y="108" class="t small" text-anchor="end">1</text>
+      <text x="62" y="144" class="t small" text-anchor="end">2</text>
+      <text x="62" y="180" class="t small" text-anchor="end">3</text>
+      <rect x="70" y="50" width="36" height="36" class="nd"/><text x="88" y="72" class="t" text-anchor="middle">0</text>
+      <rect x="106" y="50" width="36" height="36" class="nd"/><text x="124" y="72" class="t" text-anchor="middle">0</text>
+      <rect x="142" y="50" width="36" height="36" class="nd"/><text x="160" y="72" class="t" text-anchor="middle">0</text>
+      <rect x="178" y="50" width="36" height="36" class="nd"/><text x="196" y="72" class="t" text-anchor="middle">0</text>
+      <rect x="70" y="86" width="36" height="36" class="nd"/><text x="88" y="108" class="t" text-anchor="middle">1</text>
+      <rect x="106" y="86" width="36" height="36" class="nd"/><text x="124" y="108" class="t" text-anchor="middle">1</text>
+      <rect x="142" y="86" width="36" height="36" class="nd"/><text x="160" y="108" class="t" text-anchor="middle">0</text>
+      <rect x="178" y="86" width="36" height="36" class="nd"/><text x="196" y="108" class="t" text-anchor="middle">0</text>
+      <rect x="70" y="122" width="36" height="36" class="nd"/><text x="88" y="144" class="t" text-anchor="middle">0</text>
+      <rect x="106" y="122" width="36" height="36" class="nd"/><text x="124" y="144" class="t" text-anchor="middle">0</text>
+      <rect x="142" y="122" width="36" height="36" class="nd"/><text x="160" y="144" class="t" text-anchor="middle">0</text>
+      <rect x="178" y="122" width="36" height="36" class="nd newnd"/><text x="196" y="144" class="t newlab" text-anchor="middle">1</text>
+      <rect x="70" y="158" width="36" height="36" class="nd"/><text x="88" y="180" class="t" text-anchor="middle">0</text>
+      <rect x="106" y="158" width="36" height="36" class="nd"/><text x="124" y="180" class="t" text-anchor="middle">1</text>
+      <rect x="142" y="158" width="36" height="36" class="nd"/><text x="160" y="180" class="t" text-anchor="middle">0</text>
+      <rect x="178" y="158" width="36" height="36" class="nd"/><text x="196" y="180" class="t" text-anchor="middle">0</text>
+      <text x="142" y="214" class="t newlab" text-anchor="middle" font-size="11">adjMatrix[2][3] = 1 → edge from 2 to 3</text>
+
+      <text x="340" y="26" class="t ptrlab">THE 4 EDGES IT ENCODES</text>
+      <circle cx="400" cy="80" r="16" class="nd"/><text x="400" y="85" class="t" text-anchor="middle">0</text>
+      <circle cx="520" cy="80" r="16" class="nd"/><text x="520" y="85" class="t" text-anchor="middle">1</text>
+      <circle cx="400" cy="170" r="16" class="nd"/><text x="400" y="175" class="t" text-anchor="middle">2</text>
+      <circle cx="520" cy="170" r="16" class="nd"/><text x="520" y="175" class="t" text-anchor="middle">3</text>
+      <path d="M504,80 L416,80" class="ptr" marker-end="url(#arr)"/>
+      <text x="460" y="72" class="t small" text-anchor="middle">[1][0]</text>
+      <path d="M512,66 C502,36 538,36 528,66" class="ptr" marker-end="url(#arr)"/>
+      <text x="556" y="48" class="t small">[1][1]</text>
+      <path d="M520,154 L520,96" class="ptr" marker-end="url(#arr)"/>
+      <text x="530" y="130" class="t small">[3][1]</text>
+      <path d="M416,170 L504,170" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="460" y="162" class="t newlab" text-anchor="middle" font-size="11">[2][3]</text>
+      <text x="470" y="214" class="t small" text-anchor="middle">4 vertices, 4 edges, 16 cells stored → O(V²)</text>
+    </svg>
+    <figcaption><b>Same numbers, different meaning.</b> As a grid, row 1 was two walls. As an adjacency matrix, row 1 says "vertex 1 points to vertex 0 and to itself". Vertex 0 has an incoming edge but no outgoing ones. The problem: this graph has 4 edges but we store 16 cells. A square matrix always costs O(V²) space, even when the graph has very few edges.</figcaption>
+  </figure>
+
+  <h3>Format 3: Adjacency list</h3>
+  <p>Typically the most common representation, and the one you will build yourself. Each vertex keeps a list of its <dfn>neighbors</dfn> (the vertices it has an edge to). It can be a 2-D array, but it is usually a hashmap, or a class where each node holds its own neighbor list.</p>
+
+<pre><code><span class="c"># GraphNode used for adjacency list</span>
+<span class="k">class</span> GraphNode:
+    <span class="k">def</span> __init__(self, val):
+        self.val = val
+        self.neighbors = []      <span class="c"># references to other GraphNodes</span></code></pre>
+
+  <p>An adjacency list stores only the edges that exist, so it is more space efficient than an adjacency matrix: O(V + E). Section 4 builds one from a list of edges and traverses it.</p>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Format</th><th>What an index means</th><th>Space</th><th>You will see it in</th></tr></thead>
+    <tbody>
+      <tr><td>Matrix (grid)</td><td><code>grid[r][c]</code> is a cell; neighbors are the 4 cells around it</td><td class="big fast">O(n · m)</td><td>islands, flood fill, maze problems</td></tr>
+      <tr><td>Adjacency matrix</td><td><code>adj[v1][v2]</code> is 1 if edge v1 → v2</td><td class="big slow">O(V²)</td><td>rare; dense graphs</td></tr>
+      <tr><td>Adjacency list</td><td><code>adj[v]</code> is the list of v's neighbors</td><td class="big fast">O(V + E)</td><td>almost everything else</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============================ MATRIX DFS ============================ -->
+<section id="mdfs">
+  <h2><span class="num">2</span>Matrix DFS: count the paths</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>You are in a maze with chalk. At each square you mark the floor, try every open direction one at a time, and when a direction leads nowhere you walk back and <em>erase your mark</em> so that a different route can use that square later. Counting the exits you find is counting the paths.</p>
+  </div>
+
+  <p>DFS on a matrix works like DFS on a tree: from a position, go as deep as you can before trying the next option. The moves are up, down, left, right. Some problems also allow diagonal moves; not here.</p>
+
+  <p><strong>The problem.</strong> Count the unique paths from the top-left cell to the bottom-right cell. A path may only move along 0s and cannot visit the same cell more than once.</p>
+
+<pre><code>matrix = [[<span class="s">0</span>,<span class="s">0</span>,<span class="s">0</span>,<span class="s">0</span>],
+          [<span class="s">1</span>,<span class="s">1</span>,<span class="s">0</span>,<span class="s">0</span>],
+          [<span class="s">0</span>,<span class="s">0</span>,<span class="s">0</span>,<span class="s">1</span>],
+          [<span class="s">0</span>,<span class="s">1</span>,<span class="s">0</span>,<span class="s">0</span>]]</code></pre>
+
+  <p>This is <dfn>backtracking</dfn>: DFS is recursive, we try every path, and when a path cannot reach the bottom right we undo the last step and try another direction. Each call returns the number of valid paths that start from its cell, and a parent adds up what its four children return.</p>
+
+  <h3>Base cases: when to stop</h3>
+  <p>Return <strong>0</strong> (no path through this cell) when any of these is true:</p>
+  <ul>
+    <li><strong>Out of bounds.</strong> Row <code>r</code> or column <code>c</code> is negative, or equals the matrix length. Both must be valid; you cannot search <code>matrix[-1][3]</code>.</li>
+    <li><strong>Already visited.</strong> This coordinate is on the current path. Revisiting would count the same path many times, or loop forever.</li>
+    <li><strong>Blocked.</strong> The cell holds a 1; you cannot move through 1s.</li>
+  </ul>
+  <p>Return <strong>1</strong> (one path found) when you stand on the bottom-most row and right-most column: <code>matrix[3][3]</code> here, <code>matrix[ROWS-1][COLS-1]</code> in general.</p>
+
+  <h3>The implementation</h3>
+  <p>Keep a hash set <code>visit</code> of coordinates on the current path. A set gives O(1) insert and lookup. (A 2-D boolean array the size of the grid works too.) From <code>(r, c)</code>, recurse on <code>(r+1, c)</code>, <code>(r-1, c)</code>, <code>(r, c+1)</code>, <code>(r, c-1)</code>. Each call returns 1 or 0; add it to <code>count</code>. The line that makes this backtracking: after exploring all four directions, <strong>remove</strong> the current coordinate from <code>visit</code>, so a different path can use this cell.</p>
+
+<pre><code><span class="c"># Matrix (2D Grid)</span>
+grid = [[<span class="s">0</span>, <span class="s">0</span>, <span class="s">0</span>, <span class="s">0</span>],
+        [<span class="s">1</span>, <span class="s">1</span>, <span class="s">0</span>, <span class="s">0</span>],
+        [<span class="s">0</span>, <span class="s">0</span>, <span class="s">0</span>, <span class="s">1</span>],
+        [<span class="s">0</span>, <span class="s">1</span>, <span class="s">0</span>, <span class="s">0</span>]]
+
+<span class="c"># Count paths (backtracking)</span>
+<span class="k">def</span> dfs(grid, r, c, visit):
+    ROWS, COLS = len(grid), len(grid[<span class="s">0</span>])
+    <span class="k">if</span> (min(r, c) &lt; <span class="s">0</span> <span class="k">or</span>
+        r == ROWS <span class="k">or</span> c == COLS <span class="k">or</span>
+        (r, c) <span class="k">in</span> visit <span class="k">or</span> grid[r][c] == <span class="s">1</span>):
+        <span class="k">return</span> <span class="s">0</span>
+    <span class="k">if</span> r == ROWS - <span class="s">1</span> <span class="k">and</span> c == COLS - <span class="s">1</span>:
+        <span class="k">return</span> <span class="s">1</span>
+
+    visit.add((r, c))
+
+    count = <span class="s">0</span>
+    count += dfs(grid, r + <span class="s">1</span>, c, visit)    <span class="c"># down</span>
+    count += dfs(grid, r - <span class="s">1</span>, c, visit)    <span class="c"># up</span>
+    count += dfs(grid, r, c + <span class="s">1</span>, visit)    <span class="c"># right</span>
+    count += dfs(grid, r, c - <span class="s">1</span>, visit)    <span class="c"># left</span>
+
+    visit.remove((r, c))                   <span class="c"># backtrack: free this cell for other paths</span>
+    <span class="k">return</span> count
+
+dfs(grid, <span class="s">0</span>, <span class="s">0</span>, set())    <span class="c"># → 2</span></code></pre>
+
+  <p>The function returns <strong>2</strong> for this grid. The video shows it in two moves: first the DFS finds one path; then it backtracks and finds a second path that goes through <code>matrix[0][3]</code>.</p>
+
+  <figure>
+    <svg viewBox="0 0 700 240" role="img" aria-label="Three copies of the grid. First: the first path found, down the column 2 then right. Second: a dead end where the search walks to cell (3,0) and is stopped by the wall at (3,1), then backtracks. Third: the second path found by going along the top row to (0,3), down, and back left to column 2.">
+      <text x="30" y="30" class="t ptrlab" font-size="12">① first path → return 1</text>
+      <text x="47" y="44" class="t small" text-anchor="middle">c0</text>
+      <text x="81" y="44" class="t small" text-anchor="middle">c1</text>
+      <text x="115" y="44" class="t small" text-anchor="middle">c2</text>
+      <text x="149" y="44" class="t small" text-anchor="middle">c3</text>
+      <text x="22" y="71" class="t small" text-anchor="end">r0</text>
+      <text x="22" y="105" class="t small" text-anchor="end">r1</text>
+      <text x="22" y="139" class="t small" text-anchor="end">r2</text>
+      <text x="22" y="173" class="t small" text-anchor="end">r3</text>
+      <rect x="30" y="50" width="34" height="34" class="nd"/><text x="47" y="71" class="t" text-anchor="middle">0</text>
+      <rect x="64" y="50" width="34" height="34" class="nd"/><text x="81" y="71" class="t" text-anchor="middle">0</text>
+      <rect x="98" y="50" width="34" height="34" class="nd"/><text x="115" y="71" class="t" text-anchor="middle">0</text>
+      <rect x="132" y="50" width="34" height="34" class="nd"/><text x="149" y="71" class="t" text-anchor="middle">0</text>
+      <rect x="30" y="84" width="34" height="34" class="nd dim"/><text x="47" y="105" class="t small" text-anchor="middle">1</text>
+      <rect x="64" y="84" width="34" height="34" class="nd dim"/><text x="81" y="105" class="t small" text-anchor="middle">1</text>
+      <rect x="98" y="84" width="34" height="34" class="nd"/><text x="115" y="105" class="t" text-anchor="middle">0</text>
+      <rect x="132" y="84" width="34" height="34" class="nd"/><text x="149" y="105" class="t" text-anchor="middle">0</text>
+      <rect x="30" y="118" width="34" height="34" class="nd"/><text x="47" y="139" class="t" text-anchor="middle">0</text>
+      <rect x="64" y="118" width="34" height="34" class="nd"/><text x="81" y="139" class="t" text-anchor="middle">0</text>
+      <rect x="98" y="118" width="34" height="34" class="nd"/><text x="115" y="139" class="t" text-anchor="middle">0</text>
+      <rect x="132" y="118" width="34" height="34" class="nd dim"/><text x="149" y="139" class="t small" text-anchor="middle">1</text>
+      <rect x="30" y="152" width="34" height="34" class="nd"/><text x="47" y="173" class="t" text-anchor="middle">0</text>
+      <rect x="64" y="152" width="34" height="34" class="nd dim"/><text x="81" y="173" class="t small" text-anchor="middle">1</text>
+      <rect x="98" y="152" width="34" height="34" class="nd"/><text x="115" y="173" class="t" text-anchor="middle">0</text>
+      <rect x="132" y="152" width="34" height="34" class="nd"/><text x="149" y="173" class="t" text-anchor="middle">0</text>
+      <polyline points="47,67 81,67 115,67 115,101 115,135 115,169 149,169" class="ptr" marker-end="url(#arr)"/>
+      <text x="98" y="206" class="t small" text-anchor="middle">right, right, down ×3, right</text>
+      <text x="98" y="222" class="t small" text-anchor="middle">visit grows to 6 cells</text>
+
+      <text x="260" y="30" class="t ptrlab" font-size="12">② dead end → backtrack</text>
+      <rect x="260" y="50" width="34" height="34" class="nd"/><text x="277" y="71" class="t" text-anchor="middle">0</text>
+      <rect x="294" y="50" width="34" height="34" class="nd"/><text x="311" y="71" class="t" text-anchor="middle">0</text>
+      <rect x="328" y="50" width="34" height="34" class="nd"/><text x="345" y="71" class="t" text-anchor="middle">0</text>
+      <rect x="362" y="50" width="34" height="34" class="nd"/><text x="379" y="71" class="t" text-anchor="middle">0</text>
+      <rect x="260" y="84" width="34" height="34" class="nd dim"/><text x="277" y="105" class="t small" text-anchor="middle">1</text>
+      <rect x="294" y="84" width="34" height="34" class="nd dim"/><text x="311" y="105" class="t small" text-anchor="middle">1</text>
+      <rect x="328" y="84" width="34" height="34" class="nd"/><text x="345" y="105" class="t" text-anchor="middle">0</text>
+      <rect x="362" y="84" width="34" height="34" class="nd"/><text x="379" y="105" class="t" text-anchor="middle">0</text>
+      <rect x="260" y="118" width="34" height="34" class="nd"/><text x="277" y="139" class="t" text-anchor="middle">0</text>
+      <rect x="294" y="118" width="34" height="34" class="nd"/><text x="311" y="139" class="t" text-anchor="middle">0</text>
+      <rect x="328" y="118" width="34" height="34" class="nd"/><text x="345" y="139" class="t" text-anchor="middle">0</text>
+      <rect x="362" y="118" width="34" height="34" class="nd dim"/><text x="379" y="139" class="t small" text-anchor="middle">1</text>
+      <rect x="260" y="152" width="34" height="34" class="nd"/><text x="277" y="173" class="t" text-anchor="middle">0</text>
+      <rect x="294" y="152" width="34" height="34" class="nd dim"/><text x="311" y="173" class="t small" text-anchor="middle">1</text>
+      <rect x="328" y="152" width="34" height="34" class="nd"/><text x="345" y="173" class="t" text-anchor="middle">0</text>
+      <rect x="362" y="152" width="34" height="34" class="nd"/><text x="379" y="173" class="t" text-anchor="middle">0</text>
+      <polyline points="277,67 311,67 345,67 345,101 345,135" class="ptr prevp" marker-end="url(#arr)"/>
+      <polyline points="345,135 311,135 277,135 277,169" class="ptr old" marker-end="url(#arrOld)"/>
+      <text x="295" y="177" class="t nulltxt" text-anchor="middle" font-size="12">×</text>
+      <text x="328" y="206" class="t small" text-anchor="middle">(2,2) → left to (3,0): walled in</text>
+      <text x="328" y="222" class="t small" text-anchor="middle">count 0, remove (3,0) (2,0) (2,1)</text>
+
+      <text x="490" y="30" class="t newlab" font-size="12">③ second path → return 1</text>
+      <rect x="490" y="50" width="34" height="34" class="nd"/><text x="507" y="71" class="t" text-anchor="middle">0</text>
+      <rect x="524" y="50" width="34" height="34" class="nd"/><text x="541" y="71" class="t" text-anchor="middle">0</text>
+      <rect x="558" y="50" width="34" height="34" class="nd"/><text x="575" y="71" class="t" text-anchor="middle">0</text>
+      <rect x="592" y="50" width="34" height="34" class="nd"/><text x="609" y="71" class="t" text-anchor="middle">0</text>
+      <rect x="490" y="84" width="34" height="34" class="nd dim"/><text x="507" y="105" class="t small" text-anchor="middle">1</text>
+      <rect x="524" y="84" width="34" height="34" class="nd dim"/><text x="541" y="105" class="t small" text-anchor="middle">1</text>
+      <rect x="558" y="84" width="34" height="34" class="nd"/><text x="575" y="105" class="t" text-anchor="middle">0</text>
+      <rect x="592" y="84" width="34" height="34" class="nd"/><text x="609" y="105" class="t" text-anchor="middle">0</text>
+      <rect x="490" y="118" width="34" height="34" class="nd"/><text x="507" y="139" class="t" text-anchor="middle">0</text>
+      <rect x="524" y="118" width="34" height="34" class="nd"/><text x="541" y="139" class="t" text-anchor="middle">0</text>
+      <rect x="558" y="118" width="34" height="34" class="nd"/><text x="575" y="139" class="t" text-anchor="middle">0</text>
+      <rect x="592" y="118" width="34" height="34" class="nd dim"/><text x="609" y="139" class="t small" text-anchor="middle">1</text>
+      <rect x="490" y="152" width="34" height="34" class="nd"/><text x="507" y="173" class="t" text-anchor="middle">0</text>
+      <rect x="524" y="152" width="34" height="34" class="nd dim"/><text x="541" y="173" class="t small" text-anchor="middle">1</text>
+      <rect x="558" y="152" width="34" height="34" class="nd"/><text x="575" y="173" class="t" text-anchor="middle">0</text>
+      <rect x="592" y="152" width="34" height="34" class="nd"/><text x="609" y="173" class="t" text-anchor="middle">0</text>
+      <polyline points="507,67 541,67 575,67 609,67 609,101 575,101 575,135 575,169 609,169" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="558" y="206" class="t small" text-anchor="middle">via (0,3): possible only because</text>
+      <text x="558" y="222" class="t small" text-anchor="middle">(1,2) (2,2) (3,2) were removed</text>
+    </svg>
+    <figcaption><b>Two paths, and the second one reuses cells from the first.</b> Path ① goes down column 2. When it returns, every cell it touched is removed from <code>visit</code> on the way back. That is what lets path ③ walk through (1,2), (2,2), (3,2) again after its detour through (0,3). Panel ② shows one of the dead ends in between: from (2,2) the search goes left to (2,0), down to (3,0), and finds the wall at (3,1). All three of those calls return 0 and erase themselves.</figcaption>
+  </figure>
+
+  <h3>Trace: the visit set growing and shrinking</h3>
+  <p>Coordinates are written as <code>rc</code> pairs to save space: <code>12</code> means (1, 2). The direction order is down, up, right, left, exactly as in the code. Only the important calls are shown; out-of-bounds and wall calls return 0 immediately and are summarized.</p>
+
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Call</th><th>What happens</th><th><code>visit</code> after</th><th>Returns</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>dfs(0,0)</td><td>add 00. down (1,0) is a wall → 0, up is out of bounds → 0, try right</td><td>{00}</td><td>…</td></tr>
+      <tr><td>2</td><td>dfs(0,1)</td><td>add 01. down (1,1) wall, up OOB, try right</td><td>{00 01}</td><td>…</td></tr>
+      <tr><td>3</td><td>dfs(0,2)</td><td>add 02. try down first</td><td>{00 01 02}</td><td>…</td></tr>
+      <tr><td>4</td><td>dfs(1,2)</td><td>add 12. try down</td><td>{00 01 02 12}</td><td>…</td></tr>
+      <tr><td>5</td><td>dfs(2,2)</td><td>add 22. try down</td><td>{00 01 02 12 22}</td><td>…</td></tr>
+      <tr><td>6</td><td>dfs(3,2)</td><td>add 32. down OOB, up visited, try right</td><td>{00 01 02 12 22 32}</td><td>…</td></tr>
+      <tr><td>7</td><td>dfs(3,3)</td><td><strong>target</strong>: return 1 without adding to visit</td><td>same</td><td>1</td></tr>
+      <tr><td>8</td><td>dfs(3,2) resumes</td><td>left (3,1) wall. count = 1. <strong>remove 32</strong></td><td>{00 01 02 12 22}</td><td>1</td></tr>
+      <tr><td>9</td><td>dfs(2,2) resumes</td><td>up visited, right (2,3) wall, try left → dfs(2,1) → dfs(2,0) → dfs(3,0)</td><td>{00 01 02 12 22 21 20 30}</td><td>…</td></tr>
+      <tr><td>10</td><td>dfs(3,0)</td><td>down OOB, up visited, right (3,1) wall, left OOB. <strong>dead end</strong>. remove 30</td><td>{00 01 02 12 22 21 20}</td><td>0</td></tr>
+      <tr><td>11</td><td>dfs(2,0), dfs(2,1) resume</td><td>nothing else open. remove 20, then remove 21</td><td>{00 01 02 12 22}</td><td>0, 0</td></tr>
+      <tr><td>12</td><td>dfs(2,2) resumes</td><td>count = 1 + 0. remove 22</td><td>{00 01 02 12}</td><td>1</td></tr>
+      <tr><td>13</td><td>dfs(1,2) resumes</td><td>up visited, right → dfs(1,3) → up → dfs(0,3): every side is OOB, wall or visited. dead end, both removed. left (1,1) wall. remove 12</td><td>{00 01 02}</td><td>1</td></tr>
+      <tr><td>14</td><td>dfs(0,2) resumes</td><td>count = 1. up OOB. right → dfs(0,3) → down dfs(1,3) → left dfs(1,2) → down dfs(2,2) → down dfs(3,2) → right dfs(3,3) = <strong>1</strong></td><td>{00 01 02 03 13 12 22 32}</td><td>…</td></tr>
+      <tr><td>15</td><td>unwind to dfs(0,2)</td><td>each call removes itself on the way back; count at (0,2) = 1 + 1</td><td>{00 01}</td><td>2</td></tr>
+      <tr><td>16</td><td>dfs(0,1), dfs(0,0) finish</td><td>left is visited / OOB. remove 01, remove 00</td><td>{ }</td><td>2</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p><code>visit</code> is empty again when the top call returns. That is the signature of correct backtracking: every <code>add</code> has a matching <code>remove</code>. Step 14 could only reuse (1,2), (2,2), (3,2) because steps 8, 12 and 13 removed them.</p>
+  </div>
+
+  <div class="callout">
+    <span class="lab">Python trap: negative indexes do not crash</span>
+    <p>The lesson says you "cannot search <code>matrix[-1][3]</code>". In C or Java that is an error. In Python <code>matrix[-1]</code> silently returns the <em>last</em> row. Without the <code>min(r, c) &lt; 0</code> check your DFS would wrap around from the top row to the bottom row and count fake paths. This bug produces no error message. Check for negatives explicitly, every time.</p>
+  </div>
+
+  <h3>Time and space</h3>
+  <p>If we only counted cells, the worst case visits every coordinate: O(n · m). But this problem counts <em>paths</em>, and from every coordinate there are four choices. Draw it as a decision tree: each node has at most 4 children (a <dfn>branching factor</dfn> of 4) and the tree can be n · m levels deep (a path can pass through every cell). That gives <strong>O(4<sup>n·m</sup>)</strong> time in the worst case.</p>
+
+  <figure>
+    <svg viewBox="0 0 700 215" role="img" aria-label="A decision tree with (0,0) at the root and four children for the four moves. Under the right child (0,1) there are four more children. Three of them are pruned immediately: a wall, out of bounds, already visited.">
+      <rect x="322" y="20" width="56" height="24" class="nd"/><text x="350" y="37" class="t mono" text-anchor="middle">(0,0)</text>
+      <line x1="350" y1="44" x2="110" y2="68" class="ptr prevp"/>
+      <line x1="350" y1="44" x2="270" y2="68" class="ptr prevp"/>
+      <line x1="350" y1="44" x2="430" y2="68" class="ptr"/>
+      <line x1="350" y1="44" x2="590" y2="68" class="ptr prevp"/>
+      <text x="200" y="62" class="t small" text-anchor="middle">down</text>
+      <text x="304" y="62" class="t small" text-anchor="middle">up</text>
+      <text x="402" y="62" class="t small" text-anchor="middle">right</text>
+      <text x="490" y="62" class="t small" text-anchor="middle">left</text>
+      <rect x="82" y="68" width="56" height="24" class="nd dim"/><text x="110" y="85" class="t mono" text-anchor="middle">(1,0)</text>
+      <rect x="242" y="68" width="56" height="24" class="nd dim"/><text x="270" y="85" class="t mono" text-anchor="middle">(-1,0)</text>
+      <rect x="402" y="68" width="56" height="24" class="nd"/><text x="430" y="85" class="t mono" text-anchor="middle">(0,1)</text>
+      <rect x="562" y="68" width="56" height="24" class="nd dim"/><text x="590" y="85" class="t mono" text-anchor="middle">(0,-1)</text>
+      <text x="110" y="108" class="t nulltxt" text-anchor="middle" font-size="11">wall → 0</text>
+      <text x="270" y="108" class="t nulltxt" text-anchor="middle" font-size="11">OOB → 0</text>
+      <text x="590" y="108" class="t nulltxt" text-anchor="middle" font-size="11">OOB → 0</text>
+      <line x1="430" y1="92" x2="340" y2="128" class="ptr prevp"/>
+      <line x1="430" y1="92" x2="400" y2="128" class="ptr prevp"/>
+      <line x1="430" y1="92" x2="460" y2="128" class="ptr"/>
+      <line x1="430" y1="92" x2="520" y2="128" class="ptr prevp"/>
+      <rect x="312" y="128" width="56" height="24" class="nd dim"/><text x="340" y="145" class="t mono" text-anchor="middle">(1,1)</text>
+      <rect x="372" y="128" width="56" height="24" class="nd dim"/><text x="400" y="145" class="t mono" text-anchor="middle">(-1,1)</text>
+      <rect x="432" y="128" width="56" height="24" class="nd"/><text x="460" y="145" class="t mono" text-anchor="middle">(0,2)</text>
+      <rect x="492" y="128" width="56" height="24" class="nd dim"/><text x="520" y="145" class="t mono" text-anchor="middle">(0,0)</text>
+      <text x="340" y="168" class="t nulltxt" text-anchor="middle" font-size="11">wall</text>
+      <text x="400" y="168" class="t nulltxt" text-anchor="middle" font-size="11">OOB</text>
+      <text x="460" y="168" class="t" text-anchor="middle">⋮</text>
+      <text x="520" y="168" class="t nulltxt" text-anchor="middle" font-size="11">visited</text>
+      <text x="350" y="204" class="t small" text-anchor="middle">4 choices per level, up to n·m levels deep → 4^(n·m) leaves in the worst case</text>
+    </svg>
+    <figcaption><b>The bound is about the tree's shape, not this grid.</b> Every node has 4 children and the depth can reach n · m, so the tree can have 4<sup>n·m</sup> leaves. In practice the three base cases prune most branches immediately (the faded boxes), which is why the code finishes instantly on a 4x4 grid. Interviewers want the honest worst case.</figcaption>
+  </figure>
+
+  <p>Space: the recursive call stack can be n · m frames deep (one per cell on the current path), and the <code>visit</code> set can hold n · m coordinates. Both O(n · m).</p>
+</section>
+
+<!-- ============================ MATRIX BFS ============================ -->
+<section id="mbfs">
+  <h2><span class="num">3</span>Matrix BFS: the shortest path</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>Drop a stone in a pond. The ripple reaches every point 1 step away, then every point 2 steps away, then 3. The first ripple that touches the far shore tells you the distance, and it cannot be wrong, because a closer ripple would have arrived earlier.</p>
+  </div>
+
+  <p>BFS on a matrix is most commonly used to find the <dfn>shortest path</dfn>: the smallest number of moves from one cell to another. It is the same as tree BFS with two differences: more edge cases (bounds, walls, revisits) and a different setup (a start coordinate instead of a root). Four directions only.</p>
+
+  <p><strong>The problem.</strong> Find the length of the shortest path from the top-left cell to the bottom-right cell of the same grid. DFS could work (find every path, keep the shortest), but BFS is more efficient because it stops the moment the target appears.</p>
+
+  <h3>Setup</h3>
+  <p>Read the grid dimensions for bounds checks. A hash set for visited vertices. A <dfn>deque</dfn> (double-ended queue, O(1) at both ends) to hold the vertices of the current level. Put <code>(0, 0)</code> in the deque and mark it visited before the loop starts.</p>
+
+<pre><code><span class="k">from</span> collections <span class="k">import</span> deque
+
+<span class="k">def</span> bfs(grid):
+    ROWS, COLS = len(grid), len(grid[<span class="s">0</span>])
+    visit = set()
+    queue = deque()
+    queue.append((<span class="s">0</span>, <span class="s">0</span>))
+    visit.add((<span class="s">0</span>, <span class="s">0</span>))</code></pre>
+
+  <h3>The level loop</h3>
+  <p>Initialize <code>length = 0</code>. The outer <code>while queue</code> runs once per level. The inner <code>for i in range(len(queue))</code> pops exactly the vertices that were in the queue when the level started (the length is read once, so vertices added during the level wait for the next one). Popping gives <code>(r, c)</code>. If it is the bottom-right cell, return <code>length</code>. Otherwise, instead of visiting children like a tree, visit the four <strong>neighbors</strong>.</p>
+
+  <p>Neighbor positions come from a <dfn>directions array</dfn>: <code>neighbors = [[0, 1], [0, -1], [1, 0], [-1, 0]]</code> = right, left, down, up. Add each direction to the current position to get the new position. The <code>if</code> inside is the same check as DFS: out of bounds, already visited, or a wall means <code>continue</code>. Otherwise append the neighbor to the queue <strong>and</strong> add it to <code>visit</code> immediately, at append time rather than pop time, so the same cell never sits in the queue twice.</p>
+
+<pre><code><span class="c"># Shortest path from top left to bottom right</span>
+<span class="k">def</span> bfs(grid):
+    ROWS, COLS = len(grid), len(grid[<span class="s">0</span>])
+    visit = set()
+    queue = deque()
+    queue.append((<span class="s">0</span>, <span class="s">0</span>))
+    visit.add((<span class="s">0</span>, <span class="s">0</span>))
+
+    length = <span class="s">0</span>
+    <span class="k">while</span> queue:
+        <span class="k">for</span> i <span class="k">in</span> range(len(queue)):          <span class="c"># exactly one level</span>
+            r, c = queue.popleft()
+            <span class="k">if</span> r == ROWS - <span class="s">1</span> <span class="k">and</span> c == COLS - <span class="s">1</span>:
+                <span class="k">return</span> length
+
+            neighbors = [[<span class="s">0</span>, <span class="s">1</span>], [<span class="s">0</span>, -<span class="s">1</span>], [<span class="s">1</span>, <span class="s">0</span>], [-<span class="s">1</span>, <span class="s">0</span>]]
+            <span class="k">for</span> dr, dc <span class="k">in</span> neighbors:
+                <span class="k">if</span> (min(r + dr, c + dc) &lt; <span class="s">0</span> <span class="k">or</span>
+                    r + dr == ROWS <span class="k">or</span> c + dc == COLS <span class="k">or</span>
+                    (r + dr, c + dc) <span class="k">in</span> visit <span class="k">or</span> grid[r + dr][c + dc] == <span class="s">1</span>):
+                    <span class="k">continue</span>
+                queue.append((r + dr, c + dc))
+                visit.add((r + dr, c + dc))     <span class="c"># mark when queued, not when popped</span>
+        length += <span class="s">1</span>
+
+bfs(grid)    <span class="c"># → 6</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 640 205" role="img" aria-label="A cell with the four directions drawn as arrows to its right, left, down and up neighbors, each labeled with the row and column offset from the directions array.">
+      <rect x="118" y="10" width="64" height="44" class="nd"/><text x="150" y="37" class="t mono" text-anchor="middle">(r-1, c)</text>
+      <rect x="34" y="78" width="64" height="44" class="nd"/><text x="66" y="105" class="t mono" text-anchor="middle">(r, c-1)</text>
+      <rect x="118" y="78" width="64" height="44" class="nd newnd"/><text x="150" y="105" class="t mono" text-anchor="middle">(r, c)</text>
+      <rect x="202" y="78" width="64" height="44" class="nd"/><text x="234" y="105" class="t mono" text-anchor="middle">(r, c+1)</text>
+      <rect x="118" y="146" width="64" height="44" class="nd"/><text x="150" y="173" class="t mono" text-anchor="middle">(r+1, c)</text>
+      <path d="M182,100 L200,100" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M118,100 L100,100" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M150,122 L150,144" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M150,78 L150,56" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="330" y="44" class="t mono">[ 0,  1]  right  same row, column + 1</text>
+      <text x="330" y="74" class="t mono">[ 0, -1]  left   same row, column - 1</text>
+      <text x="330" y="104" class="t mono">[ 1,  0]  down   row + 1 (rows grow downward)</text>
+      <text x="330" y="134" class="t mono">[-1,  0]  up     row - 1</text>
+      <text x="330" y="170" class="t small">new position = (r + dr, c + dc)</text>
+      <text x="330" y="188" class="t small">one loop over 4 pairs replaces 4 copied lines</text>
+    </svg>
+    <figcaption><b>The directions array is the four DFS lines folded into a loop.</b> <code>[1, 0]</code> is "down" because row numbers grow as you go down the grid. Memorize the array as a unit; every grid problem starts with it.</figcaption>
+  </figure>
+
+  <h3>Trace: level by level</h3>
+  <p>The queue column shows the queue at the moment the level starts, which is exactly the set of cells at distance <code>length</code>. Everything appended during the level has distance <code>length + 1</code>.</p>
+
+  <div class="tbl"><table>
+    <thead><tr><th><code>length</code></th><th>Queue at start of level</th><th>Popped → neighbors added</th><th>Skipped (wall / OOB / visited)</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td>[(0,0)]</td><td>(0,0) → (0,1)</td><td>(1,0) wall; left and up OOB</td></tr>
+      <tr><td>1</td><td>[(0,1)]</td><td>(0,1) → (0,2)</td><td>(1,1) wall; (0,0) visited</td></tr>
+      <tr><td>2</td><td>[(0,2)]</td><td>(0,2) → (0,3), (1,2)</td><td>(0,1) visited</td></tr>
+      <tr><td>3</td><td>[(0,3), (1,2)]</td><td>(0,3) → (1,3); (1,2) → (2,2)</td><td>(1,3) visited when (1,2) looks right; (1,1) wall</td></tr>
+      <tr><td>4</td><td>[(1,3), (2,2)]</td><td>(1,3) → nothing; (2,2) → (2,1), (3,2)</td><td>(2,3) wall, twice</td></tr>
+      <tr><td>5</td><td>[(2,1), (3,2)]</td><td>(2,1) → (2,0); (3,2) → (3,3)</td><td>(3,1) wall, twice; (1,1) wall</td></tr>
+      <tr><td>6</td><td>[(2,0), (3,3)]</td><td>(2,0) → (3,0); then pop (3,3): <strong>target, return 6</strong></td><td>(1,0) wall</td></tr>
+    </tbody>
+  </table></div>
+
+  <figure>
+    <svg viewBox="0 0 700 215" role="img" aria-label="Left: the grid with every reachable cell labeled by its BFS distance from the top-left, 0 through 7, and the target cell (3,3) highlighted with distance 6. Right: the queue contents at the start of each level.">
+      <text x="40" y="20" class="t ptrlab">DISTANCE FROM (0,0)</text>
+      <text x="58" y="34" class="t small" text-anchor="middle">c0</text>
+      <text x="94" y="34" class="t small" text-anchor="middle">c1</text>
+      <text x="130" y="34" class="t small" text-anchor="middle">c2</text>
+      <text x="166" y="34" class="t small" text-anchor="middle">c3</text>
+      <text x="32" y="62" class="t small" text-anchor="end">r0</text>
+      <text x="32" y="98" class="t small" text-anchor="end">r1</text>
+      <text x="32" y="134" class="t small" text-anchor="end">r2</text>
+      <text x="32" y="170" class="t small" text-anchor="end">r3</text>
+      <rect x="40" y="40" width="36" height="36" class="nd"/><text x="58" y="62" class="t" text-anchor="middle">0</text>
+      <rect x="76" y="40" width="36" height="36" class="nd"/><text x="94" y="62" class="t ptrlab" text-anchor="middle">1</text>
+      <rect x="112" y="40" width="36" height="36" class="nd"/><text x="130" y="62" class="t ptrlab" text-anchor="middle">2</text>
+      <rect x="148" y="40" width="36" height="36" class="nd"/><text x="166" y="62" class="t ptrlab" text-anchor="middle">3</text>
+      <rect x="40" y="76" width="36" height="36" class="nd dim"/><text x="58" y="98" class="t small" text-anchor="middle">1</text>
+      <rect x="76" y="76" width="36" height="36" class="nd dim"/><text x="94" y="98" class="t small" text-anchor="middle">1</text>
+      <rect x="112" y="76" width="36" height="36" class="nd"/><text x="130" y="98" class="t ptrlab" text-anchor="middle">3</text>
+      <rect x="148" y="76" width="36" height="36" class="nd"/><text x="166" y="98" class="t ptrlab" text-anchor="middle">4</text>
+      <rect x="40" y="112" width="36" height="36" class="nd"/><text x="58" y="134" class="t ptrlab" text-anchor="middle">6</text>
+      <rect x="76" y="112" width="36" height="36" class="nd"/><text x="94" y="134" class="t ptrlab" text-anchor="middle">5</text>
+      <rect x="112" y="112" width="36" height="36" class="nd"/><text x="130" y="134" class="t ptrlab" text-anchor="middle">4</text>
+      <rect x="148" y="112" width="36" height="36" class="nd dim"/><text x="166" y="134" class="t small" text-anchor="middle">1</text>
+      <rect x="40" y="148" width="36" height="36" class="nd"/><text x="58" y="170" class="t ptrlab" text-anchor="middle">7</text>
+      <rect x="76" y="148" width="36" height="36" class="nd dim"/><text x="94" y="170" class="t small" text-anchor="middle">1</text>
+      <rect x="112" y="148" width="36" height="36" class="nd"/><text x="130" y="170" class="t ptrlab" text-anchor="middle">5</text>
+      <rect x="148" y="148" width="36" height="36" class="nd newnd"/><text x="166" y="170" class="t newlab" text-anchor="middle">6</text>
+      <text x="112" y="204" class="t small" text-anchor="middle">shaded = wall, never a vertex</text>
+
+      <text x="260" y="20" class="t ptrlab">QUEUE AT EACH LEVEL</text>
+      <text x="260" y="46" class="t mono">length 0   [(0,0)]</text>
+      <text x="260" y="68" class="t mono">length 1   [(0,1)]</text>
+      <text x="260" y="90" class="t mono">length 2   [(0,2)]</text>
+      <text x="260" y="112" class="t mono">length 3   [(0,3), (1,2)]</text>
+      <text x="260" y="134" class="t mono">length 4   [(1,3), (2,2)]</text>
+      <text x="260" y="156" class="t mono">length 5   [(2,1), (3,2)]</text>
+      <text x="260" y="178" class="t newlab" font-size="12">length 6   [(2,0), (3,3)]  → pop (3,3), return 6</text>
+      <text x="260" y="200" class="t small">(3,0) is queued at distance 7 but never popped</text>
+    </svg>
+    <figcaption><b>Cells with the same number are one ripple.</b> The video draws these as circles of the same color. Each level of the queue is one ring; the ring that contains (3,3) is level 6, so the shortest path has 6 moves. Compare with DFS, which found paths of length 6 and 8 and had no way to know which was shortest until it tried everything.</figcaption>
+  </figure>
+
+  <div class="callout">
+    <span class="lab">Mark at append time</span>
+    <p>If you mark a cell visited only when you pop it, two different cells in the same level can both append the same neighbor before either is popped. That neighbor is now in the queue twice, and on a big grid the duplicates multiply. Add to <code>visit</code> in the same line you <code>append</code>.</p>
+  </div>
+
+  <h3>Time and space</h3>
+  <p>A coordinate is never visited twice, so each of the n · m cells is popped at most once and checks at most 4 neighbors: <strong>O(n · m)</strong> time. Space is also O(n · m): the queue and the hash set can each hold every cell. No exponential term, because BFS never re-explores a cell for a different path the way backtracking does.</p>
+</section>
+
+<!-- ============================ ADJACENCY LIST ============================ -->
+<section id="adjlist">
+  <h2><span class="num">4</span>Adjacency list: build it, then DFS and BFS it</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>A contact list. Under each person's name is the list of people they can call. To find everyone Bob can reach, you look up "Bob" and read his list; you never scan the whole phone book, and you never worry about "going out of bounds".</p>
+  </div>
+
+  <p>The adjacency list is probably the easiest format to traverse. Finding the neighbors of a vertex is one lookup, and there are no bounds to check because a neighbor list only contains real vertices.</p>
+
+  <h3>Building it from a list of directed edges</h3>
+  <p>Use a hashmap: key = vertex, value = list of that vertex's neighbors. A hashmap works because keys are unique, so each vertex has exactly one list. For each edge <code>[src, dst]</code>, make sure both vertices have a key (a vertex with only incoming edges still needs an empty list), then append <code>dst</code> to <code>src</code>'s list. Only <code>src</code>'s list changes, because the edge is directed.</p>
+
+<pre><code><span class="c"># GraphNode used for adjacency list</span>
+<span class="k">class</span> GraphNode:
+    <span class="k">def</span> __init__(self, val):
+        self.val = val
+        self.neighbors = []
+
+<span class="c"># Or use a HashMap</span>
+adjList = { <span class="s">"A"</span>: [], <span class="s">"B"</span>: [] }
+
+<span class="c"># Given directed edges, build an adjacency list</span>
+edges = [[<span class="s">"A"</span>, <span class="s">"B"</span>], [<span class="s">"B"</span>, <span class="s">"C"</span>], [<span class="s">"B"</span>, <span class="s">"E"</span>], [<span class="s">"C"</span>, <span class="s">"E"</span>], [<span class="s">"E"</span>, <span class="s">"D"</span>]]
+
+adjList = {}
+
+<span class="k">for</span> src, dst <span class="k">in</span> edges:
+    <span class="k">if</span> src <span class="k">not in</span> adjList:
+        adjList[src] = []
+    <span class="k">if</span> dst <span class="k">not in</span> adjList:
+        adjList[dst] = []
+    adjList[src].append(dst)
+
+<span class="c"># adjList == {"A": ["B"], "B": ["C", "E"], "C": ["E"], "D": [], "E": ["D"]}</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 780 236" role="img" aria-label="Left: the directed graph with edges A to B, B to C, B to E, C to E, E to D. Right: the same graph as a hashmap, each key pointing to its list of neighbors; D's list is empty.">
+      <text x="20" y="24" class="t ptrlab">DIRECTED GRAPH</text>
+      <circle cx="60" cy="120" r="16" class="nd"/><text x="60" y="125" class="t" text-anchor="middle">A</text>
+      <circle cx="160" cy="120" r="16" class="nd"/><text x="160" y="125" class="t" text-anchor="middle">B</text>
+      <circle cx="260" cy="60" r="16" class="nd"/><text x="260" y="65" class="t" text-anchor="middle">C</text>
+      <circle cx="260" cy="180" r="16" class="nd"/><text x="260" y="185" class="t" text-anchor="middle">E</text>
+      <circle cx="360" cy="180" r="16" class="nd"/><text x="360" y="185" class="t" text-anchor="middle">D</text>
+      <path d="M76,120 L144,120" class="ptr" marker-end="url(#arr)"/>
+      <path d="M174,112 L246,68" class="ptr" marker-end="url(#arr)"/>
+      <path d="M174,128 L246,172" class="ptr" marker-end="url(#arr)"/>
+      <path d="M260,76 L260,164" class="ptr" marker-end="url(#arr)"/>
+      <path d="M276,180 L344,180" class="ptr" marker-end="url(#arr)"/>
+      <text x="200" y="222" class="t small" text-anchor="middle">D has no outgoing edges but is still a vertex</text>
+
+      <text x="420" y="24" class="t ptrlab">ADJACENCY LIST (HASHMAP)</text>
+      <rect x="420" y="44" width="36" height="28" class="nd"/><text x="438" y="63" class="t" text-anchor="middle">A</text>
+      <path d="M456,58 L478,58" class="ptr" marker-end="url(#arr)"/>
+      <rect x="480" y="44" width="36" height="28" class="nd"/><text x="498" y="63" class="t" text-anchor="middle">B</text>
+
+      <rect x="420" y="78" width="36" height="28" class="nd"/><text x="438" y="97" class="t" text-anchor="middle">B</text>
+      <path d="M456,92 L478,92" class="ptr" marker-end="url(#arr)"/>
+      <rect x="480" y="78" width="36" height="28" class="nd"/><text x="498" y="97" class="t" text-anchor="middle">C</text>
+      <rect x="516" y="78" width="36" height="28" class="nd"/><text x="534" y="97" class="t" text-anchor="middle">E</text>
+
+      <rect x="420" y="112" width="36" height="28" class="nd"/><text x="438" y="131" class="t" text-anchor="middle">C</text>
+      <path d="M456,126 L478,126" class="ptr" marker-end="url(#arr)"/>
+      <rect x="480" y="112" width="36" height="28" class="nd"/><text x="498" y="131" class="t" text-anchor="middle">E</text>
+
+      <rect x="420" y="146" width="36" height="28" class="nd"/><text x="438" y="165" class="t" text-anchor="middle">D</text>
+      <path d="M456,160 L478,160" class="ptr" marker-end="url(#arr)"/>
+      <text x="484" y="165" class="t nulltxt">[ ]</text>
+      <text x="512" y="165" class="t small">empty, but the key exists</text>
+
+      <rect x="420" y="180" width="36" height="28" class="nd"/><text x="438" y="199" class="t" text-anchor="middle">E</text>
+      <path d="M456,194 L478,194" class="ptr" marker-end="url(#arr)"/>
+      <rect x="480" y="180" width="36" height="28" class="nd"/><text x="498" y="199" class="t" text-anchor="middle">D</text>
+
+      <text x="420" y="228" class="t small">key = vertex, value = its outgoing neighbors</text>
+    </svg>
+    <figcaption><b>Every arrow on the left is one entry in a list on the right.</b> 5 edges, 5 list entries. B's list is <code>["C", "E"]</code> in the order the edges were given, and that order decides which neighbor DFS explores first. Vertex 0 in the adjacency matrix earlier and D here show the same point: a vertex with no outgoing edges is still a vertex.</figcaption>
+  </figure>
+
+  <h3>DFS on an adjacency list: count paths from source to target</h3>
+  <p>Same backtracking shape as the matrix version, with the base cases simplified. If the node is already on the current path, return 0. If the node is the target, return 1. Otherwise add the node to <code>visit</code>, sum the results from every neighbor, then remove the node (backtrack) and return the sum.</p>
+
+<pre><code><span class="c"># Count paths (backtracking)</span>
+<span class="k">def</span> dfs(node, target, adjList, visit):
+    <span class="k">if</span> node <span class="k">in</span> visit:
+        <span class="k">return</span> <span class="s">0</span>
+    <span class="k">if</span> node == target:
+        <span class="k">return</span> <span class="s">1</span>
+
+    count = <span class="s">0</span>
+    visit.add(node)
+    <span class="k">for</span> neighbor <span class="k">in</span> adjList[node]:
+        count += dfs(neighbor, target, adjList, visit)
+    visit.remove(node)
+
+    <span class="k">return</span> count
+
+dfs(<span class="s">"A"</span>, <span class="s">"E"</span>, adjList, set())    <span class="c"># → 2   (A-B-E and A-B-C-E)</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 780 200" role="img" aria-label="Left: the graph with the two paths from A to E highlighted, A-B-E in teal and A-B-C-E in orange, and the unused edge E to D dashed. Right: the recursive call tree showing dfs of A calling dfs of B, which calls dfs of C then dfs of E, each returning 1 at E for a total of 2.">
+      <circle cx="50" cy="110" r="16" class="nd"/><text x="50" y="115" class="t" text-anchor="middle">A</text>
+      <circle cx="150" cy="110" r="16" class="nd"/><text x="150" y="115" class="t" text-anchor="middle">B</text>
+      <circle cx="250" cy="50" r="16" class="nd"/><text x="250" y="55" class="t" text-anchor="middle">C</text>
+      <circle cx="250" cy="170" r="16" class="nd newnd"/><text x="250" y="175" class="t" text-anchor="middle">E</text>
+      <circle cx="350" cy="170" r="16" class="nd dim"/><text x="350" y="175" class="t" text-anchor="middle" opacity=".5">D</text>
+      <path d="M66,110 L134,110" class="ptr" marker-end="url(#arr)"/>
+      <path d="M164,118 L236,162" class="ptr" marker-end="url(#arr)"/>
+      <path d="M164,102 L236,58" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M250,66 L250,154" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M266,170 L334,170" class="ptr old" marker-end="url(#arrOld)"/>
+      <text x="100" y="72" class="t small" text-anchor="middle">A→B shared by both</text>
+      <text x="150" y="176" class="t ptrlab" text-anchor="start" font-size="11">path 1: A-B-E</text>
+      <text x="290" y="110" class="t newlab" font-size="11">path 2: A-B-C-E</text>
+      <text x="300" y="196" class="t small" text-anchor="end">E is the target, so E → D is never followed</text>
+
+      <text x="420" y="24" class="t ptrlab">CALL TREE</text>
+      <text x="420" y="50" class="t mono">dfs(A)                    → 2</text>
+      <text x="420" y="74" class="t mono">└ dfs(B)                  → 2</text>
+      <text x="420" y="98" class="t mono">   ├ dfs(C)               → 1</text>
+      <text x="420" y="122" class="t mono">   │  └ dfs(E)  target    → 1</text>
+      <text x="420" y="146" class="t mono">   └ dfs(E)     target    → 1</text>
+      <text x="420" y="178" class="t small">C comes before E because adjList[B] = ["C", "E"]</text>
+    </svg>
+    <figcaption><b>The count is the number of leaves that hit the target.</b> B has two neighbors, so its call fans out into two branches, and both reach E. Reaching E returns 1 immediately, without adding E to <code>visit</code>, so the second branch can reach E too.</figcaption>
+  </figure>
+
+  <p><strong>Time.</strong> Counting paths by backtracking is exponential. In the worst case every vertex connects to every other (E ≤ V²). If each vertex has N edges and the decision tree has height V, the work is N<sup>V</sup>. In the worst case N = V, giving <strong>O(V<sup>V</sup>)</strong>. That is the honest bound for "count all paths"; do not confuse it with plain DFS reachability, which is O(V + E) because it visits each vertex once and never removes it from <code>visit</code>.</p>
+
+  <h3>BFS on an adjacency list: shortest path from node to target</h3>
+  <p><dfn>Shortest path</dfn> here means reaching the destination through the fewest vertices (equivalently, the fewest edges). The code is matrix BFS without the edge cases: no bounds, no walls. Increase <code>length</code> after each level until the target is popped.</p>
+
+<pre><code><span class="c"># Shortest path from node to target</span>
+<span class="k">def</span> bfs(node, target, adjList):
+    length = <span class="s">0</span>
+    visit = set()
+    visit.add(node)
+    queue = deque()
+    queue.append(node)
+
+    <span class="k">while</span> queue:
+        <span class="k">for</span> i <span class="k">in</span> range(len(queue)):
+            curr = queue.popleft()
+            <span class="k">if</span> curr == target:
+                <span class="k">return</span> length
+
+            <span class="k">for</span> neighbor <span class="k">in</span> adjList[curr]:
+                <span class="k">if</span> neighbor <span class="k">not in</span> visit:
+                    visit.add(neighbor)
+                    queue.append(neighbor)
+        length += <span class="s">1</span>
+    <span class="k">return</span> length
+
+bfs(<span class="s">"A"</span>, <span class="s">"E"</span>, adjList)    <span class="c"># → 2</span></code></pre>
+
+  <div class="tbl"><table>
+    <thead><tr><th><code>length</code></th><th>Queue at start of level</th><th>Popped</th><th>Neighbors added</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td>[A]</td><td>A, not the target</td><td>B</td></tr>
+      <tr><td>1</td><td>[B]</td><td>B, not the target</td><td>C, E</td></tr>
+      <tr><td>2</td><td>[C, E]</td><td>C, not the target; then E: <strong>target, return 2</strong></td><td>C's neighbor E is already visited, skip</td></tr>
+    </tbody>
+  </table></div>
+
+  <figure>
+    <svg viewBox="0 0 640 200" role="img" aria-label="The graph arranged in columns by BFS level: A at length 0, B at length 1, C and E at length 2, D at length 3 faded because the search stops before reaching it.">
+      <rect x="40" y="40" width="100" height="120" class="mem"/>
+      <rect x="200" y="40" width="100" height="120" class="mem"/>
+      <rect x="360" y="40" width="100" height="120" class="mem"/>
+      <rect x="510" y="40" width="100" height="120" class="mem"/>
+      <text x="90" y="30" class="t small" text-anchor="middle">length 0</text>
+      <text x="250" y="30" class="t small" text-anchor="middle">length 1</text>
+      <text x="410" y="30" class="t small" text-anchor="middle">length 2</text>
+      <text x="560" y="30" class="t small" text-anchor="middle">length 3 (never runs)</text>
+      <circle cx="90" cy="100" r="16" class="nd"/><text x="90" y="105" class="t" text-anchor="middle">A</text>
+      <circle cx="250" cy="100" r="16" class="nd"/><text x="250" y="105" class="t" text-anchor="middle">B</text>
+      <circle cx="410" cy="70" r="16" class="nd"/><text x="410" y="75" class="t" text-anchor="middle">C</text>
+      <circle cx="410" cy="130" r="16" class="nd newnd"/><text x="410" y="135" class="t" text-anchor="middle">E</text>
+      <circle cx="560" cy="130" r="16" class="nd dim"/><text x="560" y="135" class="t" text-anchor="middle" opacity=".5">D</text>
+      <path d="M106,100 L234,100" class="ptr" marker-end="url(#arr)"/>
+      <path d="M266,97 L394,73" class="ptr" marker-end="url(#arr)"/>
+      <path d="M266,103 L394,127" class="ptr" marker-end="url(#arr)"/>
+      <path d="M410,86 L410,114" class="ptr old" marker-end="url(#arrOld)"/>
+      <path d="M426,130 L544,130" class="ptr old" marker-end="url(#arrOld)"/>
+      <text x="320" y="185" class="t small" text-anchor="middle">E popped at length 2 → return 2. The path A → B → E has 2 edges.</text>
+    </svg>
+    <figcaption><b>Level = distance.</b> C → E is dashed because E was already visited (queued by B) when C looked at it. BFS finds the 2-edge path first and never considers A-B-C-E, which is 3 edges.</figcaption>
+  </figure>
+
+  <p><strong>Time: O(V + E).</strong> In the worst case BFS visits every vertex once and looks at every edge once. This assumes a normal graph: no self loops and not the maximal V² edges, so V and E are counted separately instead of collapsing into V².</p>
+
+  <figure>
+    <svg viewBox="0 0 760 200" role="img" aria-label="The five-node graph with each vertex numbered by the order it is popped from the queue and each edge labeled e1 through e5, next to the arithmetic showing 5 vertices plus 5 edges equals 10 units of work.">
+      <circle cx="50" cy="110" r="16" class="nd"/><text x="50" y="115" class="t" text-anchor="middle">A</text>
+      <circle cx="150" cy="110" r="16" class="nd"/><text x="150" y="115" class="t" text-anchor="middle">B</text>
+      <circle cx="250" cy="50" r="16" class="nd"/><text x="250" y="55" class="t" text-anchor="middle">C</text>
+      <circle cx="250" cy="170" r="16" class="nd"/><text x="250" y="175" class="t" text-anchor="middle">E</text>
+      <circle cx="350" cy="170" r="16" class="nd"/><text x="350" y="175" class="t" text-anchor="middle">D</text>
+      <text x="50" y="86" class="t newlab" text-anchor="middle" font-size="11">pop ①</text>
+      <text x="150" y="86" class="t newlab" text-anchor="middle" font-size="11">pop ②</text>
+      <text x="250" y="26" class="t newlab" text-anchor="middle" font-size="11">pop ③</text>
+      <text x="250" y="196" class="t newlab" text-anchor="middle" font-size="11">pop ④</text>
+      <text x="350" y="196" class="t newlab" text-anchor="middle" font-size="11">pop ⑤</text>
+      <path d="M66,110 L134,110" class="ptr" marker-end="url(#arr)"/>
+      <text x="100" y="102" class="t ptrlab" text-anchor="middle" font-size="11">e1</text>
+      <path d="M164,102 L236,58" class="ptr" marker-end="url(#arr)"/>
+      <text x="192" y="72" class="t ptrlab" text-anchor="middle" font-size="11">e2</text>
+      <path d="M164,118 L236,162" class="ptr" marker-end="url(#arr)"/>
+      <text x="192" y="152" class="t ptrlab" text-anchor="middle" font-size="11">e3</text>
+      <path d="M250,66 L250,154" class="ptr" marker-end="url(#arr)"/>
+      <text x="262" y="114" class="t ptrlab" font-size="11">e4</text>
+      <path d="M266,170 L334,170" class="ptr" marker-end="url(#arr)"/>
+      <text x="300" y="162" class="t ptrlab" text-anchor="middle" font-size="11">e5</text>
+
+      <text x="420" y="60" class="t mono">5 vertices popped once  = V</text>
+      <text x="420" y="86" class="t mono">5 edges checked once    = E</text>
+      <text x="420" y="112" class="t mono">total work = V + E = 10</text>
+      <text x="420" y="146" class="t small">not V × E, not V². Each edge is scanned</text>
+      <text x="420" y="162" class="t small">exactly when its source vertex is popped.</text>
+    </svg>
+    <figcaption><b>Why it is a sum, not a product.</b> The visit set guarantees each vertex is popped once. When a vertex is popped, its neighbor list is scanned once, and every edge belongs to exactly one neighbor list. So the total edge work across the whole run is E, added to the V pops. The same argument gives O(V + E) for plain DFS reachability.</figcaption>
+  </figure>
+
+  <div class="callout">
+    <span class="lab">A quirk in the lesson's BFS</span>
+    <p>If the target is unreachable, the loop ends and the function returns the current <code>length</code>, which is a meaningless number (for <code>bfs("D", "A", adjList)</code> it returns 1). In an interview, return <code>-1</code> after the loop so "not found" cannot be confused with a real distance. The patterns below do this.</p>
+  </div>
+
+  <p>This page only scratches the surface. Weighted graphs, Dijkstra, topological sort, and union-find are in NeetCode's Advanced Algorithms course. Everything there builds on the two traversals above.</p>
+</section>
+
+<!-- ============================ PATTERNS ============================ -->
+<section id="patterns">
+  <h2><span class="num">5</span>Moves that solve most graph problems</h2>
+  <p>The lessons teach two traversals on two formats. Interviews dress them up in stories about islands, oranges, courses, and mazes. These six moves cover the stories.</p>
+
+  <h3>Move 1: The grid DFS template with a bounds check</h3>
+  <p>Every grid problem starts with the same skeleton: read <code>ROWS</code> and <code>COLS</code>, write the directions array, write a nested <code>dfs</code> that rejects out-of-bounds, blocked, and visited cells, then loop over neighbors. A small <code>in_bounds</code> helper keeps the check readable.</p>
+
+<pre><code>directions = [[<span class="s">0</span>, <span class="s">1</span>], [<span class="s">0</span>, -<span class="s">1</span>], [<span class="s">1</span>, <span class="s">0</span>], [-<span class="s">1</span>, <span class="s">0</span>]]   <span class="c"># right, left, down, up</span>
+
+<span class="k">def</span> in_bounds(grid, r, c):
+    <span class="k">return</span> <span class="s">0</span> &lt;= r &lt; len(grid) <span class="k">and</span> <span class="s">0</span> &lt;= c &lt; len(grid[<span class="s">0</span>])
+
+<span class="k">def</span> grid_dfs(grid, r, c, visit):
+    <span class="k">if</span> (<span class="k">not</span> in_bounds(grid, r, c) <span class="k">or</span>
+            grid[r][c] == <span class="s">1</span> <span class="k">or</span> (r, c) <span class="k">in</span> visit):
+        <span class="k">return</span>
+    visit.add((r, c))
+    <span class="k">for</span> dr, dc <span class="k">in</span> directions:
+        grid_dfs(grid, r + dr, c + dc, visit)
+    <span class="c"># no visit.remove here: this is reachability, not path counting</span></code></pre>
+
+  <p><strong>When to use:</strong> any time the input is a 2-D list and the question is about connected cells. Note the chained comparison <code>0 &lt;= r &lt; len(grid)</code>: it is the Python idiom for "in range" and it catches the negative-index trap in one expression.</p>
+
+  <h3>Move 2: Flood fill and Number of Islands</h3>
+  <p>An <dfn>island</dfn> is a connected component of land cells. To count them, scan every cell with two nested loops. When you find land that is not yet visited, you have discovered a new island: run DFS from it to mark the whole component, and add 1 to the count. The DFS is called a <dfn>flood fill</dfn> because it spreads like water until it hits the edge of the component.</p>
+
+<pre><code><span class="k">def</span> num_islands(grid):                 <span class="c"># LeetCode 200: cells are "1" (land) or "0" (water)</span>
+    ROWS, COLS = len(grid), len(grid[<span class="s">0</span>])
+    visit = set()
+
+    <span class="k">def</span> dfs(r, c):
+        <span class="k">if</span> (r &lt; <span class="s">0</span> <span class="k">or</span> c &lt; <span class="s">0</span> <span class="k">or</span> r &gt;= ROWS <span class="k">or</span> c &gt;= COLS <span class="k">or</span>
+                grid[r][c] != <span class="s">"1"</span> <span class="k">or</span> (r, c) <span class="k">in</span> visit):
+            <span class="k">return</span>
+        visit.add((r, c))
+        <span class="k">for</span> dr, dc <span class="k">in</span> directions:
+            dfs(r + dr, c + dc)
+
+    count = <span class="s">0</span>
+    <span class="k">for</span> r <span class="k">in</span> range(ROWS):
+        <span class="k">for</span> c <span class="k">in</span> range(COLS):
+            <span class="k">if</span> grid[r][c] == <span class="s">"1"</span> <span class="k">and</span> (r, c) <span class="k">not in</span> visit:
+                dfs(r, c)                  <span class="c"># floods the whole island</span>
+                count += <span class="s">1</span>
+    <span class="k">return</span> count
+
+
+<span class="k">def</span> max_area(grid):                    <span class="c"># LeetCode 695: same shape, dfs returns a size</span>
+    ROWS, COLS = len(grid), len(grid[<span class="s">0</span>])
+    visit = set()
+
+    <span class="k">def</span> dfs(r, c):
+        <span class="k">if</span> (r &lt; <span class="s">0</span> <span class="k">or</span> c &lt; <span class="s">0</span> <span class="k">or</span> r &gt;= ROWS <span class="k">or</span> c &gt;= COLS <span class="k">or</span>
+                grid[r][c] == <span class="s">0</span> <span class="k">or</span> (r, c) <span class="k">in</span> visit):
+            <span class="k">return</span> <span class="s">0</span>
+        visit.add((r, c))
+        <span class="k">return</span> <span class="s">1</span> + sum(dfs(r + dr, c + dc) <span class="k">for</span> dr, dc <span class="k">in</span> directions)
+
+    <span class="k">return</span> max((dfs(r, c) <span class="k">for</span> r <span class="k">in</span> range(ROWS) <span class="k">for</span> c <span class="k">in</span> range(COLS)), default=<span class="s">0</span>)
+
+
+<span class="k">def</span> flood_fill(image, sr, sc, color):  <span class="c"># LeetCode 733: recolor one component</span>
+    ROWS, COLS = len(image), len(image[<span class="s">0</span>])
+    old = image[sr][sc]
+    <span class="k">if</span> old == color:
+        <span class="k">return</span> image                   <span class="c"># already that color: recoloring would never stop</span>
+
+    <span class="k">def</span> dfs(r, c):
+        <span class="k">if</span> r &lt; <span class="s">0</span> <span class="k">or</span> c &lt; <span class="s">0</span> <span class="k">or</span> r &gt;= ROWS <span class="k">or</span> c &gt;= COLS <span class="k">or</span> image[r][c] != old:
+            <span class="k">return</span>
+        image[r][c] = color            <span class="c"># the new color doubles as the visited mark</span>
+        <span class="k">for</span> dr, dc <span class="k">in</span> directions:
+            dfs(r + dr, c + dc)
+
+    dfs(sr, sc)
+    <span class="k">return</span> image</code></pre>
+
+  <figure>
+    <svg viewBox="0 0 640 210" role="img" aria-label="A 4 by 5 grid of land and water cells with three islands. The first cell of each island found by the row-by-row scan is marked with a circled number.">
+      <text x="58" y="34" class="t small" text-anchor="middle">c0</text>
+      <text x="94" y="34" class="t small" text-anchor="middle">c1</text>
+      <text x="130" y="34" class="t small" text-anchor="middle">c2</text>
+      <text x="166" y="34" class="t small" text-anchor="middle">c3</text>
+      <text x="202" y="34" class="t small" text-anchor="middle">c4</text>
+      <text x="32" y="62" class="t small" text-anchor="end">r0</text>
+      <text x="32" y="98" class="t small" text-anchor="end">r1</text>
+      <text x="32" y="134" class="t small" text-anchor="end">r2</text>
+      <text x="32" y="170" class="t small" text-anchor="end">r3</text>
+      <rect x="40" y="40" width="36" height="36" class="nd newnd"/><text x="58" y="62" class="t" text-anchor="middle">1</text>
+      <rect x="76" y="40" width="36" height="36" class="nd"/><text x="94" y="62" class="t" text-anchor="middle">1</text>
+      <rect x="112" y="40" width="36" height="36" class="nd dim"/><text x="130" y="62" class="t small" text-anchor="middle">0</text>
+      <rect x="148" y="40" width="36" height="36" class="nd dim"/><text x="166" y="62" class="t small" text-anchor="middle">0</text>
+      <rect x="184" y="40" width="36" height="36" class="nd dim"/><text x="202" y="62" class="t small" text-anchor="middle">0</text>
+      <rect x="40" y="76" width="36" height="36" class="nd"/><text x="58" y="98" class="t" text-anchor="middle">1</text>
+      <rect x="76" y="76" width="36" height="36" class="nd"/><text x="94" y="98" class="t" text-anchor="middle">1</text>
+      <rect x="112" y="76" width="36" height="36" class="nd dim"/><text x="130" y="98" class="t small" text-anchor="middle">0</text>
+      <rect x="148" y="76" width="36" height="36" class="nd dim"/><text x="166" y="98" class="t small" text-anchor="middle">0</text>
+      <rect x="184" y="76" width="36" height="36" class="nd dim"/><text x="202" y="98" class="t small" text-anchor="middle">0</text>
+      <rect x="40" y="112" width="36" height="36" class="nd dim"/><text x="58" y="134" class="t small" text-anchor="middle">0</text>
+      <rect x="76" y="112" width="36" height="36" class="nd dim"/><text x="94" y="134" class="t small" text-anchor="middle">0</text>
+      <rect x="112" y="112" width="36" height="36" class="nd newnd"/><text x="130" y="134" class="t" text-anchor="middle">1</text>
+      <rect x="148" y="112" width="36" height="36" class="nd dim"/><text x="166" y="134" class="t small" text-anchor="middle">0</text>
+      <rect x="184" y="112" width="36" height="36" class="nd dim"/><text x="202" y="134" class="t small" text-anchor="middle">0</text>
+      <rect x="40" y="148" width="36" height="36" class="nd dim"/><text x="58" y="170" class="t small" text-anchor="middle">0</text>
+      <rect x="76" y="148" width="36" height="36" class="nd dim"/><text x="94" y="170" class="t small" text-anchor="middle">0</text>
+      <rect x="112" y="148" width="36" height="36" class="nd dim"/><text x="130" y="170" class="t small" text-anchor="middle">0</text>
+      <rect x="148" y="148" width="36" height="36" class="nd newnd"/><text x="166" y="170" class="t" text-anchor="middle">1</text>
+      <rect x="184" y="148" width="36" height="36" class="nd"/><text x="202" y="170" class="t" text-anchor="middle">1</text>
+      <text x="72" y="50" class="t newlab" font-size="10">①</text>
+      <text x="144" y="122" class="t newlab" font-size="10">②</text>
+      <text x="180" y="158" class="t newlab" font-size="10">③</text>
+      <text x="130" y="202" class="t small" text-anchor="middle">shaded = water ("0")</text>
+
+      <text x="260" y="52" class="t small">outer loops scan row by row, left to right</text>
+      <text x="260" y="76" class="t small">first unvisited "1" → dfs floods its island</text>
+      <text x="260" y="100" class="t small">→ count += 1, then the scan continues</text>
+      <text x="260" y="136" class="t mono">① (0,0): floods 4 cells</text>
+      <text x="260" y="158" class="t mono">② (2,2): floods 1 cell</text>
+      <text x="260" y="180" class="t mono">③ (3,3): floods 2 cells</text>
+      <text x="260" y="202" class="t newlab" font-size="12">num_islands → 3</text>
+    </svg>
+    <figcaption><b>Count the number of times DFS starts, not the number of land cells.</b> The orange cells are where the scan first touches each island. Cells (0,1), (1,0), (1,1) are land but never start a DFS because island ① already visited them. Diagonal neighbors do not connect: (1,1) and (2,2) are separate islands.</figcaption>
+  </figure>
+
+  <p><strong>When to use:</strong> "count the regions", "size of the largest region", "recolor a region", "is this region enclosed". The outer double loop plus an inner flood fill is the whole idea. Total time O(n · m): each cell is visited by the scan once and by at most one DFS.</p>
+
+  <h3>Move 3: BFS shortest path with the level loop</h3>
+  <p>Any "minimum number of steps" question on an unweighted graph is BFS. Keep the level loop, mark at append time, and return -1 after the loop for "unreachable". For problems with many starting points (Rotting Oranges, Walls and Gates) put <em>all</em> of them in the queue before the loop starts: this is a <dfn>multi-source BFS</dfn>, and it costs nothing extra.</p>
+
+<pre><code><span class="k">def</span> shortest_path(grid, start, target):
+    ROWS, COLS = len(grid), len(grid[<span class="s">0</span>])
+    queue = deque([start])
+    visit = {start}
+    length = <span class="s">0</span>
+    <span class="k">while</span> queue:
+        <span class="k">for</span> _ <span class="k">in</span> range(len(queue)):        <span class="c"># one level = one unit of distance</span>
+            r, c = queue.popleft()
+            <span class="k">if</span> (r, c) == target:
+                <span class="k">return</span> length
+            <span class="k">for</span> dr, dc <span class="k">in</span> directions:
+                nr, nc = r + dr, c + dc
+                <span class="k">if</span> (<span class="s">0</span> &lt;= nr &lt; ROWS <span class="k">and</span> <span class="s">0</span> &lt;= nc &lt; COLS <span class="k">and</span>
+                        grid[nr][nc] == <span class="s">0</span> <span class="k">and</span> (nr, nc) <span class="k">not in</span> visit):
+                    visit.add((nr, nc))
+                    queue.append((nr, nc))
+        length += <span class="s">1</span>
+    <span class="k">return</span> -<span class="s">1</span>                                <span class="c"># never reached the target</span>
+
+
+<span class="k">def</span> rotting_oranges(grid):               <span class="c"># LeetCode 994: multi-source BFS</span>
+    ROWS, COLS = len(grid), len(grid[<span class="s">0</span>])
+    queue = deque()
+    fresh = <span class="s">0</span>
+    <span class="k">for</span> r <span class="k">in</span> range(ROWS):
+        <span class="k">for</span> c <span class="k">in</span> range(COLS):
+            <span class="k">if</span> grid[r][c] == <span class="s">2</span>:
+                queue.append((r, c))         <span class="c"># every rotten orange is a source</span>
+            <span class="k">elif</span> grid[r][c] == <span class="s">1</span>:
+                fresh += <span class="s">1</span>
+    minutes = <span class="s">0</span>
+    <span class="k">while</span> queue <span class="k">and</span> fresh:
+        <span class="k">for</span> _ <span class="k">in</span> range(len(queue)):
+            r, c = queue.popleft()
+            <span class="k">for</span> dr, dc <span class="k">in</span> directions:
+                nr, nc = r + dr, c + dc
+                <span class="k">if</span> <span class="s">0</span> &lt;= nr &lt; ROWS <span class="k">and</span> <span class="s">0</span> &lt;= nc &lt; COLS <span class="k">and</span> grid[nr][nc] == <span class="s">1</span>:
+                    grid[nr][nc] = <span class="s">2</span>            <span class="c"># marking in place = visited</span>
+                    fresh -= <span class="s">1</span>
+                    queue.append((nr, nc))
+        minutes += <span class="s">1</span>
+    <span class="k">return</span> minutes <span class="k">if</span> fresh == <span class="s">0</span> <span class="k">else</span> -<span class="s">1</span></code></pre>
+
+  <p><strong>When to use:</strong> the words "shortest", "minimum steps", "nearest", "how many minutes until". If edges have different weights, BFS is wrong and you need Dijkstra (advanced course).</p>
+
+  <h3>Move 4: Building adjacency lists from edge lists</h3>
+  <p>LeetCode rarely hands you an adjacency list. It hands you <code>n</code> and <code>edges</code>. The first thing you write is the build loop. <code>collections.defaultdict(list)</code> removes the "if key not in dict" lines. For an undirected graph, add the edge in both directions. For numeric vertices 0..n-1, a list of lists is faster than a dict.</p>
+
+<pre><code><span class="k">from</span> collections <span class="k">import</span> defaultdict
+
+<span class="k">def</span> build_directed(edges):
+    adj = defaultdict(list)
+    <span class="k">for</span> src, dst <span class="k">in</span> edges:
+        adj[src].append(dst)
+        adj[dst]                       <span class="c"># touch it so a pure sink like D still gets a key</span>
+    <span class="k">return</span> adj
+
+<span class="k">def</span> build_undirected(edges):
+    adj = defaultdict(list)
+    <span class="k">for</span> u, v <span class="k">in</span> edges:
+        adj[u].append(v)
+        adj[v].append(u)               <span class="c"># both directions: each edge stored twice</span>
+    <span class="k">return</span> adj
+
+<span class="k">def</span> build_undirected_list(n, edges):  <span class="c"># vertices are 0 .. n-1</span>
+    adj = [[] <span class="k">for</span> _ <span class="k">in</span> range(n)]
+    <span class="k">for</span> u, v <span class="k">in</span> edges:
+        adj[u].append(v)
+        adj[v].append(u)
+    <span class="k">return</span> adj
+
+build_undirected_list(<span class="s">3</span>, [[<span class="s">0</span>, <span class="s">1</span>], [<span class="s">1</span>, <span class="s">2</span>]])    <span class="c"># → [[1], [0, 2], [1]]</span></code></pre>
+
+  <p><strong>When to use:</strong> every adjacency-list problem, first five lines. Ask the interviewer "directed or undirected?" before writing the loop. Sum of all list lengths is E for directed, 2E for undirected.</p>
+
+  <h3>Move 5: Visited set vs marking the grid in place</h3>
+  <p>A <code>visit</code> set is the safe default: it works for any format, never damages the input, and is required when you must backtrack (remove) or when the grid is read-only. Marking in place (overwriting a visited land cell with <code>"0"</code>, or a fresh orange with <code>2</code>) saves the O(n · m) set and one lookup per cell, but it destroys the input. Say which one you are choosing and why.</p>
+
+<pre><code><span class="k">def</span> num_islands_in_place(grid):
+    ROWS, COLS = len(grid), len(grid[<span class="s">0</span>])
+
+    <span class="k">def</span> sink(r, c):
+        <span class="k">if</span> r &lt; <span class="s">0</span> <span class="k">or</span> c &lt; <span class="s">0</span> <span class="k">or</span> r &gt;= ROWS <span class="k">or</span> c &gt;= COLS <span class="k">or</span> grid[r][c] != <span class="s">"1"</span>:
+            <span class="k">return</span>
+        grid[r][c] = <span class="s">"0"</span>                 <span class="c"># the grid itself is the visit set</span>
+        <span class="k">for</span> dr, dc <span class="k">in</span> directions:
+            sink(r + dr, c + dc)
+
+    count = <span class="s">0</span>
+    <span class="k">for</span> r <span class="k">in</span> range(ROWS):
+        <span class="k">for</span> c <span class="k">in</span> range(COLS):
+            <span class="k">if</span> grid[r][c] == <span class="s">"1"</span>:
+                sink(r, c)
+                count += <span class="s">1</span>
+    <span class="k">return</span> count                       <span class="c"># grid is now all "0"</span></code></pre>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Choice</th><th>Extra space</th><th>Input after</th><th>Works with backtracking?</th><th>Use when</th></tr></thead>
+    <tbody>
+      <tr><td><code>visit</code> set of <code>(r, c)</code></td><td class="big slow">O(n · m)</td><td>unchanged</td><td>yes (add / remove)</td><td>default; counting paths; read-only input</td></tr>
+      <tr><td>Overwrite the cell</td><td class="big fast">O(1)</td><td>destroyed</td><td>no</td><td>islands, flood fill, rotting oranges; interviewer allows mutation</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Move 6: DFS for reachability and counting, BFS for shortest path</h3>
+  <p>The choice is usually decided by one word in the problem statement.</p>
+
+  <div class="tbl"><table>
+    <thead><tr><th>The question says</th><th>Use</th><th>Visit set behavior</th><th>Time</th></tr></thead>
+    <tbody>
+      <tr><td>"is there a path", "how many components", "fill the region"</td><td>DFS (reachability)</td><td>add only, never remove</td><td class="big fast">O(V + E) or O(n · m)</td></tr>
+      <tr><td>"how many distinct paths", "all routes"</td><td>DFS with backtracking</td><td>add, recurse, remove</td><td class="big slow">exponential</td></tr>
+      <tr><td>"shortest", "fewest steps", "nearest", "minimum time"</td><td>BFS with the level loop</td><td>add at append time, never remove</td><td class="big fast">O(V + E) or O(n · m)</td></tr>
+      <tr><td>"can it be ordered", "detect a cycle in a directed graph"</td><td>DFS with three states (or BFS by in-degree)</td><td>visiting / visited</td><td class="big fast">O(V + E)</td></tr>
+    </tbody>
+  </table></div>
+
+<pre><code><span class="k">def</span> has_path(adj, src, dst, visit=<span class="k">None</span>):     <span class="c"># LeetCode 1971 shape: reachability, no backtracking</span>
+    <span class="k">if</span> visit <span class="k">is None</span>:
+        visit = set()
+    <span class="k">if</span> src == dst:
+        <span class="k">return True</span>
+    visit.add(src)
+    <span class="k">for</span> nb <span class="k">in</span> adj[src]:
+        <span class="k">if</span> nb <span class="k">not in</span> visit <span class="k">and</span> has_path(adj, nb, dst, visit):
+            <span class="k">return True</span>
+    <span class="k">return False</span>
+
+
+<span class="k">def</span> count_components(n, edges):            <span class="c"># NeetCode 323 shape: islands, but on an adjacency list</span>
+    adj = build_undirected_list(n, edges)
+    visit = set()
+
+    <span class="k">def</span> dfs(node):
+        visit.add(node)
+        <span class="k">for</span> nb <span class="k">in</span> adj[node]:
+            <span class="k">if</span> nb <span class="k">not in</span> visit:
+                dfs(nb)
+
+    count = <span class="s">0</span>
+    <span class="k">for</span> node <span class="k">in</span> range(n):
+        <span class="k">if</span> node <span class="k">not in</span> visit:
+            dfs(node)
+            count += <span class="s">1</span>
+    <span class="k">return</span> count
+
+count_components(<span class="s">5</span>, [[<span class="s">0</span>, <span class="s">1</span>], [<span class="s">1</span>, <span class="s">2</span>], [<span class="s">3</span>, <span class="s">4</span>]])    <span class="c"># → 2</span></code></pre>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>The only difference between "count paths" (exponential) and "is there a path" (linear) is the <code>visit.remove</code> line. Remove it and each vertex is explored once. Keep it and each vertex can be explored once per path through it. Know which one the question needs before you type.</p>
+  </div>
+</section>
+
+<!-- ============================ COMPLEXITY ============================ -->
+<section id="complexity">
+  <h2><span class="num">6</span>Big-O summary</h2>
+  <p>n and m are grid dimensions; V and E are vertex and edge counts. Say the assumption behind each bound out loud: "each cell visited once" or "each vertex and each edge once".</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Operation</th><th>Time</th><th>Space</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Store a grid</td><td>-</td><td class="big fast">O(n · m)</td><td>one cell per value</td></tr>
+      <tr><td>Store an adjacency matrix</td><td>-</td><td class="big slow">O(V²)</td><td>a cell for every possible edge, present or not</td></tr>
+      <tr><td>Store an adjacency list</td><td>-</td><td class="big fast">O(V + E)</td><td>one key per vertex, one entry per edge</td></tr>
+      <tr><td>Build adjacency list from edges</td><td class="big fast">O(V + E)</td><td class="big fast">O(V + E)</td><td>one append per edge</td></tr>
+      <tr><td>Matrix DFS, count all paths</td><td class="big slow">O(4<sup>n·m</sup>)</td><td class="big fast">O(n · m)</td><td>4-way branching, depth n · m; stack + visit set</td></tr>
+      <tr><td>Matrix DFS, reachability / flood fill</td><td class="big fast">O(n · m)</td><td class="big fast">O(n · m)</td><td>each cell visited once, never removed</td></tr>
+      <tr><td>Matrix BFS, shortest path</td><td class="big fast">O(n · m)</td><td class="big fast">O(n · m)</td><td>each cell queued at most once</td></tr>
+      <tr><td>Adjacency list DFS, count all paths</td><td class="big slow">O(V<sup>V</sup>)*</td><td class="big fast">O(V)</td><td>N edges per vertex, depth V, worst N = V</td></tr>
+      <tr><td>Adjacency list DFS, reachability</td><td class="big fast">O(V + E)</td><td class="big fast">O(V)</td><td>each vertex once, each edge once</td></tr>
+      <tr><td>Adjacency list BFS, shortest path</td><td class="big fast">O(V + E)</td><td class="big fast">O(V)</td><td>each vertex popped once, each edge scanned once</td></tr>
+      <tr><td>Neighbor lookup, adjacency list</td><td class="big fast">O(1) + len(list)</td><td>-</td><td>one hash lookup</td></tr>
+      <tr><td>Neighbor lookup, adjacency matrix</td><td class="big slow">O(V)</td><td>-</td><td>must scan the whole row</td></tr>
+    </tbody>
+  </table></div>
+  <p>* The V<sup>V</sup> bound assumes the densest possible graph. On a grid the same idea gives 4<sup>n·m</sup> because the branching factor is fixed at 4. Both are "count every path" bounds; the moment you stop removing from <code>visit</code>, the exponent disappears and you are back to V + E.</p>
+</section>
+
+<!-- ============================ MISTAKES ============================ -->
+<section id="mistakes">
+  <h2><span class="num">7</span>Mistakes to watch for</h2>
+  <div class="mistake">
+    <div>
+      <div class="bad">Forgetting the negative-index check</div>
+      <p>Python's <code>grid[-1]</code> is the last row, not an error. A DFS that only checks <code>r &gt;= ROWS</code> wraps around the grid and counts phantom paths with no crash to warn you. Always check <code>r &lt; 0 or c &lt; 0</code> (or <code>min(r, c) &lt; 0</code>) too.</p>
+    </div>
+    <div>
+      <div class="bad">Using len(grid) for columns</div>
+      <p>On a non-square grid, <code>c == len(grid)</code> is the wrong bound. Read <code>ROWS, COLS = len(grid), len(grid[0])</code> at the top and use each for its own axis. The lesson's grid is 4x4, which hides this bug until the interview.</p>
+    </div>
+    <div>
+      <div class="bad">Marking visited at pop time in BFS</div>
+      <p>Two cells in the same level both append the same neighbor. It is now in the queue twice, and each copy appends its own neighbors. Mark in <code>visit</code> on the same line you <code>append</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Backtracking when you should not (or not when you should)</div>
+      <p><code>visit.remove</code> in a reachability or islands problem turns O(n · m) into exponential time and times out. Leaving it out in a count-paths problem returns too few paths (the lesson grid gives 1 instead of 2). Decide from the question before you write the line.</p>
+    </div>
+    <div>
+      <div class="bad">KeyError on a sink vertex</div>
+      <p><code>adjList["D"]</code> raises <code>KeyError</code> if you only created keys for sources. The build loop must add <code>dst</code> as a key too, or use <code>defaultdict(list)</code>. NeetCode's loop handles this with the second <code>if</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Adding an undirected edge one way</div>
+      <p><code>adj[u].append(v)</code> alone makes the graph directed. Components and paths come out wrong. For undirected input, always write the second <code>adj[v].append(u)</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Using a list as the queue</div>
+      <p><code>queue.pop(0)</code> is O(n): every element shifts. On a 1000x1000 grid that is a million shifts per pop. Use <code>collections.deque</code> and <code>popleft()</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Returning length when the target is unreachable</div>
+      <p>The lesson's BFS falls out of the loop and returns whatever <code>length</code> is. That number looks like a real distance. Return <code>-1</code> after the loop so the caller can tell.</p>
+    </div>
+    <div>
+      <div class="bad">Hitting Python's recursion limit</div>
+      <p>Python allows about 1000 nested calls by default. A DFS that snakes through a 1000x1000 grid of all-land cells goes a million deep and raises <code>RecursionError</code>. Call <code>sys.setrecursionlimit(10**6)</code>, or rewrite DFS with an explicit stack (a list used with <code>append</code> / <code>pop</code>).</p>
+    </div>
+  </div>
+
+  <div class="cheat">
+    <h3>Interview one-liners</h3>
+    <ul>
+      <li>"A graph is vertices plus edges with no restrictions; trees and linked lists are just directed graphs with rules."</li>
+      <li>"E is at most V squared, because every vertex can point to every vertex including itself; that is a complete graph."</li>
+      <li>"An adjacency matrix costs O(V²) space no matter how few edges there are; an adjacency list costs O(V + E), so I default to the list."</li>
+      <li>"For a grid I write the directions array once and check out of bounds, blocked, and visited before every recursive call."</li>
+      <li>"Counting paths is backtracking: add to visit, recurse, remove from visit. That makes it exponential, 4 to the n·m on a grid."</li>
+      <li>"For the shortest path I use BFS with a level loop, mark cells visited when I enqueue them, and return the level when I pop the target."</li>
+      <li>"BFS and plain DFS are O(V + E): each vertex is popped once and each edge is scanned once when its source is popped."</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================ PRACTICE ============================ -->
+<section id="practice">
+  <h2><span class="num">8</span>Practice, in this order</h2>
+  <p>Do them with no notes open. After each one, check your bounds check, your visited marking, and your choice of DFS or BFS against the moves in section 5.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Problem</th><th>Move it trains</th><th>Level</th></tr></thead>
+    <tbody>
+      <tr><td>733</td><td>Flood Fill</td><td>grid DFS template, marking in place</td><td>Easy</td></tr>
+      <tr><td>1971</td><td>Find if Path Exists in Graph</td><td>build undirected adjacency list, DFS reachability</td><td>Easy</td></tr>
+      <tr><td>200</td><td>Number of Islands</td><td>outer scan + flood fill, count DFS starts</td><td>Medium</td></tr>
+      <tr><td>695</td><td>Max Area of Island</td><td>flood fill that returns a size</td><td>Medium</td></tr>
+      <tr><td>1091</td><td>Shortest Path in Binary Matrix</td><td>grid BFS with the level loop (8 directions)</td><td>Medium</td></tr>
+      <tr><td>994</td><td>Rotting Oranges</td><td>multi-source BFS, minutes = levels</td><td>Medium</td></tr>
+      <tr><td>133</td><td>Clone Graph</td><td>GraphNode with neighbors, hashmap old → new, DFS</td><td>Medium</td></tr>
+      <tr><td>417</td><td>Pacific Atlantic Water Flow</td><td>DFS from the borders inward, two visited sets</td><td>Medium</td></tr>
+      <tr><td>207</td><td>Course Schedule</td><td>directed adjacency list, cycle detection with DFS</td><td>Medium</td></tr>
+      <tr><td>323</td><td>Number of Connected Components in an Undirected Graph (premium; on the NeetCode practice list)</td><td>islands idea on an adjacency list</td><td>Medium</td></tr>
+      <tr><td>286</td><td>Walls and Gates (premium; on the NeetCode practice list)</td><td>multi-source BFS from every gate</td><td>Medium</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Your next step today:</strong> LeetCode 200, Number of Islands. Write it with a visited set first, then rewrite it marking in place, and compare the two against Move 5.</p>
+</section>
+
+<!-- ============================ QUIZ ============================ -->
+<section id="quiz">
+  <h2><span class="num">9</span>Self-check</h2>
+  <p>Answer out loud before opening. If you cannot answer in one breath, reread that section.</p>
+
+  <details><summary><span class="q">Q1</span>What is the maximum number of edges in a graph with V vertices, and why?</summary><div><p>V². Each of the V vertices can have an edge to each of the V vertices, including itself. A graph that reaches this maximum is a complete graph.</p></div></details>
+
+  <details><summary><span class="q">Q2</span>Same list of lists, two meanings. What does the value at <code>[1][0]</code> mean in a grid, and what does it mean in an adjacency matrix?</summary><div><p>In a grid it is the cell at row 1, column 0 (a wall if it is 1). In an adjacency matrix it says whether there is a directed edge from vertex 1 to vertex 0: row is "from", column is "to".</p></div></details>
+
+  <details><summary><span class="q">Q3</span>Why is an adjacency list usually preferred over an adjacency matrix?</summary><div><p>Space. The matrix stores V² cells whether or not the edges exist. The list stores one entry per real edge, O(V + E). Neighbor lookup is also faster: one hash lookup instead of scanning a row of length V.</p></div></details>
+
+  <details><summary><span class="q">Q4</span>List the three "return 0" base cases of matrix DFS and the one "return 1" case.</summary><div><p>Return 0 if out of bounds (r or c negative, or equal to ROWS or COLS), if <code>(r, c)</code> is already in <code>visit</code>, or if <code>grid[r][c] == 1</code>. Return 1 if <code>r == ROWS - 1 and c == COLS - 1</code>.</p></div></details>
+
+  <details><summary><span class="q">Q5</span>Why does the path-counting DFS call <code>visit.remove((r, c))</code> before returning?</summary><div><p>So a different path can pass through this cell. Without it, the second path through (1,2), (2,2), (3,2) would be blocked by the first path's marks and the lesson grid would return 1 instead of 2.</p></div></details>
+
+  <details><summary><span class="q">Q6</span>Explain O(4<sup>n·m</sup>) for matrix DFS in one sentence.</summary><div><p>Each cell has 4 possible next moves (branching factor 4) and a path can be n · m cells long (tree height n · m), so the decision tree has up to 4<sup>n·m</sup> leaves.</p></div></details>
+
+  <details><summary><span class="q">Q7</span>In matrix BFS, when do you add a neighbor to the visit set, and what goes wrong if you do it later?</summary><div><p>At the moment you append it to the queue. If you wait until it is popped, two cells in the same level can each append the same neighbor, and the queue fills with duplicates.</p></div></details>
+
+  <details><summary><span class="q">Q8</span>What does the directions array <code>[[0, 1], [0, -1], [1, 0], [-1, 0]]</code> mean, and how do you use it?</summary><div><p>Right, left, down, up as (row change, column change). For each pair, the neighbor is <code>(r + dr, c + dc)</code>. <code>[1, 0]</code> is down because row numbers increase going down.</p></div></details>
+
+  <details><summary><span class="q">Q9</span>Given edges <code>[["A","B"], ["B","C"], ["B","E"], ["C","E"], ["E","D"]]</code>, write the adjacency list. Why must D appear?</summary><div><p><code>{"A": ["B"], "B": ["C", "E"], "C": ["E"], "D": [], "E": ["D"]}</code>. D has no outgoing edges but it is a vertex; without the key, <code>adjList["D"]</code> raises <code>KeyError</code> the first time a traversal reaches D.</p></div></details>
+
+  <details><summary><span class="q">Q10</span>Why is BFS on an adjacency list O(V + E) and not O(V × E)?</summary><div><p>The visit set means each vertex is popped from the queue once. When it is popped, its own neighbor list is scanned once, and every edge appears in exactly one neighbor list. So the total is V pops plus E edge checks, a sum.</p></div></details>
+
+  <details><summary><span class="q">Q11</span>Trace it: matrix BFS on the lesson grid. What is in the queue at the start of level 3, and what is in it at the start of level 5?</summary><div><p>Level 3: <code>[(0,3), (1,2)]</code>. Level 5: <code>[(2,1), (3,2)]</code>. The full sequence is [(0,0)], [(0,1)], [(0,2)], [(0,3),(1,2)], [(1,3),(2,2)], [(2,1),(3,2)], [(2,0),(3,3)], and (3,3) is popped at level 6.</p></div></details>
+
+  <details><summary><span class="q">Q12</span>Trace it: <code>dfs("A", "E", adjList, set())</code>. In what order are the recursive calls made, and what does each return?</summary><div><p>dfs(A) adds A, calls dfs(B). dfs(B) adds B, calls dfs(C) first (because adjList[B] = ["C", "E"]). dfs(C) adds C, calls dfs(E) which returns 1 (target). dfs(C) removes C, returns 1. dfs(B) then calls dfs(E), returns 1. dfs(B) removes B, returns 2. dfs(A) removes A, returns 2.</p></div></details>
+
+  <details><summary><span class="q">Q13</span>"Is there a path from u to v?" versus "How many paths from u to v?" What is the one-line code difference and the complexity difference?</summary><div><p>Reachability never removes from <code>visit</code>: O(V + E). Counting paths removes on the way back (backtracking): exponential, O(V<sup>V</sup>) in the densest case, 4<sup>n·m</sup> on a grid.</p></div></details>
+</section>
+
+<nav class="pager" aria-label="Previous and next topic">
+  <a class="prev" href="09-hashing.html"><small>Previous</small>Hashing</a>
+  <a class="next" href="11-dynamic-programming.html"><small>Next</small>Dynamic Programming</a>
+</nav>
+
+<footer>
+  Source: NeetCode "Algorithms and Data Structures for Beginners", lessons 28 (Introduction to Graphs), 29 (Matrix DFS), 30 (Matrix BFS), 31 (Adjacency List). All Python in these notes was run and tested. Orange in every diagram marks what changed.
+</footer>
+</div>
+</body>
+</html>

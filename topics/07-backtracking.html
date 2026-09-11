@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backtracking · DSA Field Notes</title>
+<meta name="description" content="Backtracking on a binary tree: canReachLeaf, leafPath with append and pop, the choose-explore-unchoose template, subsets, permutations, combinations, Big-O, mistakes, practice, self-check.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arr"/></marker>
+    <marker id="arrNew" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrNew"/></marker>
+    <marker id="arrOld" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrOld"/></marker>
+    <marker id="arrCur" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrCur"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="site-head">
+  <a class="brand" href="../index.html">DSA <span>Field Notes</span></a>
+  <div class="crumbs"><a href="../index.html">Course map</a> <span>/</span> <span>07 Backtracking</span></div>
+</header>
+<header class="top">
+  <div class="eyebrow">NeetCode · DSA for Beginners · Lesson 22</div>
+  <h1>Backtracking Field Notes</h1>
+  <p class="lede">Try a choice, go deeper, and if it leads nowhere, undo the choice and try the next one. One tree problem teaches the whole idea. The same three lines then solve subsets, permutations, and combinations.</p>
+</header>
+
+<nav class="sections" aria-label="Sections">
+  <a href="#why">Why</a>
+  <a href="#reach">Reach a leaf</a>
+  <a href="#path">Build the path</a>
+  <a href="#cost">Cost</a>
+  <a href="#patterns">Patterns</a>
+  <a href="#complexity">Big-O</a>
+  <a href="#mistakes">Mistakes</a>
+  <a href="#practice">Practice</a>
+  <a href="#quiz">Self-check</a>
+</nav>
+
+<!-- ============================ WHY ============================ -->
+<section id="why">
+  <h2><span class="num">0</span>Why backtracking exists</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>You are trapped in a maze. At every fork you pick a corridor and walk. When you hit a dead end, you do not give up. You walk <em>back</em> to the last fork and take the corridor you have not tried yet. Do this at every fork and you will either find the exit or prove there is none.</p>
+  </div>
+
+  <p><dfn>Backtracking</dfn> is a brute-force method: try every possible solution, and the moment a partial attempt hits a dead end, undo the last step and try the next option. It overlaps a lot with <dfn>DFS</dfn> (depth-first search): you go as deep as you can before you turn around. The new part is the <em>undo</em>. You keep a record of the choices made so far, and when a branch fails you remove those choices before trying the next branch.</p>
+
+  <figure>
+    <svg viewBox="0 0 660 250" role="img" aria-label="A maze drawn as a branching path. From the entrance to fork A, fork A to a dead end is tried first and abandoned, then A to fork B, then B to a dead end is tried and abandoned, then B to the exit.">
+      <text x="20" y="18" class="t small">dashed grey = tried, hit a dead end, walked back</text>
+      <text x="640" y="18" class="t small" text-anchor="end">orange = the path that worked</text>
+      <!-- nodes -->
+      <circle cx="60" cy="140" r="18" class="nd"/><text x="60" y="145" class="t" text-anchor="middle">S</text>
+      <text x="60" y="190" class="t small" text-anchor="middle">entrance</text>
+      <circle cx="200" cy="140" r="18" class="nd"/><text x="200" y="145" class="t" text-anchor="middle">A</text>
+      <text x="200" y="190" class="t small" text-anchor="middle">fork</text>
+      <circle cx="360" cy="140" r="18" class="nd"/><text x="360" y="145" class="t" text-anchor="middle">B</text>
+      <text x="330" y="190" class="t small" text-anchor="middle">fork</text>
+      <circle cx="560" cy="140" r="18" class="nd newnd"/><text x="560" y="145" class="t" text-anchor="middle">E</text>
+      <text x="560" y="190" class="t small" text-anchor="middle">exit</text>
+      <!-- dead ends -->
+      <circle cx="260" cy="50" r="18" class="nd dim"/><text x="260" y="55" class="t nulltxt" text-anchor="middle">✕</text>
+      <text x="290" y="54" class="t nulltxt">dead end</text>
+      <circle cx="420" cy="225" r="18" class="nd dim"/><text x="420" y="230" class="t nulltxt" text-anchor="middle">✕</text>
+      <text x="450" y="229" class="t nulltxt">dead end</text>
+      <!-- edges -->
+      <path d="M78,140 L180,140" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M210,125 L250,65" class="ptr old" marker-end="url(#arrOld)"/>
+      <text x="212" y="88" class="t newlab" text-anchor="end">①</text>
+      <text x="205" y="104" class="t small" text-anchor="end">try up first</text>
+      <path d="M218,140 L340,140" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="279" y="130" class="t newlab" text-anchor="middle">②</text>
+      <path d="M370,155 L410,210" class="ptr old" marker-end="url(#arrOld)"/>
+      <text x="408" y="170" class="t newlab">③</text>
+      <text x="425" y="188" class="t small">try down first</text>
+      <path d="M378,140 L540,140" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="459" y="130" class="t newlab" text-anchor="middle">④</text>
+    </svg>
+    <figcaption><b>Every dead end sends you back exactly one fork.</b> At A you try ① and fail, so you return to A and take ②. At B you try ③ and fail, return to B, take ④. You never restart from the entrance: you only undo the last choice. That "undo one step, try the next option" is the whole algorithm.</figcaption>
+  </figure>
+
+  <p>Two words you will meet on every backtracking problem. A <dfn>choice</dfn> is one option at a fork (go left, go right, take this number, skip it). A <dfn>dead end</dfn> is a partial attempt that can no longer become a valid answer. Detecting dead ends early is called <dfn>pruning</dfn>; it is what separates backtracking from blindly listing everything.</p>
+</section>
+
+<!-- ============================ REACH A LEAF ============================ -->
+<section id="reach">
+  <h2><span class="num">1</span>The motivating problem: reach a leaf without a 0</h2>
+
+  <h3>The question</h3>
+  <p>Given a binary tree, determine if there exists a path from the root to a <dfn>leaf</dfn> (a node with no children) such that <strong>no node on the path has value 0</strong>. Return <code>True</code> if such a path exists, else <code>False</code>. A node with value 0 is a wall in the maze: you cannot walk through it.</p>
+
+  <h3>The reasoning, step by step</h3>
+  <p>Use DFS. The constraint is "no node with value 0". Work out the small cases first, then the recursive case.</p>
+  <ul>
+    <li><strong>Empty tree</strong> (<code>root</code> is <code>None</code>): there is no path at all, so return <code>False</code>. Note that NeetCode writes <code>null</code>; in Python it is <code>None</code>.</li>
+    <li><strong>Node value is 0</strong>: this branch is blocked, return <code>False</code>.</li>
+    <li><strong>Reached a leaf</strong> (and it is not 0): we walked root-to-leaf without touching a 0, return <code>True</code>.</li>
+    <li><strong>Otherwise</strong>: if a solution exists, it is in the left subtree or the right subtree.</li>
+  </ul>
+  <ol class="steps">
+    <li>Arbitrarily explore the left subtree first.</li>
+    <li>If left returns <code>True</code>, return <code>True</code>.</li>
+    <li>If left returns <code>False</code>, explore the right subtree.</li>
+    <li>If right returns <code>True</code>, return <code>True</code>.</li>
+    <li>If both return <code>False</code>, return <code>False</code>.</li>
+  </ol>
+
+<pre><code><span class="k">class</span> TreeNode:
+    <span class="k">def</span> __init__(self, val):
+        self.val = val
+        self.left = <span class="k">None</span>
+        self.right = <span class="k">None</span>
+
+<span class="k">def</span> canReachLeaf(root):
+    <span class="k">if not</span> root <span class="k">or</span> root.val == <span class="s">0</span>:      <span class="c"># empty, or a wall: dead end</span>
+        <span class="k">return False</span>
+
+    <span class="k">if not</span> root.left <span class="k">and not</span> root.right:   <span class="c"># a leaf, and it is not 0: found a path</span>
+        <span class="k">return True</span>
+    <span class="k">if</span> canReachLeaf(root.left):           <span class="c"># try left first (arbitrary choice)</span>
+        <span class="k">return True</span>
+    <span class="k">if</span> canReachLeaf(root.right):          <span class="c"># left failed, try right</span>
+        <span class="k">return True</span>
+    <span class="k">return False</span>                          <span class="c"># both failed: this node is a dead end</span></code></pre>
+
+  <h3>The lesson's example: [4,0,1,null,7,2,0]</h3>
+  <p>Root 4. Its left child is 0, and that 0 has a right child 7. Its right child is 1, with children 2 and 0. A path is invalid if it contains a 0. The only valid root-to-leaf path is <strong>4 → 1 → 2</strong>.</p>
+
+  <figure>
+    <svg viewBox="0 0 640 250" role="img" aria-label="Tree with root 4, left child 0 whose right child is 7, right child 1 with children 2 and 0. The path 4 to 1 to 2 is highlighted in orange. The 0 nodes are marked blocked. The edge from 4 to 0 is dashed because it was tried and rejected. Node 7 and the right 0 are faded because they were never visited.">
+      <!-- edges -->
+      <path d="M304,49 L216,101" class="ptr old" marker-end="url(#arrOld)"/>
+      <path d="M336,49 L424,101" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M188,124 L152,166" class="ptr prevp"/>
+      <path d="M212,124 L248,166" class="ptr prevp" marker-end="url(#arr)"/>
+      <path d="M428,124 L392,166" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M452,124 L488,166" class="ptr prevp" marker-end="url(#arr)"/>
+      <!-- nodes -->
+      <circle cx="320" cy="40" r="18" class="nd newnd"/><text x="320" y="45" class="t" text-anchor="middle">4</text>
+      <text x="345" y="30" class="t newlab">①</text>
+      <circle cx="200" cy="110" r="18" class="nd dim"/><text x="200" y="115" class="t nulltxt" text-anchor="middle">0</text>
+      <text x="225" y="100" class="t newlab">②</text>
+      <text x="170" y="106" class="t small" text-anchor="end">returns False</text>
+      <text x="170" y="122" class="t nulltxt" text-anchor="end" font-size="11">blocked</text>
+      <circle cx="440" cy="110" r="18" class="nd newnd"/><text x="440" y="115" class="t" text-anchor="middle">1</text>
+      <text x="465" y="100" class="t newlab">③</text>
+      <text x="470" y="118" class="t small">returns True</text>
+      <text x="140" y="186" class="t nulltxt" text-anchor="middle">∅</text>
+      <circle cx="260" cy="180" r="18" class="nd dim"/><text x="260" y="185" class="t" text-anchor="middle">7</text>
+      <text x="260" y="215" class="t small" text-anchor="middle">never visited</text>
+      <circle cx="380" cy="180" r="18" class="nd newnd"/><text x="380" y="185" class="t" text-anchor="middle">2</text>
+      <text x="405" y="170" class="t newlab">④</text>
+      <text x="380" y="215" class="t small" text-anchor="middle">leaf: True</text>
+      <circle cx="500" cy="180" r="18" class="nd dim"/><text x="500" y="185" class="t nulltxt" text-anchor="middle">0</text>
+      <text x="520" y="215" class="t small" text-anchor="middle">blocked, not visited</text>
+      <text x="320" y="242" class="t small" text-anchor="middle">orange = the path found     dashed = explored and rejected     faded = never visited</text>
+    </svg>
+    <figcaption><b>The left subtree is rejected in one step.</b> Call ② sees <code>root.val == 0</code> and returns <code>False</code> without looking at 7. Call ③ goes left first, call ④ is a leaf, so <code>True</code> bubbles up: 2 → 1 → 4. The right child of 1 is never visited because the left already answered <code>True</code>. Circled numbers are the order the calls start.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Call</th><th>Node</th><th>Check that fires</th><th>Returns</th><th>Back in the caller</th></tr></thead>
+    <tbody>
+      <tr><td>①</td><td>4</td><td>not 0, not a leaf → recurse left</td><td>(waiting)</td><td>-</td></tr>
+      <tr><td>②</td><td>0</td><td><code>root.val == 0</code></td><td>False</td><td>4: left was False, recurse right</td></tr>
+      <tr><td>③</td><td>1</td><td>not 0, not a leaf → recurse left</td><td>(waiting)</td><td>-</td></tr>
+      <tr><td>④</td><td>2</td><td>no children → leaf</td><td>True</td><td>1: left was True → return True</td></tr>
+      <tr><td>①</td><td>4</td><td>right was True</td><td>True</td><td>done: a valid path exists</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>The order of the two <code>if</code> checks matters. <code>if not root or root.val == 0</code> must come first so that a 0 leaf is rejected before the leaf check can say <code>True</code>. A leaf with value 0 is a wall, not an exit.</p>
+  </div>
+
+  <div class="callout">
+    <span class="lab">Where is the backtracking?</span>
+    <p>In <code>canReachLeaf</code> the "undo" is invisible: when a call returns <code>False</code>, the recursion simply comes back to the parent and the parent tries its other child. Nothing has to be cleaned up because we stored nothing. The next section adds a stored path, and then the undo becomes a real line of code: <code>path.pop()</code>.</p>
+  </div>
+</section>
+
+<!-- ============================ BUILD THE PATH ============================ -->
+<section id="path">
+  <h2><span class="num">2</span>Variation: also build the path</h2>
+
+  <h3>The question</h3>
+  <p>Same rule, but now return the path itself: the node values from root to leaf, in the order they were visited. We pass a parameter <code>path</code> (a Python list) into the recursion. Every call that is on a promising branch appends its value. Every call that turns out to be a dead end removes its value again before returning. That removal is the backtrack.</p>
+
+<pre><code><span class="k">def</span> leafPath(root, path):
+    <span class="k">if not</span> root <span class="k">or</span> root.val == <span class="s">0</span>:
+        <span class="k">return False</span>
+    path.append(root.val)                <span class="c"># choose: this node is on the path (for now)</span>
+
+    <span class="k">if not</span> root.left <span class="k">and not</span> root.right:
+        <span class="k">return True</span>                      <span class="c"># leaf: keep it in the path, done</span>
+    <span class="k">if</span> leafPath(root.left, path):        <span class="c"># explore left</span>
+        <span class="k">return True</span>
+    <span class="k">if</span> leafPath(root.right, path):       <span class="c"># explore right</span>
+        <span class="k">return True</span>
+    path.pop()                           <span class="c"># un-choose: no valid path goes through here</span>
+    <span class="k">return False</span></code></pre>
+
+  <p>Call it with an empty list: <code>path = []; leafPath(root, path)</code>. When the function returns <code>True</code>, <code>path</code> holds the answer. When it returns <code>False</code>, <code>path</code> is empty again, because every append was matched by a pop.</p>
+
+  <h3>The lesson's example: [4,0,1,null,7,3,2,null,null,null,0]</h3>
+  <p>Root 4. Left child 0 with a right child 7. Right child 1 with children 3 and 2. Node 3 has a right child 0. This tree is chosen so that one branch (through 3) looks promising, gets added to the path, and then must be removed.</p>
+
+  <figure>
+    <svg viewBox="0 0 640 310" role="img" aria-label="Tree with root 4, left child 0 whose right child is 7, right child 1 with children 3 and 2, and 3 has a right child 0. Calls are numbered in visit order: 4, then 0 which fails, then 1, then 3, then 3's null left, then 3's 0 right, then 3 is popped, then 2 which is a leaf. The path 4 to 1 to 2 is orange.">
+      <!-- edges -->
+      <path d="M304,49 L216,101" class="ptr old" marker-end="url(#arrOld)"/>
+      <path d="M336,49 L424,101" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M188,124 L152,166" class="ptr prevp"/>
+      <path d="M212,124 L248,166" class="ptr prevp" marker-end="url(#arr)"/>
+      <path d="M428,124 L392,166" class="ptr old" marker-end="url(#arrOld)"/>
+      <path d="M452,124 L488,166" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M370,195 L340,235" class="ptr old" marker-end="url(#arrOld)"/>
+      <path d="M390,195 L420,235" class="ptr old" marker-end="url(#arrOld)"/>
+      <!-- nodes -->
+      <circle cx="320" cy="40" r="18" class="nd newnd"/><text x="320" y="45" class="t" text-anchor="middle">4</text>
+      <text x="345" y="30" class="t newlab">①</text>
+      <text x="292" y="30" class="t small" text-anchor="end">append 4</text>
+      <circle cx="200" cy="110" r="18" class="nd dim"/><text x="200" y="115" class="t nulltxt" text-anchor="middle">0</text>
+      <text x="225" y="100" class="t newlab">②</text>
+      <text x="170" y="106" class="t small" text-anchor="end">returns False</text>
+      <text x="170" y="122" class="t nulltxt" text-anchor="end" font-size="11">blocked</text>
+      <circle cx="440" cy="110" r="18" class="nd newnd"/><text x="440" y="115" class="t" text-anchor="middle">1</text>
+      <text x="465" y="100" class="t newlab">③</text>
+      <text x="470" y="118" class="t small">append 1</text>
+      <text x="140" y="186" class="t nulltxt" text-anchor="middle">∅</text>
+      <circle cx="260" cy="180" r="18" class="nd dim"/><text x="260" y="185" class="t" text-anchor="middle">7</text>
+      <text x="260" y="215" class="t small" text-anchor="middle">never visited</text>
+      <circle cx="380" cy="180" r="18" class="nd"/><text x="380" y="185" class="t" text-anchor="middle">3</text>
+      <text x="345" y="176" class="t newlab" text-anchor="end">④ ⑦</text>
+      <text x="300" y="178" class="t small" text-anchor="end">append 3, later pop 3</text>
+      <circle cx="500" cy="180" r="18" class="nd newnd"/><text x="500" y="185" class="t" text-anchor="middle">2</text>
+      <text x="525" y="170" class="t newlab">⑧</text>
+      <text x="525" y="188" class="t small">leaf: True</text>
+      <text x="330" y="256" class="t nulltxt" text-anchor="middle">∅</text>
+      <text x="305" y="256" class="t newlab" text-anchor="end">⑤</text>
+      <circle cx="430" cy="250" r="18" class="nd dim"/><text x="430" y="255" class="t nulltxt" text-anchor="middle">0</text>
+      <text x="455" y="240" class="t newlab">⑥</text>
+      <text x="330" y="290" class="t small" text-anchor="middle">⑤ and ⑥ return False, so ⑦ pops 3 and returns False to 1, which tries 2</text>
+    </svg>
+    <figcaption><b>Node 3 is the whole point of this example.</b> It is not 0 and it is not a leaf, so it looks fine and gets appended (④). Only after both of its children fail (⑤ null, ⑥ a 0) do we learn it was a dead end. Step ⑦ pops it. The dashed edges are the branches that were explored and rejected.</figcaption>
+  </figure>
+
+  <h3>The path list, moment by moment</h3>
+  <p>The lesson describes nine steps. Here they are, and under them the exact state of <code>path</code> after each one.</p>
+  <ol class="steps">
+    <li>Add root 4 to the list. <code>path = [4]</code>.</li>
+    <li>Left subtree is invalid (4's left child is 0), so that call returns <code>False</code>. Check the right subtree.</li>
+    <li>1 is valid: add it. <code>path = [4, 1]</code>.</li>
+    <li>3 is valid: add it. <code>path = [4, 1, 3]</code>.</li>
+    <li>3's left child is <code>None</code>: return <code>False</code>.</li>
+    <li>3's right child is 0: base case, return <code>False</code>.</li>
+    <li>Remove 3 from the list (<code>pop</code>). If a valid path went through 3 we would have returned <code>True</code> already. <code>path = [4, 1]</code>.</li>
+    <li>Back up to 3's parent, node 1, and check its right subtree.</li>
+    <li>Add 2. 2 is a leaf, so return <code>True</code>, and the whole function returns <code>True</code>. <code>path = [4, 1, 2]</code>.</li>
+  </ol>
+
+  <figure>
+    <svg viewBox="0 0 660 215" role="img" aria-label="Five snapshots of the path list drawn as a stack. First it holds 4. Then 4 and 1. Then 4, 1 and 3. Then 3 is popped leaving 4 and 1. Then 2 is appended giving 4, 1, 2.">
+      <text x="330" y="18" class="t small" text-anchor="middle">path drawn as a stack: newest value on top. Orange = the cell that changed in this step.</text>
+      <!-- panel 1: [4] -->
+      <rect x="52" y="120" width="56" height="30" class="nd newnd"/><text x="80" y="140" class="t" text-anchor="middle">4</text>
+      <text x="80" y="172" class="t newlab" text-anchor="middle" font-size="12">① append 4</text>
+      <text x="80" y="192" class="t mono" text-anchor="middle">[4]</text>
+      <!-- panel 2: [4,1] -->
+      <rect x="172" y="120" width="56" height="30" class="nd"/><text x="200" y="140" class="t" text-anchor="middle">4</text>
+      <rect x="172" y="90" width="56" height="30" class="nd newnd"/><text x="200" y="110" class="t" text-anchor="middle">1</text>
+      <text x="200" y="172" class="t newlab" text-anchor="middle" font-size="12">③ append 1</text>
+      <text x="200" y="192" class="t mono" text-anchor="middle">[4, 1]</text>
+      <!-- panel 3: [4,1,3] -->
+      <rect x="292" y="120" width="56" height="30" class="nd"/><text x="320" y="140" class="t" text-anchor="middle">4</text>
+      <rect x="292" y="90" width="56" height="30" class="nd"/><text x="320" y="110" class="t" text-anchor="middle">1</text>
+      <rect x="292" y="60" width="56" height="30" class="nd newnd"/><text x="320" y="80" class="t" text-anchor="middle">3</text>
+      <text x="320" y="172" class="t newlab" text-anchor="middle" font-size="12">④ append 3</text>
+      <text x="320" y="192" class="t mono" text-anchor="middle">[4, 1, 3]</text>
+      <!-- panel 4: pop -> [4,1] -->
+      <rect x="412" y="120" width="56" height="30" class="nd"/><text x="440" y="140" class="t" text-anchor="middle">4</text>
+      <rect x="412" y="90" width="56" height="30" class="nd"/><text x="440" y="110" class="t" text-anchor="middle">1</text>
+      <rect x="412" y="60" width="56" height="30" class="nd dim"/><text x="440" y="80" class="t nulltxt" text-anchor="middle">3</text>
+      <path d="M440,52 L440,32" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="440" y="172" class="t newlab" text-anchor="middle" font-size="12">⑦ pop → 3</text>
+      <text x="440" y="192" class="t mono" text-anchor="middle">[4, 1]</text>
+      <!-- panel 5: [4,1,2] -->
+      <rect x="532" y="120" width="56" height="30" class="nd"/><text x="560" y="140" class="t" text-anchor="middle">4</text>
+      <rect x="532" y="90" width="56" height="30" class="nd"/><text x="560" y="110" class="t" text-anchor="middle">1</text>
+      <rect x="532" y="60" width="56" height="30" class="nd newnd"/><text x="560" y="80" class="t" text-anchor="middle">2</text>
+      <text x="560" y="172" class="t newlab" text-anchor="middle" font-size="12">⑨ append 2</text>
+      <text x="560" y="192" class="t mono" text-anchor="middle">[4, 1, 2]</text>
+    </svg>
+    <figcaption><b>The list is a stack.</b> <code>append</code> pushes, <code>pop</code> pops, and only the top ever changes. That is why the same list can be shared by every recursive call: a call only ever removes the value it added itself, because every deeper call has already cleaned up before returning <code>False</code>.</figcaption>
+  </figure>
+
+  <h3>Full trace of <code>leafPath</code> on this tree</h3>
+  <p>Each row is one event inside the recursion. "Path after" is the list at that moment. Read it top to bottom and match the circled numbers with the tree figure above.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Call</th><th>What happens</th><th>Path after</th><th>Returns</th></tr></thead>
+    <tbody>
+      <tr><td>①</td><td><code>leafPath(4)</code></td><td>4 is not 0 → append 4. Not a leaf → call left</td><td><code>[4]</code></td><td>waiting</td></tr>
+      <tr><td>②</td><td><code>leafPath(0)</code></td><td><code>root.val == 0</code> → nothing appended</td><td><code>[4]</code></td><td>False</td></tr>
+      <tr><td>①</td><td><code>leafPath(4)</code></td><td>left False → call right</td><td><code>[4]</code></td><td>waiting</td></tr>
+      <tr><td>③</td><td><code>leafPath(1)</code></td><td>append 1. Not a leaf → call left</td><td><code>[4, 1]</code></td><td>waiting</td></tr>
+      <tr><td>④</td><td><code>leafPath(3)</code></td><td>append 3. Not a leaf → call left</td><td><code>[4, 1, 3]</code></td><td>waiting</td></tr>
+      <tr><td>⑤</td><td><code>leafPath(None)</code></td><td><code>not root</code></td><td><code>[4, 1, 3]</code></td><td>False</td></tr>
+      <tr><td>④</td><td><code>leafPath(3)</code></td><td>left False → call right</td><td><code>[4, 1, 3]</code></td><td>waiting</td></tr>
+      <tr><td>⑥</td><td><code>leafPath(0)</code></td><td><code>root.val == 0</code></td><td><code>[4, 1, 3]</code></td><td>False</td></tr>
+      <tr><td>⑦</td><td><code>leafPath(3)</code></td><td>right False too → <code>path.pop()</code> removes 3</td><td><code>[4, 1]</code></td><td>False</td></tr>
+      <tr><td>③</td><td><code>leafPath(1)</code></td><td>left False → call right</td><td><code>[4, 1]</code></td><td>waiting</td></tr>
+      <tr><td>⑧</td><td><code>leafPath(2)</code></td><td>append 2. No children → leaf</td><td><code>[4, 1, 2]</code></td><td>True</td></tr>
+      <tr><td>③</td><td><code>leafPath(1)</code></td><td>right True → return without popping</td><td><code>[4, 1, 2]</code></td><td>True</td></tr>
+      <tr><td>①</td><td><code>leafPath(4)</code></td><td>right True → return without popping</td><td><code>[4, 1, 2]</code></td><td>True</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>A <code>True</code> return skips the <code>pop</code> on purpose. The values stay in the list all the way up, so when the outermost call returns <code>True</code> the caller finds the full path <code>[4, 1, 2]</code> in the list it passed in. Only a <code>False</code> return cleans up.</p>
+  </div>
+
+  <div class="callout">
+    <span class="lab">Append after the checks, not before</span>
+    <p>The <code>append</code> sits <em>below</em> the <code>if not root or root.val == 0</code> line. If you append first, a 0 node lands in the path and then returns <code>False</code> without popping, and the list is corrupted for every later call. Rule: a call that returns from the base case must not have changed shared state.</p>
+  </div>
+</section>
+
+<!-- ============================ COST ============================ -->
+<section id="cost">
+  <h2><span class="num">3</span>Time and space</h2>
+
+  <h3>Time: O(n)</h3>
+  <p>In the worst case there is no valid path, or the only one is in the last branch, and the recursion visits every node once. Each visit does constant work (a few comparisons, one append, one pop). So the total is O(n), where n is the number of nodes. Nodes below a 0 are skipped, so the real count is often smaller, but Big-O reports the worst case.</p>
+
+  <h3>Space: O(h)</h3>
+  <p>Two things use memory, and both are bounded by the <dfn>height</dfn> h of the tree (the longest root-to-leaf distance). First, the <dfn>call stack</dfn>: recursion goes at most h levels deep, because each call moves one level down. Second, the <code>path</code> list: it holds one value per active call that appended, so it never holds more than h + 1 values at once. The rejected values are popped before the list can grow further.</p>
+
+  <figure>
+    <svg viewBox="0 0 640 200" role="img" aria-label="At the deepest moment of the trace, the call stack holds four frames: leafPath 4, leafPath 1, leafPath 3 and leafPath 0 on top. The path list holds 4, 1, 3. Both are bounded by the height of the tree.">
+      <text x="60" y="30" class="t ptrlab">CALL STACK at step ⑥</text>
+      <rect x="60" y="40" width="170" height="30" class="nd newnd"/><text x="145" y="60" class="t mono" text-anchor="middle">leafPath(0)  ⑥</text>
+      <rect x="60" y="70" width="170" height="30" class="nd"/><text x="145" y="90" class="t mono" text-anchor="middle">leafPath(3)  ④</text>
+      <rect x="60" y="100" width="170" height="30" class="nd"/><text x="145" y="120" class="t mono" text-anchor="middle">leafPath(1)  ③</text>
+      <rect x="60" y="130" width="170" height="30" class="nd"/><text x="145" y="150" class="t mono" text-anchor="middle">leafPath(4)  ①</text>
+      <text x="145" y="185" class="t small" text-anchor="middle">4 frames = height 3, plus 1</text>
+      <text x="360" y="30" class="t ptrlab">PATH LIST at step ⑥</text>
+      <rect x="360" y="85" width="46" height="30" class="nd"/><text x="383" y="105" class="t" text-anchor="middle">4</text>
+      <rect x="406" y="85" width="46" height="30" class="nd"/><text x="429" y="105" class="t" text-anchor="middle">1</text>
+      <rect x="452" y="85" width="46" height="30" class="nd"/><text x="475" y="105" class="t" text-anchor="middle">3</text>
+      <text x="383" y="132" class="t small" text-anchor="middle">0</text>
+      <text x="429" y="132" class="t small" text-anchor="middle">1</text>
+      <text x="475" y="132" class="t small" text-anchor="middle">2</text>
+      <text x="429" y="160" class="t small" text-anchor="middle">3 values: the 0 call appended nothing</text>
+      <text x="429" y="185" class="t small" text-anchor="middle">never more than one value per level</text>
+    </svg>
+    <figcaption><b>Both memory users grow and shrink together.</b> A frame is pushed when a call starts and popped when it returns; a value is appended when a call passes the checks and popped when it fails. Neither can be taller than the tree. For a balanced tree h is about log n; for a chain-shaped tree h is n.</figcaption>
+  </figure>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>If you copy the path when you find an answer (<code>res.append(path[:])</code>, see the Patterns section), each copy costs O(h) extra. That is the price of returning all solutions instead of the first one.</p>
+  </div>
+
+  <p>The lesson closes with this: backtracking is a common pattern and it applies far beyond binary trees. Subsets, permutations, and combinations are the classic examples and they are covered in later lessons and courses. The next section shows that the exact same three lines drive all of them.</p>
+</section>
+
+<!-- ============================ PATTERNS ============================ -->
+<section id="patterns">
+  <h2><span class="num">4</span>Moves that solve most backtracking problems</h2>
+  <p><code>leafPath</code> already contains the whole template. Pull it out and you can reuse it on problems that have nothing to do with trees.</p>
+
+  <h3>Move 1: The universal loop, choose → explore → un-choose</h3>
+  <p>Every backtracking function has the same body. Make a choice and record it. Recurse to explore what follows from that choice. When the recursion returns, undo the choice so the next option starts from a clean state.</p>
+
+  <figure>
+    <svg viewBox="0 0 640 190" role="img" aria-label="Three boxes in a row: choose, explore, un-choose, with arrows between them and a return arrow from un-choose back to choose labeled next option.">
+      <text x="320" y="30" class="t small" text-anchor="middle">one lap = one candidate at this level of the recursion</text>
+      <rect x="40" y="58" width="150" height="56" class="nd newnd"/>
+      <text x="115" y="82" class="t" text-anchor="middle" font-weight="600">1. choose</text>
+      <text x="115" y="102" class="t mono" text-anchor="middle">path.append(v)</text>
+      <path d="M190,86 L243,86" class="ptr" marker-end="url(#arr)"/>
+      <rect x="245" y="58" width="150" height="56" class="nd"/>
+      <text x="320" y="82" class="t" text-anchor="middle" font-weight="600">2. explore</text>
+      <text x="320" y="102" class="t mono" text-anchor="middle">recurse deeper</text>
+      <path d="M395,86 L448,86" class="ptr" marker-end="url(#arr)"/>
+      <rect x="450" y="58" width="150" height="56" class="nd newnd"/>
+      <text x="525" y="82" class="t" text-anchor="middle" font-weight="600">3. un-choose</text>
+      <text x="525" y="102" class="t mono" text-anchor="middle">path.pop()</text>
+      <path d="M525,114 L525,150 L115,150 L115,116" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="320" y="170" class="t newlab" text-anchor="middle" font-size="12">next option at the same fork</text>
+    </svg>
+    <figcaption><b>Orange boxes must be mirror images.</b> Whatever <code>choose</code> changes, <code>un-choose</code> must reverse: an append needs a pop, a <code>used[i] = True</code> needs <code>used[i] = False</code>, a grid cell marked visited must be unmarked. If they do not match, the state leaks into the next lap.</figcaption>
+  </figure>
+
+<pre><code><span class="k">def</span> backtrack_template(candidates):
+    <span class="c"># records every ordered selection of distinct items, to show the shape</span>
+    res, choice = [], []
+
+    <span class="k">def</span> explore():
+        res.append(list(choice))          <span class="c"># record the current state</span>
+        <span class="k">for</span> c <span class="k">in</span> candidates:
+            <span class="k">if</span> c <span class="k">in</span> choice:
+                <span class="k">continue</span>                  <span class="c"># prune: this option is not allowed</span>
+            choice.append(c)              <span class="c"># 1. choose</span>
+            explore()                     <span class="c"># 2. explore</span>
+            choice.pop()                  <span class="c"># 3. un-choose</span>
+    explore()
+    <span class="k">return</span> res
+
+backtrack_template([<span class="s">1</span>, <span class="s">2</span>])   <span class="c"># [[], [1], [1, 2], [2], [2, 1]]</span></code></pre>
+
+  <p><strong>When to use:</strong> the problem says "all", "every", "generate", "enumerate", or asks whether <em>any</em> arrangement satisfies a rule, and the input is small (n ≤ about 20). The three questions to answer before you code: what are the choices at each step, when is a partial state a dead end (prune), and when is a state a complete answer (record it)?</p>
+
+  <h3>Move 2: Subsets (take it or skip it)</h3>
+  <p>For each element you make a two-way choice: include it or not. That gives a binary decision tree with 2<sup>n</sup> leaves, one per subset. There is no dead end here; every leaf is an answer, so no pruning is needed.</p>
+
+<pre><code><span class="k">def</span> subsets(nums):
+    res, cur = [], []
+
+    <span class="k">def</span> dfs(i):
+        <span class="k">if</span> i == len(nums):
+            res.append(cur[:])            <span class="c"># copy! cur keeps changing after this</span>
+            <span class="k">return</span>
+        cur.append(nums[i])               <span class="c"># choose: take nums[i]</span>
+        dfs(i + <span class="s">1</span>)
+        cur.pop()                         <span class="c"># un-choose</span>
+        dfs(i + <span class="s">1</span>)                        <span class="c"># other choice: skip nums[i]</span>
+    dfs(<span class="s">0</span>)
+    <span class="k">return</span> res
+
+subsets([<span class="s">1</span>, <span class="s">2</span>])       <span class="c"># [[1, 2], [1], [2], []]</span>
+len(subsets([<span class="s">1</span>, <span class="s">2</span>, <span class="s">3</span>]))   <span class="c"># 8</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 640 250" role="img" aria-label="Decision tree for subsets of 1 and 2. Root is the empty list. Level one: take 1 gives list 1, skip 1 gives empty list. Level two: from list 1, take 2 gives 1 2 and skip 2 gives 1; from empty, take 2 gives 2 and skip 2 gives empty. The four leaves are the four subsets, visited in order 1 2, then 1, then 2, then empty.">
+      <!-- edges level 1 -->
+      <path d="M320,50 L200,100" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="252" y="72" class="t small" text-anchor="end">append 1</text>
+      <path d="M320,50 L440,100" class="ptr" marker-end="url(#arr)"/>
+      <text x="388" y="72" class="t small">skip 1</text>
+      <!-- edges level 2 -->
+      <path d="M200,130 L140,180" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="162" y="152" class="t small" text-anchor="end">append 2</text>
+      <path d="M200,130 L260,180" class="ptr" marker-end="url(#arr)"/>
+      <text x="238" y="152" class="t small">skip 2</text>
+      <path d="M440,130 L380,180" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="402" y="152" class="t small" text-anchor="end">append 2</text>
+      <path d="M440,130 L500,180" class="ptr" marker-end="url(#arr)"/>
+      <text x="478" y="152" class="t small">skip 2</text>
+      <!-- nodes -->
+      <rect x="288" y="20" width="64" height="30" rx="15" class="nd"/><text x="320" y="40" class="t mono" text-anchor="middle">[ ]</text>
+      <text x="360" y="30" class="t newlab">①</text>
+      <text x="280" y="30" class="t small" text-anchor="end">dfs(0)</text>
+      <rect x="168" y="100" width="64" height="30" rx="15" class="nd"/><text x="200" y="120" class="t mono" text-anchor="middle">[1]</text>
+      <text x="240" y="110" class="t newlab">②</text>
+      <rect x="408" y="100" width="64" height="30" rx="15" class="nd"/><text x="440" y="120" class="t mono" text-anchor="middle">[ ]</text>
+      <text x="480" y="110" class="t newlab">⑤</text>
+      <text x="530" y="120" class="t small">dfs(1)</text>
+      <rect x="108" y="180" width="64" height="30" rx="15" class="nd newnd"/><text x="140" y="200" class="t mono" text-anchor="middle">[1, 2]</text>
+      <rect x="228" y="180" width="64" height="30" rx="15" class="nd newnd"/><text x="260" y="200" class="t mono" text-anchor="middle">[1]</text>
+      <rect x="348" y="180" width="64" height="30" rx="15" class="nd newnd"/><text x="380" y="200" class="t mono" text-anchor="middle">[2]</text>
+      <rect x="468" y="180" width="64" height="30" rx="15" class="nd newnd"/><text x="500" y="200" class="t mono" text-anchor="middle">[ ]</text>
+      <text x="140" y="228" class="t newlab" text-anchor="middle">③</text>
+      <text x="260" y="228" class="t newlab" text-anchor="middle">④</text>
+      <text x="380" y="228" class="t newlab" text-anchor="middle">⑥</text>
+      <text x="500" y="228" class="t newlab" text-anchor="middle">⑦</text>
+      <text x="560" y="200" class="t small">dfs(2)</text>
+      <text x="320" y="246" class="t small" text-anchor="middle">orange edge = append then pop on the way back; orange box = res.append(cur[:])</text>
+    </svg>
+    <figcaption><b>Same shape as the tree maze, but the tree is built by your choices instead of given to you.</b> Depth = index <code>i</code>. Going down the orange edge is <code>cur.append</code>; coming back up it is <code>cur.pop</code>. The DFS reaches the leaves in the order ③④⑥⑦, which is exactly the output order <code>[[1,2],[1],[2],[]]</code>.</figcaption>
+  </figure>
+
+  <p><strong>When to use:</strong> "all subsets", "all combinations of any size", or any problem where each item is independently in or out.</p>
+
+  <h3>Move 3: Permutations (a used array is the choose / un-choose)</h3>
+  <p>Order matters and every element must appear exactly once. At each level try every element that is not used yet. The <code>used</code> list is the state you must undo.</p>
+
+<pre><code><span class="k">def</span> permutations(nums):
+    res, cur, used = [], [], [<span class="k">False</span>] * len(nums)
+
+    <span class="k">def</span> dfs():
+        <span class="k">if</span> len(cur) == len(nums):
+            res.append(cur[:])
+            <span class="k">return</span>
+        <span class="k">for</span> i <span class="k">in</span> range(len(nums)):
+            <span class="k">if</span> used[i]:
+                <span class="k">continue</span>                  <span class="c"># prune: already in cur</span>
+            used[i] = <span class="k">True</span>                <span class="c"># choose</span>
+            cur.append(nums[i])
+            dfs()                         <span class="c"># explore</span>
+            cur.pop()                     <span class="c"># un-choose (both changes!)</span>
+            used[i] = <span class="k">False</span>
+    dfs()
+    <span class="k">return</span> res
+
+permutations([<span class="s">1</span>, <span class="s">2</span>, <span class="s">3</span>])
+<span class="c"># [[1,2,3], [1,3,2], [2,1,3], [2,3,1], [3,1,2], [3,2,1]]</span></code></pre>
+
+  <p><strong>When to use:</strong> "all orderings", "arrangements", or anything where <code>[1,2]</code> and <code>[2,1]</code> count as different answers. n! answers, so n is always small.</p>
+
+  <h3>Move 4: Combinations (a start index stops duplicates)</h3>
+  <p>Choose k numbers out of 1..n where order does not matter. To avoid producing both <code>[1,2]</code> and <code>[2,1]</code>, each call only looks at numbers larger than the last one chosen. That is the <code>start</code> parameter.</p>
+
+<pre><code><span class="k">def</span> combinations(n, k):
+    res, cur = [], []
+
+    <span class="k">def</span> dfs(start):
+        <span class="k">if</span> len(cur) == k:
+            res.append(cur[:])
+            <span class="k">return</span>
+        <span class="k">for</span> i <span class="k">in</span> range(start, n + <span class="s">1</span>):
+            cur.append(i)                 <span class="c"># choose</span>
+            dfs(i + <span class="s">1</span>)                    <span class="c"># explore only larger numbers</span>
+            cur.pop()                     <span class="c"># un-choose</span>
+    dfs(<span class="s">1</span>)
+    <span class="k">return</span> res
+
+combinations(<span class="s">4</span>, <span class="s">2</span>)   <span class="c"># [[1,2], [1,3], [1,4], [2,3], [2,4], [3,4]]</span></code></pre>
+
+  <p><strong>When to use:</strong> "choose k of n", "combination sum", "pick a team". If elements may be reused (Combination Sum), recurse with <code>dfs(i)</code> instead of <code>dfs(i + 1)</code>.</p>
+
+  <h3>Move 5: Collect every path (Path Sum II shape)</h3>
+  <p><code>leafPath</code> stops at the first answer. Interview problems usually want <em>all</em> of them. Two changes: never return early, and record a <em>copy</em> of the path at each leaf. Because nothing returns early, the pop happens on every exit, so the un-choose can move to the end of the function.</p>
+
+<pre><code><span class="k">def</span> allLeafPaths(root):
+    res, path = [], []
+
+    <span class="k">def</span> dfs(node):
+        <span class="k">if not</span> node <span class="k">or</span> node.val == <span class="s">0</span>:
+            <span class="k">return</span>
+        path.append(node.val)             <span class="c"># choose</span>
+        <span class="k">if not</span> node.left <span class="k">and not</span> node.right:
+            res.append(path[:])           <span class="c"># record a copy, keep going</span>
+        <span class="k">else</span>:
+            dfs(node.left)                <span class="c"># explore both, always</span>
+            dfs(node.right)
+        path.pop()                        <span class="c"># un-choose on every exit</span>
+    dfs(root)
+    <span class="k">return</span> res
+
+<span class="c"># tree [1,2,3,4,5,null,6] → [[1,2,4], [1,2,5], [1,3,6]]</span>
+<span class="c"># the lesson's trees → [[4,1,2]]</span></code></pre>
+
+  <h3>Backtracking or dynamic programming?</h3>
+  <p>Both explore choices recursively, so beginners mix them up. The decision comes from what the question asks for.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Question asks for</th><th>Use</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>All solutions, every path, every arrangement, or the actual path itself</td><td>Backtracking</td><td>You must build each answer explicitly; there is no shortcut around listing them.</td></tr>
+      <tr><td>Does <em>any</em> solution exist, with small n</td><td>Backtracking with pruning</td><td>Stop at the first success, like <code>canReachLeaf</code>.</td></tr>
+      <tr><td>A count, a minimum, or a maximum, and the same subproblem shows up many times</td><td>Dynamic programming</td><td>Cache each subproblem once (memoization) instead of re-exploring it. Backtracking would redo the same work exponentially.</td></tr>
+      <tr><td>A count, but the subproblems never repeat</td><td>Backtracking (DFS)</td><td>Nothing to cache; a memo would not help.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Test for repeated subproblems: does the answer for the rest of the input depend only on a small state (index, remaining sum) and not on the exact choices made so far? If yes, DP. If the whole path matters (N-Queens, Sudoku, "print all paths"), backtracking.</p>
+</section>
+
+<!-- ============================ COMPLEXITY ============================ -->
+<section id="complexity">
+  <h2><span class="num">5</span>Big-O summary</h2>
+  <p>For enumeration problems the output itself is huge, so the time is "number of answers × cost to build one". Say that sentence in the interview; it shows you know where the cost comes from.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Function</th><th>Time</th><th>Extra space</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td><code>canReachLeaf</code></td><td class="big fast">O(n)</td><td class="big fast">O(h)</td><td>visits each node at most once; recursion depth = height</td></tr>
+      <tr><td><code>leafPath</code></td><td class="big fast">O(n)</td><td class="big fast">O(h)</td><td>path list never exceeds h + 1 values</td></tr>
+      <tr><td><code>allLeafPaths</code></td><td class="big fast">O(n · h)*</td><td class="big slow">O(L · h)</td><td>L = number of leaves; each copy of a path costs O(h)</td></tr>
+      <tr><td><code>subsets</code></td><td class="big slow">O(n · 2<sup>n</sup>)</td><td class="big fast">O(n)</td><td>2<sup>n</sup> subsets, each copied in O(n); space excludes the output</td></tr>
+      <tr><td><code>permutations</code></td><td class="big slow">O(n · n!)</td><td class="big fast">O(n)</td><td>n! orderings, each of length n</td></tr>
+      <tr><td><code>combinations</code></td><td class="big slow">O(k · C(n, k))</td><td class="big fast">O(k)</td><td>C(n, k) = n! / (k! (n-k)!) answers</td></tr>
+    </tbody>
+  </table></div>
+  <p>The asterisk on <code>allLeafPaths</code>: the visit is O(n), and the O(n · h) is a loose bound for the copying, since a tree has at most n leaves. "Extra space" means the recursion stack and the working list, not the returned answers. Interviewers usually ask "excluding the output"; say which one you mean.</p>
+</section>
+
+<!-- ============================ MISTAKES ============================ -->
+<section id="mistakes">
+  <h2><span class="num">6</span>Mistakes to watch for</h2>
+  <div class="mistake">
+    <div>
+      <div class="bad">Forgetting the pop</div>
+      <p>The path keeps values from failed branches, so the final answer contains ghosts like <code>[4, 1, 3, 2]</code>. Every <code>append</code> in a backtracking function needs a matching <code>pop</code> on the failure path.</p>
+    </div>
+    <div>
+      <div class="bad">Appending before the base-case check</div>
+      <p>If <code>path.append(root.val)</code> comes before <code>if not root or root.val == 0</code>, the code crashes on <code>None</code> and, worse, puts 0 values into the path that are never popped. Check first, then choose.</p>
+    </div>
+    <div>
+      <div class="bad">Storing the list instead of a copy</div>
+      <p><code>res.append(cur)</code> stores a reference to the one shared list. After the recursion finishes, every entry in <code>res</code> is the same empty list. Use <code>cur[:]</code>, <code>list(cur)</code>, or <code>cur.copy()</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Returning early when all answers are needed</div>
+      <p><code>if dfs(left): return True</code> is right for "does a path exist" and wrong for "list every path". For all-answers problems the recursive calls return nothing; you collect into <code>res</code> and let every branch run.</p>
+    </div>
+    <div>
+      <div class="bad">Wrong leaf test</div>
+      <p><code>if not root.left or not root.right</code> treats a node with one child as a leaf. A leaf has <em>no</em> children: <code>not root.left and not root.right</code>. In tree A this bug would make node 0 (with one child 7) look like a leaf.</p>
+    </div>
+    <div>
+      <div class="bad">Mutable default argument</div>
+      <p><code>def leafPath(root, path=[])</code> creates one list that is shared across every call of the function in the whole program. The second time you call it, the old path is still inside. Pass <code>[]</code> explicitly at the call site.</p>
+    </div>
+    <div>
+      <div class="bad">Undoing only half of the choice</div>
+      <p>In <code>permutations</code>, popping <code>cur</code> but leaving <code>used[i] = True</code> means that number is never available again. If <code>choose</code> touches two things, <code>un-choose</code> must touch both, in reverse order.</p>
+    </div>
+    <div>
+      <div class="bad">No start index in combinations</div>
+      <p>Looping from 0 every time produces <code>[1,2]</code> and <code>[2,1]</code> as separate answers. Pass <code>start</code> and loop from it so choices only move forward.</p>
+    </div>
+    <div>
+      <div class="bad">Using backtracking where DP was asked</div>
+      <p>"How many ways" with overlapping subproblems (climbing stairs, coin change count) explodes exponentially without a memo. If you only need a number and the same state repeats, cache it.</p>
+    </div>
+  </div>
+
+  <div class="cheat">
+    <h3>Interview one-liners</h3>
+    <ul>
+      <li>"Backtracking is DFS plus undo: I make a choice, recurse, and remove the choice before trying the next one."</li>
+      <li>"The base cases come first: an empty node or a 0 returns False before anything is added to the path, so a failed call never changes shared state."</li>
+      <li>"A leaf that passed the checks returns True and skips the pop, so the values stay in the list all the way up to the caller."</li>
+      <li>"Time is O(n) because every node is visited at most once; space is O(h) for the recursion stack and the path list."</li>
+      <li>"For all-solutions problems I record a copy, <code>res.append(cur[:])</code>, because the working list keeps changing."</li>
+      <li>"Subsets is take-or-skip, permutations is a <code>used</code> array, combinations is a <code>start</code> index; all three are the same choose-explore-unchoose loop."</li>
+      <li>"If the question wants a count or an optimum and subproblems repeat, I switch to DP with a memo instead of backtracking."</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================ PRACTICE ============================ -->
+<section id="practice">
+  <h2><span class="num">7</span>Practice, in this order</h2>
+  <p>The first three are the lesson's problem in LeetCode clothing. Then the three classic enumerations, then the ones that add pruning and a grid. Do them without notes, then compare with the templates above.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Problem</th><th>Move it trains</th><th>Level</th></tr></thead>
+    <tbody>
+      <tr><td>112</td><td>Path Sum</td><td><code>canReachLeaf</code> with a running sum instead of a 0 check</td><td>Easy</td></tr>
+      <tr><td>257</td><td>Binary Tree Paths</td><td><code>allLeafPaths</code>: append, recurse both sides, pop</td><td>Easy</td></tr>
+      <tr><td>113</td><td>Path Sum II</td><td>collect every path with a copy at each leaf</td><td>Medium</td></tr>
+      <tr><td>78</td><td>Subsets</td><td>take-or-skip decision tree</td><td>Medium</td></tr>
+      <tr><td>77</td><td>Combinations</td><td><code>start</code> index</td><td>Medium</td></tr>
+      <tr><td>46</td><td>Permutations</td><td><code>used</code> array, undo two things</td><td>Medium</td></tr>
+      <tr><td>39</td><td>Combination Sum</td><td><code>start</code> index with reuse (<code>dfs(i)</code>) and a sum prune</td><td>Medium</td></tr>
+      <tr><td>90</td><td>Subsets II</td><td>sort, then skip duplicates at the same level</td><td>Medium</td></tr>
+      <tr><td>40</td><td>Combination Sum II</td><td><code>start</code> index plus duplicate skipping</td><td>Medium</td></tr>
+      <tr><td>17</td><td>Letter Combinations of a Phone Number</td><td>one choice per digit; build a string instead of a list</td><td>Medium</td></tr>
+      <tr><td>79</td><td>Word Search</td><td>backtracking on a grid: mark cell, explore 4 directions, unmark</td><td>Medium</td></tr>
+      <tr><td>51</td><td>N-Queens</td><td>three "used" sets (columns, both diagonals) chosen and un-chosen together</td><td>Hard</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Your next step today:</strong> LeetCode 257. Write <code>allLeafPaths</code> from memory, then change it to return only the first path and check that the pop moves back to the failure branch.</p>
+</section>
+
+<!-- ============================ QUIZ ============================ -->
+<section id="quiz">
+  <h2><span class="num">8</span>Self-check</h2>
+  <p>Answer out loud before opening. If you cannot answer in one breath, reread that section.</p>
+
+  <details><summary><span class="q">Q1</span>In one sentence, what is the difference between plain DFS and backtracking?</summary><div><p>Both go as deep as possible before turning around. Backtracking also keeps a record of the choices made so far and <em>undoes</em> the last choice when a branch fails, so the next branch starts from a clean state.</p></div></details>
+
+  <details><summary><span class="q">Q2</span>What are the three base cases of <code>canReachLeaf</code>, in the order they are checked, and what does each return?</summary><div><p>1. <code>root</code> is <code>None</code> → <code>False</code> (no path). 2. <code>root.val == 0</code> → <code>False</code> (blocked). 3. No left and no right child → <code>True</code> (reached a leaf without a 0). The first two share one <code>if</code> and must come before the leaf check.</p></div></details>
+
+  <details><summary><span class="q">Q3</span>Why does the lesson say "arbitrarily explore the left subtree first"?</summary><div><p>Because either order finds a path if one exists. Left-first is just a convention. If the left returns <code>True</code> we never look at the right; if it returns <code>False</code> we try the right.</p></div></details>
+
+  <details><summary><span class="q">Q4</span>In <code>leafPath</code>, why is <code>path.append(root.val)</code> placed after the <code>0</code> check and not before?</summary><div><p>A call that fails the base case returns <code>False</code> immediately and never reaches the <code>pop</code>. If it had appended first, the 0 would stay in the list forever. Rule: a base-case return must not change shared state.</p></div></details>
+
+  <details><summary><span class="q">Q5</span>Why is there no <code>pop</code> before <code>return True</code>?</summary><div><p>A <code>True</code> means "this node is on the answer path". We want it to stay in the list so that when the outermost call returns, the caller's list holds the full root-to-leaf path. Only failed calls clean up after themselves.</p></div></details>
+
+  <details><summary><span class="q">Q6</span>Trace it: run <code>leafPath</code> on <code>[4,0,1,null,7,3,2,null,null,null,0]</code>. Write the state of <code>path</code> after each append or pop.</summary><div><p><code>[4]</code> (append 4) → <code>[4,1]</code> (append 1; the 0 child appended nothing) → <code>[4,1,3]</code> (append 3) → <code>[4,1]</code> (3's children were None and 0, so pop 3) → <code>[4,1,2]</code> (append 2, a leaf, return True). Final answer <code>[4, 1, 2]</code>.</p></div></details>
+
+  <details><summary><span class="q">Q7</span>Trace it: run <code>leafPath</code> on the tree <code>[1,0,2,null,null,0,0]</code> (root 1, left 0, right 2 whose children are both 0). What is returned and what is in <code>path</code> at the end?</summary><div><p>Append 1 → <code>[1]</code>. Left child is 0 → False. Right child 2: append → <code>[1,2]</code>. Both of 2's children are 0 → both False → pop 2 → <code>[1]</code> → 2 returns False. Back in 1: both False → pop 1 → <code>[]</code> → return False. Result: <code>False</code> and an empty list. Every append was undone.</p></div></details>
+
+  <details><summary><span class="q">Q8</span>State the time and space complexity of <code>leafPath</code> and explain the space part.</summary><div><p>Time O(n): each node is visited at most once. Space O(h): the recursion is at most h levels deep, and the <code>path</code> list holds one value per active call that appended, so at most h + 1 values.</p></div></details>
+
+  <details><summary><span class="q">Q9</span>What are the three lines of the universal backtracking template, and what must be true about the first and third?</summary><div><p>Choose (for example <code>path.append(v)</code>), explore (recurse), un-choose (<code>path.pop()</code>). The third must exactly reverse the first. If choose changes two things, un-choose changes both, in reverse order.</p></div></details>
+
+  <details><summary><span class="q">Q10</span>Why must you write <code>res.append(cur[:])</code> and not <code>res.append(cur)</code> in <code>subsets</code>?</summary><div><p><code>cur</code> is one list that keeps being modified by later appends and pops. Storing it stores a reference; at the end every entry in <code>res</code> would be the same (empty) list. The slice makes a snapshot.</p></div></details>
+
+  <details><summary><span class="q">Q11</span>How do subsets, permutations, and combinations differ in the choices at each level?</summary><div><p>Subsets: two choices per element, take or skip, depth = index. Permutations: choose any not-yet-used element, tracked with a <code>used</code> array. Combinations: choose any element with index ≥ <code>start</code> so that order never repeats.</p></div></details>
+
+  <details><summary><span class="q">Q12</span>A problem asks "how many root-to-leaf paths have sum 22". Another asks "how many ways to climb n stairs with steps of 1 or 2". Which one is backtracking and which is DP, and why?</summary><div><p>Path counting on a tree is backtracking/DFS: each node is visited once and no subproblem repeats. Climbing stairs is DP: the answer for step k is asked again and again by different branches, so a memo turns exponential work into O(n). The rule is: same state reached many times → cache it.</p></div></details>
+</section>
+
+<nav class="pager" aria-label="Previous and next topic">
+  <a class="prev" href="06-trees.html"><small>Previous</small>Trees</a>
+  <a class="next" href="08-heaps.html"><small>Next</small>Heap / Priority Queue</a>
+</nav>
+
+<footer>
+  Source: NeetCode "Algorithms and Data Structures for Beginners", lesson 22 (Backtracking, Tree Maze). All Python in these notes was run and tested. Orange in every diagram marks the path found or the value that changed.
+</footer>
+</div>
+</body>
+</html>

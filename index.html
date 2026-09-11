@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DSA Field Notes</title>
+<meta name="description" content="Visual study notes for the NeetCode DSA for Beginners course: 12 topics, 34 lessons, pointer-level diagrams, tested Python, Big-O tables, mistakes, practice lists and self-check quizzes.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arr"/></marker>
+    <marker id="arrNew" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrNew"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="site-head">
+  <a class="brand" href="index.html">DSA <span>Field Notes</span></a>
+  <div class="crumbs"><span>NeetCode · Algorithms and Data Structures for Beginners</span></div>
+</header>
+
+<header class="top">
+  <div class="eyebrow">12 topics · 34 lessons · Python</div>
+  <h1>DSA Field Notes</h1>
+  <p class="lede">Study notes for the NeetCode beginner course. Every topic page shows the mechanism in diagrams (orange marks what changed), gives Python that was actually run, and ends with a mistakes list, a practice order, and a self-check quiz. Read a page after the videos, then close it and solve.</p>
+</header>
+
+<section id="map" style="padding-top:24px">
+  <h2>Course map</h2>
+  <p>Topics build on each other in this order. Each card names the NeetCode lessons it covers.</p>
+
+  <div class="topic-grid">
+    <a class="topic-card" href="topics/01-arrays.html"><div class="n">01 · LESSONS 1-4</div><h3>Arrays</h3><p>RAM, static and dynamic arrays, amortized O(1), stacks.</p><div class="lessons">RAM · Static Arrays · Dynamic Arrays · Stacks</div></a>
+    <a class="topic-card" href="topics/02-linked-lists.html"><div class="n">02 · LESSONS 5-7</div><h3>Linked Lists</h3><p>Nodes and pointers, head/tail, doubly linked, queues.</p><div class="lessons">Singly · Doubly · Queues</div></a>
+    <a class="topic-card" href="topics/03-recursion.html"><div class="n">03 · LESSONS 8-9</div><h3>Recursion</h3><p>Base case, call stack, one-branch and two-branch trees.</p><div class="lessons">Factorial · Fibonacci</div></a>
+    <a class="topic-card" href="topics/04-sorting.html"><div class="n">04 · LESSONS 10-13</div><h3>Sorting</h3><p>Insertion, merge, quick, bucket. Stability and O(n log n).</p><div class="lessons">Insertion · Merge · Quick · Bucket</div></a>
+    <a class="topic-card" href="topics/05-binary-search.html"><div class="n">05 · LESSONS 14-15</div><h3>Binary Search</h3><p>Halve the search space: on an array, on a range, on the answer.</p><div class="lessons">Search Array · Search Range</div></a>
+    <a class="topic-card" href="topics/06-trees.html"><div class="n">06 · LESSONS 16-21</div><h3>Trees</h3><p>Binary trees, BSTs, insert/remove, DFS orders, BFS, tree sets and maps.</p><div class="lessons">Binary Tree · BST · Insert/Remove · DFS · BFS · Sets and Maps</div></a>
+    <a class="topic-card" href="topics/07-backtracking.html"><div class="n">07 · LESSON 22</div><h3>Backtracking</h3><p>Choose, explore, un-choose. Tree maze and path building.</p><div class="lessons">Tree Maze</div></a>
+    <a class="topic-card" href="topics/08-heaps.html"><div class="n">08 · LESSONS 23-25</div><h3>Heap / Priority Queue</h3><p>Complete tree in an array, push, pop, heapify in O(n), heapq.</p><div class="lessons">Properties · Push and Pop · Heapify</div></a>
+    <a class="topic-card" href="topics/09-hashing.html"><div class="n">09 · LESSONS 26-27</div><h3>Hashing</h3><p>Hash maps and sets, hash functions, resizing, collisions.</p><div class="lessons">Hash Usage · Hash Implementation</div></a>
+    <a class="topic-card" href="topics/10-graphs.html"><div class="n">10 · LESSONS 28-31</div><h3>Graphs</h3><p>Matrix, adjacency matrix, adjacency list. DFS and BFS on both.</p><div class="lessons">Intro · Matrix DFS · Matrix BFS · Adjacency List</div></a>
+    <a class="topic-card" href="topics/11-dynamic-programming.html"><div class="n">11 · LESSONS 32-33</div><h3>Dynamic Programming</h3><p>Memoization and tabulation: fibonacci, unique paths.</p><div class="lessons">1-D DP · 2-D DP</div></a>
+    <a class="topic-card" href="topics/12-bit-manipulation.html"><div class="n">12 · LESSON 34</div><h3>Bit Manipulation</h3><p>AND, OR, XOR, NOT, shifts, counting bits, masks.</p><div class="lessons">Bit Operations</div></a>
+  </div>
+</section>
+
+<section id="how">
+  <h2>How to use a page</h2>
+  <figure>
+    <svg viewBox="0 0 660 120" role="img" aria-label="Four steps in a row: watch the NeetCode lesson, read the topic page once, close it and solve the practice list, then take the self-check quiz.">
+      <rect x="10" y="30" width="140" height="56" rx="8" class="nd"/><text x="80" y="54" class="t" text-anchor="middle">1. Watch</text><text x="80" y="72" class="t small" text-anchor="middle">the NeetCode lesson</text>
+      <path d="M152,58 L178,58" class="ptr" marker-end="url(#arr)"/>
+      <rect x="180" y="30" width="140" height="56" rx="8" class="nd"/><text x="250" y="54" class="t" text-anchor="middle">2. Read</text><text x="250" y="72" class="t small" text-anchor="middle">the page once, slowly</text>
+      <path d="M322,58 L348,58" class="ptr" marker-end="url(#arr)"/>
+      <rect x="350" y="30" width="140" height="56" rx="8" class="nd newnd"/><text x="420" y="54" class="t" text-anchor="middle">3. Solve</text><text x="420" y="72" class="t small" text-anchor="middle">notes closed</text>
+      <path d="M492,58 L518,58" class="ptr" marker-end="url(#arr)"/>
+      <rect x="520" y="30" width="130" height="56" rx="8" class="nd"/><text x="585" y="54" class="t" text-anchor="middle">4. Self-check</text><text x="585" y="72" class="t small" text-anchor="middle">answer out loud</text>
+      <text x="330" y="108" class="t small" text-anchor="middle">step 3 is the one that builds skill; the pages exist to make step 3 possible</text>
+    </svg>
+    <figcaption><b>Notes are for after the video, not instead of practice.</b> Each page ends with "Your next step today": one problem. Do that one before reading the next topic.</figcaption>
+  </figure>
+
+  <div class="callout keep">
+    <span class="lab">Reading the diagrams</span>
+    <p>Teal = a pointer or link that already existed. <strong>Orange = what changed in this step.</strong> Dashed grey = the old link that was replaced. Faded = never visited or no longer reachable. Red ∅ = None.</p>
+  </div>
+</section>
+
+<section id="about">
+  <h2>What is on every page</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Section</th><th>What it gives you</th></tr></thead>
+    <tbody>
+      <tr><td>Why</td><td>A real-world analogy, then the technical idea, then one diagram of the core mechanism.</td></tr>
+      <tr><td>One section per lesson</td><td>Every fact, example array and code snippet from the NeetCode lesson, with trace tables and diagrams.</td></tr>
+      <tr><td>Patterns</td><td>The 2-4 "moves" interviews test on this topic, each with a tested Python template.</td></tr>
+      <tr><td>Big-O</td><td>One table; green is good, red is bad; every asterisk explained.</td></tr>
+      <tr><td>Mistakes</td><td>The bugs beginners actually write, with the fix, plus one-liners to say out loud in interviews.</td></tr>
+      <tr><td>Practice</td><td>8-12 LeetCode problems in order, each tagged with the move it trains.</td></tr>
+      <tr><td>Self-check</td><td>10-13 questions with hidden answers, including trace-it questions.</td></tr>
+    </tbody>
+  </table></div>
+  <p>All Python on these pages was executed before publishing; the check scripts live in the <code>checks/</code> folder of the repository. Content follows the NeetCode "Algorithms and Data Structures for Beginners" course; the diagrams, trace tables, patterns, mistakes and quizzes are original study material.</p>
+</section>
+
+<footer>
+  DSA Field Notes · built by Krushal Kalkani with Claude · source course: <a href="https://neetcode.io/courses/dsa-for-beginners/0">NeetCode DSA for Beginners</a>
+</footer>
+</div>
+</body>
+</html>

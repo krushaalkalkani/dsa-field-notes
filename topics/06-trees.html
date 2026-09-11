@@ -1,0 +1,1188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trees · DSA Field Notes</title>
+<meta name="description" content="Binary trees, binary search trees, BST insert and remove, depth-first and breadth-first search, tree sets and maps - diagrams, trace tables, tested Python, Big-O, mistakes, practice, self-check.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arr"/></marker>
+    <marker id="arrNew" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrNew"/></marker>
+    <marker id="arrOld" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrOld"/></marker>
+    <marker id="arrCur" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrCur"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="site-head">
+  <a class="brand" href="../index.html">DSA <span>Field Notes</span></a>
+  <div class="crumbs"><a href="../index.html">Course map</a> <span>/</span> <span>06 Trees</span></div>
+</header>
+<header class="top">
+  <div class="eyebrow">NeetCode · DSA for Beginners · Lessons 16-21</div>
+  <h1>Trees Field Notes</h1>
+  <p class="lede">Binary trees, binary search trees, insert and remove, the three depth-first orders, breadth-first search, and tree-backed sets and maps. Every diagram uses the same two trees as the NeetCode videos, so you can trace along.</p>
+</header>
+
+<nav class="sections" aria-label="Sections">
+  <a href="#why">Why</a>
+  <a href="#binary">Binary trees</a>
+  <a href="#bst">BST</a>
+  <a href="#insert">Insert / remove</a>
+  <a href="#dfs">DFS</a>
+  <a href="#bfs">BFS</a>
+  <a href="#setsmaps">Sets &amp; maps</a>
+  <a href="#patterns">Patterns</a>
+  <a href="#complexity">Big-O</a>
+  <a href="#mistakes">Mistakes</a>
+  <a href="#practice">Practice</a>
+  <a href="#quiz">Self-check</a>
+</nav>
+
+<!-- ============================ WHY ============================ -->
+<section id="why">
+  <h2><span class="num">0</span>Why trees exist</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>Think of the folders on your laptop. <strong>Home</strong> contains <strong>Photos</strong> and <strong>Work</strong>. <strong>Photos</strong> contains <strong>Trip</strong>. Every folder has exactly one parent, and you can only go down from a folder into its children. A <strong>binary tree</strong> is the same picture with one rule added: each folder may hold at most two subfolders.</p>
+  </div>
+
+  <p>A linked list is a chain: one node, then the next, then the next. A <dfn>tree</dfn> is the same idea, nodes and pointers, but each node can point to more than one node below it. That single change gives you a <dfn>hierarchy</dfn> (levels of parents and children), and, when the values are kept in order, a structure you can search in O(log n) while still inserting and deleting in O(log n). A sorted array cannot do the second part.</p>
+
+  <figure>
+    <svg viewBox="0 0 660 180" role="img" aria-label="A linked list chains nodes forward with next; a binary tree points down with left and right from a root node.">
+<text x="20" y="22" class="t ptrlab" text-anchor="start">LINKED LIST: next points forward</text>
+<rect x="30" y="40" width="70" height="40" class="nd"/><line x1="75" y1="40" x2="75" y2="80" class="cell"/>
+<text x="52" y="65" class="t" text-anchor="middle">1</text>
+<circle cx="87" cy="60" r="3.5" class="dot"/><path d="M87,60 L128,60" class="ptr" marker-end="url(#arr)"/>
+<rect x="130" y="40" width="70" height="40" class="nd"/><line x1="175" y1="40" x2="175" y2="80" class="cell"/>
+<text x="152" y="65" class="t" text-anchor="middle">2</text>
+<circle cx="187" cy="60" r="3.5" class="dot"/><path d="M187,60 L228,60" class="ptr" marker-end="url(#arr)"/>
+<rect x="230" y="40" width="70" height="40" class="nd"/><line x1="275" y1="40" x2="275" y2="80" class="cell"/>
+<text x="252" y="65" class="t" text-anchor="middle">3</text>
+<text x="287" y="65" class="t nulltxt" text-anchor="middle">∅</text>
+<text x="380" y="22" class="t ptrlab" text-anchor="start">BINARY TREE: pointers go down</text>
+<path d="M507.3,72.7 L464.1,115.9" class="ptr" marker-end="url(#arr)"/>
+<path d="M532.7,72.7 L575.9,115.9" class="ptr" marker-end="url(#arr)"/>
+<circle cx="520" cy="60" r="18" class="nd"/><text x="520" y="65" class="t" text-anchor="middle">4</text>
+<circle cx="450" cy="130" r="18" class="nd"/><text x="450" y="135" class="t" text-anchor="middle">3</text>
+<circle cx="590" cy="130" r="18" class="nd"/><text x="590" y="135" class="t" text-anchor="middle">6</text>
+<text x="520" y="20" class="t small" text-anchor="middle"></text>
+<text x="520" y="34" class="t small" text-anchor="middle">root</text>
+<text x="450" y="160" class="t small" text-anchor="middle">leaf</text>
+<text x="590" y="160" class="t small" text-anchor="middle">leaf</text>
+    </svg>
+    <figcaption><b>Same parts as a linked list, pointing down instead of forward.</b> A linked list node has one <code>next</code>. A binary tree node has <code>left</code> and <code>right</code>. The arrows only go down, so from the top node you can reach everything, and you can never walk in a circle.</figcaption>
+  </figure>
+
+  <p>Six lessons, one page. Lesson 16 is vocabulary. Lesson 17 adds the sorted rule (a BST). Lesson 18 changes the tree. Lessons 19 and 20 walk the whole tree in two different orders. Lesson 21 uses a BST to build a sorted set and a sorted map.</p>
+</section>
+
+<!-- ============================ 1 BINARY TREES ============================ -->
+<section id="binary">
+  <h2><span class="num">1</span>Binary trees</h2>
+
+  <h3>The node: one value, two pointers</h3>
+  <p>Like linked lists, binary trees are built from nodes and pointers. A linked list node points to the <em>next</em> node. A binary tree node has at most two pointers, called the <dfn>left child</dfn> and the <dfn>right child</dfn>. The first node, the one at the top, is the <dfn>root</dfn>. NeetCode draws the pointers going downward, and so does every diagram here.</p>
+
+<pre><code><span class="k">class</span> ListNode:                 <span class="c"># from the linked list lessons</span>
+    <span class="k">def</span> __init__(self, val):
+        self.val = val
+        self.next = <span class="k">None</span>
+
+<span class="k">class</span> TreeNode:
+    <span class="k">def</span> __init__(self, val):
+        self.val = val
+        self.left = <span class="k">None</span>          <span class="c"># left child, or None</span>
+        self.right = <span class="k">None</span>         <span class="c"># right child, or None</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 640 206" role="img" aria-label="A TreeNode has a val, a left pointer and a right pointer; each pointer holds another TreeNode or None.">
+<rect x="200" y="30" width="240" height="56" class="nd"/>
+<line x1="270" y1="30" x2="270" y2="86" class="cell"/><line x1="370" y1="30" x2="370" y2="86" class="cell"/>
+<text x="320" y="63" class="t" text-anchor="middle" font-size="15">4</text>
+<circle cx="235" cy="58" r="4" class="dot"/><circle cx="405" cy="58" r="4" class="dot"/>
+<text x="235" y="20" class="t small" text-anchor="middle">left</text>
+<text x="320" y="20" class="t small" text-anchor="middle">val</text>
+<text x="405" y="20" class="t small" text-anchor="middle">right</text>
+<path d="M235,62 L150,130" class="ptr" marker-end="url(#arr)"/><path d="M405,62 L490,130" class="ptr" marker-end="url(#arr)"/>
+<circle cx="140" cy="150" r="18" class="nd"/><text x="140" y="155" class="t" text-anchor="middle">3</text>
+<circle cx="500" cy="150" r="18" class="nd"/><text x="500" y="155" class="t" text-anchor="middle">6</text>
+<text x="140" y="186" class="t small" text-anchor="middle">left child (a TreeNode)</text>
+<text x="500" y="186" class="t small" text-anchor="middle">right child (a TreeNode)</text>
+<text x="320" y="196" class="t small" text-anchor="middle">each pointer holds a TreeNode object, or None</text>
+    </svg>
+    <figcaption><b>The only new thing is a second pointer.</b> Everything you learned about <code>next</code> (it holds a node object or <code>None</code>, you must check for <code>None</code> before you use it) applies to <code>left</code> and <code>right</code>. The nodes below a node are called its <dfn>children</dfn>; the node above is its <dfn>parent</dfn>.</figcaption>
+  </figure>
+
+  <h3>Building a tree by hand</h3>
+  <p>Create the nodes, then attach them. This is the tree NeetCode uses for the BST search lesson: root 2, left child 1, right child 3, and 4 under 3 on the right.</p>
+
+<pre><code>root = TreeNode(2)
+root.left = TreeNode(1)
+root.right = TreeNode(3)
+root.right.right = TreeNode(4)    <span class="c"># 4 is the right child of 3</span></code></pre>
+
+  <p>LeetCode and NeetCode describe a tree as a list, level by level, left to right, with <code>null</code> for a missing child. This tree is <code>[2,1,3,null,null,null,4]</code>: level 1 is <code>2</code>; level 2 is <code>1, 3</code>; level 3 is the children of 1 (<code>null, null</code>) then the children of 3 (<code>null, 4</code>). Trailing nulls are dropped. A small helper turns that list into real nodes so you can test locally.</p>
+
+<pre><code><span class="k">from</span> collections <span class="k">import</span> deque
+
+<span class="k">def</span> build_tree(values):
+    <span class="s">"""[2,1,3,None,None,None,4] -&gt; root of that tree (LeetCode format)."""</span>
+    <span class="k">if not</span> values <span class="k">or</span> values[0] <span class="k">is None</span>:
+        <span class="k">return None</span>
+    root = TreeNode(values[0])
+    queue = deque([root])
+    i = 1
+    <span class="k">while</span> queue <span class="k">and</span> i &lt; len(values):
+        node = queue.popleft()
+        <span class="k">if</span> i &lt; len(values) <span class="k">and</span> values[i] <span class="k">is not None</span>:
+            node.left = TreeNode(values[i])
+            queue.append(node.left)
+        i += 1
+        <span class="k">if</span> i &lt; len(values) <span class="k">and</span> values[i] <span class="k">is not None</span>:
+            node.right = TreeNode(values[i])
+            queue.append(node.right)
+        i += 1
+    <span class="k">return</span> root</code></pre>
+
+  <h3>Leaves, and why one always exists</h3>
+  <p>A node with no children is a <dfn>leaf</dfn>. A node with even one child, left or right, is a <dfn>non-leaf</dfn> node. Unlike a linked list, tree pointers go only one way, down, and cycles are not allowed. Mathematically a binary tree is a <dfn>connected, undirected graph with no cycles</dfn>: every node is reachable, and there is no way to walk back to where you started. Because there are no cycles, walking down must end somewhere, so a leaf node is always guaranteed to exist.</p>
+
+  <h3>The words interviewers use</h3>
+  <p>Lesson 16 is mostly definitions, but every tree question is asked in these words, so they must be automatic.</p>
+
+  <figure>
+    <svg viewBox="0 0 660 230" role="img" aria-label="A binary tree labeled with root, leaves, depth of each node, and the height measured in nodes or edges.">
+<path d="M244.8,49.7 L166.9,99.3" class="ptr" marker-end="url(#arr)"/>
+<path d="M275.2,49.7 L353.1,99.3" class="ptr" marker-end="url(#arr)"/>
+<path d="M358.9,124.2 L327.4,164.3" class="ptr" marker-end="url(#arr)"/>
+<path d="M381.1,124.2 L412.6,164.3" class="ptr" marker-end="url(#arr)"/>
+<circle cx="260" cy="40" r="18" class="nd"/><text x="260" y="45" class="t" text-anchor="middle">2</text>
+<text x="286" y="45" class="t newlab" text-anchor="start" font-size="12">root · depth 1</text>
+<circle cx="150" cy="110" r="18" class="nd"/><text x="150" y="115" class="t" text-anchor="middle">1</text>
+<text x="124" y="115" class="t newlab" text-anchor="end" font-size="12">leaf · depth 2</text>
+<circle cx="370" cy="110" r="18" class="nd"/><text x="370" y="115" class="t" text-anchor="middle">3</text>
+<text x="396" y="115" class="t newlab" text-anchor="start" font-size="12">depth 2</text>
+<circle cx="315.0" cy="180" r="18" class="nd"/><text x="315.0" y="185" class="t" text-anchor="middle">4</text>
+<text x="289.0" y="185" class="t newlab" text-anchor="end" font-size="12">depth 3</text>
+<circle cx="425.0" cy="180" r="18" class="nd"/><text x="425.0" y="185" class="t" text-anchor="middle">5</text>
+<text x="451.0" y="185" class="t newlab" text-anchor="start" font-size="12">leaf</text>
+<path d="M505,40 L505,180" class="cur"/><path d="M497,40 L513,40" class="cur"/><path d="M497,180 L513,180" class="cur"/>
+<text x="520" y="100" class="t small" text-anchor="start">height = 3 nodes</text>
+<text x="520" y="116" class="t small" text-anchor="start">(or 2 edges)</text>
+<text x="520" y="140" class="t small" text-anchor="start">edges = n - 1 = 4</text>
+<text x="260" y="215" class="t small" text-anchor="middle">2 is an ancestor of every node; 4 and 5 are descendants of 3 and of 2</text>
+    </svg>
+    <figcaption><b>Height counts down from the root, depth counts up from a node.</b> The height of this tree is 3 if you count nodes on the longest root-to-leaf path, or 2 if you count the edges between them. The depth of node 4 is 3: the nodes above it, including itself. Note that 1 is a leaf on depth 2, so leaves are not only on the last level.</figcaption>
+  </figure>
+
+  <ul>
+    <li><strong>Root node:</strong> the highest node; it has no parent, and every node is reachable from it.</li>
+    <li><strong>Leaf nodes:</strong> nodes with no children. Nodes on the last level are guaranteed to be leaves, but leaves can sit on other levels too (node 1 above).</li>
+    <li><strong>Children:</strong> a node's left child and right child.</li>
+    <li><strong>Height:</strong> measured from the root down to the lowest leaf. A single-node tree has height 1 if you count nodes, or 0 if you count edges. When counting edges, height = n - 1 where n is the number of nodes on the path from the root to the lowest leaf. Ask which one a problem wants; LeetCode 104 counts nodes.</li>
+    <li><strong>Depth:</strong> measured from a node up to the root. The root has depth 1, and depth grows as you go down. Depth of a node = how many nodes are above it, itself included.</li>
+    <li><strong>Ancestor:</strong> a node connected to all the nodes below it. The root is an ancestor of every node.</li>
+    <li><strong>Descendant:</strong> a child of the node, or a child of some other descendant of the node. Everything below.</li>
+    <li><strong>Number of edges:</strong> always n - 1 for n nodes, because every node except the root has exactly one pointer coming into it.</li>
+  </ul>
+
+<pre><code><span class="k">def</span> height_nodes(root):             <span class="c"># count nodes on the longest path</span>
+    <span class="k">if not</span> root:
+        <span class="k">return</span> 0
+    <span class="k">return</span> 1 + max(height_nodes(root.left), height_nodes(root.right))
+
+<span class="k">def</span> height_edges(root):             <span class="c"># count edges: one less than nodes</span>
+    <span class="k">if not</span> root:
+        <span class="k">return</span> -1                     <span class="c"># so a single node gives 1 + (-1) = 0</span>
+    <span class="k">return</span> 1 + max(height_edges(root.left), height_edges(root.right))
+
+<span class="k">def</span> count_nodes(root):
+    <span class="k">if not</span> root:
+        <span class="k">return</span> 0
+    <span class="k">return</span> 1 + count_nodes(root.left) + count_nodes(root.right)
+
+<span class="c"># for [2,1,3,None,None,None,4]:  height_nodes = 3,  height_edges = 2,</span>
+<span class="c">#                                 count_nodes = 4,  edges = 4 - 1 = 3</span></code></pre>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>Every tree function starts with the same line: <code>if not root: return &lt;something small&gt;</code>. That line handles the empty tree, and it also handles every missing child, because <code>root.left</code> of a leaf is <code>None</code>. Forget it and you get <code>AttributeError: 'NoneType' object has no attribute 'left'</code>.</p>
+  </div>
+</section>
+
+<!-- ============================ 2 BST ============================ -->
+<section id="bst">
+  <h2><span class="num">2</span>Binary search trees</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>A dictionary. You open it in the middle. If your word comes earlier in the alphabet, you ignore the whole right half and never look at it again. A BST stores that "left is smaller, right is bigger" rule inside the structure itself, so every step throws away half of what is left.</p>
+  </div>
+
+  <h3>Binary tree vs BST</h3>
+  <p>A <dfn>binary search tree</dfn> (BST) is a binary tree with a <strong>sorted property</strong>: every node in the left subtree is smaller than the root, and every node in the right subtree is greater than the root. The property is <strong>recursive</strong>: it applies at every node, not only at the top. Node 6 below has 5 on its left and 7 on its right, for the same reason. A BST is the tree version of a sorted array.</p>
+
+  <figure>
+    <svg viewBox="0 0 640 262" role="img" aria-label="In a binary search tree every value in the left subtree is smaller than the node and every value in the right subtree is larger, at every node.">
+<rect x="150" y="90" width="150" height="120" rx="10" class="mem"/>
+<rect x="340" y="90" width="150" height="120" rx="10" class="mem"/>
+<path d="M304.5,49.1 L217.3,99.9" class="ptr" marker-end="url(#arr)"/>
+<path d="M335.5,49.1 L422.7,99.9" class="ptr" marker-end="url(#arr)"/>
+<path d="M188.3,123.7 L153.0,164.8" class="ptr" marker-end="url(#arr)"/>
+<path d="M428.3,123.7 L393.0,164.8" class="ptr" marker-end="url(#arr)"/>
+<path d="M451.7,123.7 L487.0,164.8" class="ptr" marker-end="url(#arr)"/>
+<circle cx="320" cy="40" r="18" class="nd"/><text x="320" y="45" class="t" text-anchor="middle">4</text>
+<circle cx="200" cy="110" r="18" class="nd"/><text x="200" y="115" class="t" text-anchor="middle">3</text>
+<circle cx="140.0" cy="180" r="18" class="nd"/><text x="140.0" y="185" class="t" text-anchor="middle">2</text>
+<circle cx="440" cy="110" r="18" class="nd"/><text x="440" y="115" class="t" text-anchor="middle">6</text>
+<circle cx="380.0" cy="180" r="18" class="nd"/><text x="380.0" y="185" class="t" text-anchor="middle">5</text>
+<circle cx="500.0" cy="180" r="18" class="nd"/><text x="500.0" y="185" class="t" text-anchor="middle">7</text>
+<text x="225" y="225" class="t ptrlab" text-anchor="middle">everything here < 4</text>
+<text x="415" y="225" class="t ptrlab" text-anchor="middle">everything here > 4</text>
+<text x="320" y="250" class="t small" text-anchor="middle">and the same rule holds again inside each subtree: 2 < 3, and 5 < 6 < 7</text>
+    </svg>
+    <figcaption><b>Everything left of a node is smaller, everything right is bigger, at every node.</b> "Everything" means the whole subtree, not only the direct child. That is what lets a search skip an entire subtree: if the target is bigger than 4, none of 3 or 2 can be the answer.</figcaption>
+  </figure>
+
+  <h3>Why a BST instead of a sorted array?</h3>
+  <p>Both give you search in O(log n). The difference is what happens when the data changes. Inserting into a sorted array means shifting everything after the new spot, O(n). Inserting into a balanced BST is a walk down the tree plus one pointer change, O(log n). Same for deletion. So BSTs are often preferred when you must search <em>and</em> keep adding and removing.</p>
+
+  <h3>BST search</h3>
+  <p>Trees are recursive (a subtree is a smaller tree), so we search with recursion. The tree is <code>[2,1,3,null,null,null,4]</code> and the target is 3. Same idea as binary search: target smaller than the current node, go left; target bigger, go right. Reach the target node: return True. Reach <code>None</code>: return False.</p>
+
+<pre><code><span class="k">def</span> search(root, target):
+    <span class="k">if not</span> root:
+        <span class="k">return False</span>
+
+    <span class="k">if</span> target &gt; root.val:
+        <span class="k">return</span> search(root.right, target)
+    <span class="k">elif</span> target &lt; root.val:
+        <span class="k">return</span> search(root.left, target)
+    <span class="k">else</span>:
+        <span class="k">return True</span></code></pre>
+
+  <ol>
+    <li><code>None</code> node: return False. The target is not in this subtree. <strong>Base case.</strong></li>
+    <li>Target greater than the current value: search the right subtree.</li>
+    <li>Target smaller than the current value: search the left subtree.</li>
+    <li>Target equals the current value: return True. <strong>Base case.</strong></li>
+  </ol>
+  <p>In steps 2 and 3 the recursive call's return value <em>is</em> the current call's return value. There is nothing to do after the call returns, so you write <code>return search(...)</code> and let the answer flow straight back up.</p>
+
+  <figure>
+    <svg viewBox="0 0 640 255" role="img" aria-label="Searching for 3 in the BST 2,1,3,4: compare at 2, go right, find 3; node 1 and node 4 are never visited.">
+<path d="M284.8,49.7 L206.9,99.3" class="ptr prevp" marker-end="url(#arr)"/>
+<path d="M315.2,49.7 L393.1,99.3" class="ptr newp" marker-end="url(#arrNew)"/>
+<path d="M421.1,124.2 L452.6,164.3" class="ptr prevp" marker-end="url(#arr)"/>
+<circle cx="300" cy="40" r="18" class="nd"/><text x="300" y="45" class="t" text-anchor="middle">2</text>
+<circle cx="190" cy="110" r="18" class="nd dim"/><text x="190" y="115" class="t" text-anchor="middle">1</text>
+<circle cx="410" cy="110" r="18" class="nd"/><text x="410" y="115" class="t" text-anchor="middle">3</text>
+<circle cx="465.0" cy="180" r="18" class="nd dim"/><text x="465.0" y="185" class="t" text-anchor="middle">4</text>
+<text x="326" y="45" class="t newlab" text-anchor="start" font-size="12">① 3 > 2 → go right</text>
+<text x="436" y="115" class="t newlab" text-anchor="start" font-size="12">② 3 == 3 → True</text>
+<text x="190" y="150" class="t small" text-anchor="middle">never visited</text>
+<text x="520" y="220" class="t small" text-anchor="middle">never visited</text>
+<text x="300" y="240" class="t small" text-anchor="middle">search(root, 3): two comparisons, half the tree skipped</text>
+    </svg>
+    <figcaption><b>Two calls, and the left half was never touched.</b> At the root, 3 is bigger than 2, so the left subtree is eliminated in one comparison. Orange is the path the search took. Dimmed nodes were never visited.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Call</th><th><code>root.val</code></th><th>Compare</th><th>Action</th><th>Returns</th></tr></thead>
+    <tbody>
+      <tr><td><code>search(2, 3)</code></td><td>2</td><td>3 &gt; 2</td><td><code>return search(root.right, 3)</code> - root.right is node 3</td><td>whatever the next call returns</td></tr>
+      <tr><td><code>search(3, 3)</code></td><td>3</td><td>3 == 3</td><td>found</td><td><code>True</code></td></tr>
+      <tr><td>unwind</td><td>-</td><td>-</td><td><code>True</code> flows back to <code>search(2, 3)</code>, which returns it</td><td><code>True</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <p>The same walk without recursion. Interviewers like this version because it uses no call stack.</p>
+
+<pre><code><span class="k">def</span> search_iter(root, target):
+    cur = root
+    <span class="k">while</span> cur:
+        <span class="k">if</span> target &gt; cur.val:
+            cur = cur.right
+        <span class="k">elif</span> target &lt; cur.val:
+            cur = cur.left
+        <span class="k">else</span>:
+            <span class="k">return True</span>
+    <span class="k">return False</span></code></pre>
+
+  <h3>Time: O(log n) if balanced, O(n) if skewed</h3>
+  <p>A tree is <dfn>balanced</dfn> when, at every node, the height of the left subtree equals the height of the right subtree, or differs by 1. In a balanced tree each comparison throws away about half of the remaining nodes, exactly the reasoning from binary search and merge sort, so search takes O(log n) steps.</p>
+  <p>The worst case is a <dfn>skewed</dfn> tree, where every node has only one child and the height equals the number of nodes. Then the search walks a straight line: O(n). A skewed tree is a linked list wearing a tree costume.</p>
+
+  <figure>
+    <svg viewBox="0 0 660 275" role="img" aria-label="The same seven values as a balanced tree of height 3 and as a right-skewed chain of height 7.">
+<text x="160" y="20" class="t ptrlab" text-anchor="middle">BALANCED · height 3 · search O(log n)</text>
+<path d="M145.6,50.8 L96.0,88.0" class="ptr" marker-end="url(#arr)"/>
+<path d="M174.4,50.8 L224.0,88.0" class="ptr" marker-end="url(#arr)"/>
+<path d="M70.0,115.0 L51.1,143.4" class="ptr" marker-end="url(#arr)"/>
+<path d="M90.0,115.0 L108.9,143.4" class="ptr" marker-end="url(#arr)"/>
+<path d="M230.0,115.0 L211.1,143.4" class="ptr" marker-end="url(#arr)"/>
+<path d="M250.0,115.0 L268.9,143.4" class="ptr" marker-end="url(#arr)"/>
+<circle cx="160" cy="40" r="18" class="nd"/><text x="160" y="45" class="t" text-anchor="middle">4</text>
+<circle cx="80" cy="100" r="18" class="nd"/><text x="80" y="105" class="t" text-anchor="middle">2</text>
+<circle cx="40.0" cy="160" r="18" class="nd"/><text x="40.0" y="165" class="t" text-anchor="middle">1</text>
+<circle cx="120.0" cy="160" r="18" class="nd"/><text x="120.0" y="165" class="t" text-anchor="middle">3</text>
+<circle cx="240" cy="100" r="18" class="nd"/><text x="240" y="105" class="t" text-anchor="middle">6</text>
+<circle cx="200.0" cy="160" r="18" class="nd"/><text x="200.0" y="165" class="t" text-anchor="middle">5</text>
+<circle cx="280.0" cy="160" r="18" class="nd"/><text x="280.0" y="165" class="t" text-anchor="middle">7</text>
+<text x="510" y="20" class="t nulltxt" text-anchor="middle">SKEWED · height 7 · search O(n)</text>
+<path d="M413.5,52.0 L421.1,58.7" class="ptr" marker-end="url(#arr)"/>
+<path d="M449.5,84.0 L457.1,90.7" class="ptr" marker-end="url(#arr)"/>
+<path d="M485.5,116.0 L493.1,122.7" class="ptr" marker-end="url(#arr)"/>
+<path d="M521.5,148.0 L529.1,154.7" class="ptr" marker-end="url(#arr)"/>
+<path d="M557.5,180.0 L565.1,186.7" class="ptr" marker-end="url(#arr)"/>
+<path d="M593.5,212.0 L601.1,218.7" class="ptr" marker-end="url(#arr)"/>
+<circle cx="400" cy="40" r="18" class="nd"/><text x="400" y="45" class="t" text-anchor="middle">1</text>
+<circle cx="436" cy="72" r="18" class="nd"/><text x="436" y="77" class="t" text-anchor="middle">2</text>
+<circle cx="472" cy="104" r="18" class="nd"/><text x="472" y="109" class="t" text-anchor="middle">3</text>
+<circle cx="508" cy="136" r="18" class="nd"/><text x="508" y="141" class="t" text-anchor="middle">4</text>
+<circle cx="544" cy="168" r="18" class="nd"/><text x="544" y="173" class="t" text-anchor="middle">5</text>
+<circle cx="580" cy="200" r="18" class="nd"/><text x="580" y="205" class="t" text-anchor="middle">6</text>
+<circle cx="616" cy="232" r="18" class="nd"/><text x="616" y="237" class="t" text-anchor="middle">7</text>
+<text x="400" y="262" class="t small" text-anchor="start">same 7 values, inserted in sorted order</text>
+    </svg>
+    <figcaption><b>Same seven values, two very different trees.</b> Insert order decides the shape. Sorted input into a plain BST gives the worst case. Self-balancing trees (AVL, red-black) fix this automatically; they are not in this course, but you should say the phrase "assuming the tree is balanced" whenever you claim O(log n).</figcaption>
+  </figure>
+</section>
+
+<!-- ============================ 3 INSERT / REMOVE ============================ -->
+<section id="insert">
+  <h2><span class="num">3</span>Insert and remove in a BST</h2>
+
+  <p>The main benefit of a BST over a sorted array is here: insertion and removal in O(log n), assuming the tree is balanced. Both are "search for the spot, then change one or two pointers".</p>
+
+  <h3>Insertion: walk down, attach a leaf</h3>
+  <p>Traverse to find the right position, then insert while keeping the sorted property. Start with the BST <code>[4]</code> and insert 6. Two results are valid: <code>[4,null,6]</code> (6 as the right child of 4) or <code>[6,4,null]</code> (6 as the new root with 4 on its left). The first one adds 6 as a <strong>leaf</strong>, which is easier, and it is what the code does. Then insert 5 into <code>[4,null,6]</code>: 5 is bigger than 4, so go right; 5 is smaller than 6, so go left; that spot is empty, so 5 becomes the left child of 6, giving <code>[4,null,6,5,null]</code>.</p>
+
+  <figure>
+    <svg viewBox="0 0 660 252" role="img" aria-label="Inserting 6 and then 5 into the BST that starts with only 4: each new value is attached where the walk reaches None.">
+<circle cx="90" cy="50" r="18" class="nd"/><text x="90" y="55" class="t" text-anchor="middle">4</text>
+<text x="90" y="200" class="t small" text-anchor="middle" font-size="11">start: [4]</text>
+<text x="90" y="214" class="t small" text-anchor="middle" font-size="11"></text>
+<path d="M311.5,63.8 L337.2,94.6" class="ptr newp" marker-end="url(#arrNew)"/>
+<circle cx="300" cy="50" r="18" class="nd"/><text x="300" y="55" class="t" text-anchor="middle">4</text>
+<circle cx="350" cy="110" r="18" class="nd newnd"/><text x="350" y="115" class="t" text-anchor="middle">6</text>
+<text x="300" y="200" class="t small" text-anchor="middle" font-size="11">① insert 6: 6 > 4 → right</text>
+<text x="300" y="214" class="t small" text-anchor="middle" font-size="11">slot is None → attach</text>
+<path d="M531.5,63.8 L557.2,94.6" class="ptr" marker-end="url(#arr)"/>
+<path d="M563.1,126.6 L552.7,151.5" class="ptr newp" marker-end="url(#arrNew)"/>
+<circle cx="520" cy="50" r="18" class="nd"/><text x="520" y="55" class="t" text-anchor="middle">4</text>
+<circle cx="570" cy="110" r="18" class="nd"/><text x="570" y="115" class="t" text-anchor="middle">6</text>
+<circle cx="545.0" cy="170" r="18" class="nd newnd"/><text x="545.0" y="175" class="t" text-anchor="middle">5</text>
+<text x="520" y="200" class="t small" text-anchor="middle" font-size="11">② insert 5: 5 > 4 → right</text>
+<text x="520" y="214" class="t small" text-anchor="middle" font-size="11">5 < 6 → left slot → attach</text>
+<text x="330" y="240" class="t small" text-anchor="middle">result: [4, None, 6, 5, None] - the tree only ever grows at a None slot</text>
+    </svg>
+    <figcaption><b>A new value always lands where the walk hits <code>None</code>.</b> Step ① finds the empty right slot of 4. Step ② finds the empty left slot of 6. No existing node moves; the tree only grows at the bottom.</figcaption>
+  </figure>
+
+<pre><code><span class="c"># Insert a new node and return the root of the BST.</span>
+<span class="k">def</span> insert(root, val):
+    <span class="k">if not</span> root:
+        <span class="k">return</span> TreeNode(val)
+
+    <span class="k">if</span> val &gt; root.val:
+        root.right = insert(root.right, val)
+    <span class="k">elif</span> val &lt; root.val:
+        root.left = insert(root.left, val)
+    <span class="k">return</span> root</code></pre>
+
+  <ul>
+    <li>Current node is <code>None</code>: return a brand new node holding <code>val</code>. <strong>This is the line that adds the node.</strong></li>
+    <li><code>val</code> greater than the current value: recurse on the right child. Smaller: recurse on the left child.</li>
+    <li>Return the current node after the recursive call. The return value of each recursive call is <strong>assigned to</strong> <code>root.left</code> or <code>root.right</code>. That assignment is how the tree structure is maintained: the parent re-attaches whatever the child call hands back, which is either the same child or a brand new node.</li>
+  </ul>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Call</th><th>Compare</th><th>Does</th><th>Returns</th></tr></thead>
+    <tbody>
+      <tr><td><code>insert(4, 5)</code></td><td>5 &gt; 4</td><td><code>root.right = insert(6, 5)</code></td><td>node 4 (unchanged root)</td></tr>
+      <tr><td><code>insert(6, 5)</code></td><td>5 &lt; 6</td><td><code>root.left = insert(None, 5)</code></td><td>node 6</td></tr>
+      <tr><td><code>insert(None, 5)</code></td><td>base case</td><td>creates <code>TreeNode(5)</code></td><td>new node 5</td></tr>
+      <tr><td>unwind</td><td>-</td><td><code>6.left = node 5</code>, then <code>4.right = node 6</code> (same node as before)</td><td>root 4, now <code>[4,null,6,5]</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <p>Time is O(log n) when balanced: we walk until we reach a leaf, so the number of visited nodes is proportional to the height. Equal values are ignored by this code (neither branch fires, the node is returned unchanged), which is what a set wants. NeetCode's video: "6 is greater than the root 4, so it goes in the right subtree. 5 is greater than 4 but less than 6, so it goes in the left subtree of the tree rooted at 6."</p>
+
+  <h3>Removal: two cases</h3>
+  <p>Removing is harder because the node may have children that must stay in the tree. Count the target's children.</p>
+  <p><strong>Case 1: the target has 0 or 1 child.</strong> Delete node 2, which has no children: the left pointer of 3 now points to <code>None</code>. Delete node 3, which has one child: the left pointer of the root now points to 2 instead of 3. The child moves up into the hole. Nothing else changes.</p>
+  <p><strong>Case 2: the target has 2 children.</strong> Delete node 6. You cannot point 4 at both 5 and 7. Instead, replace 6 with its <dfn>in-order successor</dfn>: the left-most node in the right subtree of the target, which is the smallest node among all nodes greater than the target. Here that is 7. Copy 7 into the target node, then remove the original 7 from the right subtree (it is a leaf, so that is case 1). Every node left of the new 7 is smaller than it and every node right of it is bigger, so the tree stays a valid BST.</p>
+
+  <figure>
+    <svg viewBox="0 0 800 268" role="img" aria-label="Three removal cases on the BST 4,3,6,2,5,7: deleting leaf 2, deleting 3 which has one child, and deleting 6 which has two children and is replaced by its in-order successor 7.">
+<path d="M106.3,51.7 L65.2,87.0" class="ptr" marker-end="url(#arr)"/>
+<path d="M133.7,51.7 L174.8,87.0" class="ptr" marker-end="url(#arr)"/>
+<path d="M40.9,115.5 L25.1,142.7" class="ptr old" marker-end="url(#arrOld)"/>
+<path d="M180.9,115.5 L165.1,142.7" class="ptr" marker-end="url(#arr)"/>
+<path d="M199.1,115.5 L214.9,142.7" class="ptr" marker-end="url(#arr)"/>
+<circle cx="120" cy="40" r="18" class="nd"/><text x="120" y="45" class="t" text-anchor="middle">4</text>
+<circle cx="50" cy="100" r="18" class="nd"/><text x="50" y="105" class="t" text-anchor="middle">3</text>
+<circle cx="15.0" cy="160" r="18" class="nd dim"/><text x="15.0" y="165" class="t" text-anchor="middle">2</text>
+<circle cx="190" cy="100" r="18" class="nd"/><text x="190" y="105" class="t" text-anchor="middle">6</text>
+<circle cx="155.0" cy="160" r="18" class="nd"/><text x="155.0" y="165" class="t" text-anchor="middle">5</text>
+<circle cx="225.0" cy="160" r="18" class="nd"/><text x="225.0" y="165" class="t" text-anchor="middle">7</text>
+<text x="120" y="240" class="t small" text-anchor="middle">delete 2 (leaf):</text>
+<text x="120" y="255" class="t newlab" text-anchor="middle" font-size="11">3.left = None</text>
+<path d="M376.3,51.7 L335.2,87.0" class="ptr newp" marker-end="url(#arrNew)"/>
+<path d="M403.7,51.7 L444.8,87.0" class="ptr" marker-end="url(#arr)"/>
+<path d="M450.9,115.5 L435.1,142.7" class="ptr" marker-end="url(#arr)"/>
+<path d="M469.1,115.5 L484.9,142.7" class="ptr" marker-end="url(#arr)"/>
+<circle cx="390" cy="40" r="18" class="nd"/><text x="390" y="45" class="t" text-anchor="middle">4</text>
+<circle cx="320" cy="100" r="18" class="nd newnd"/><text x="320" y="105" class="t" text-anchor="middle">2</text>
+<circle cx="460" cy="100" r="18" class="nd"/><text x="460" y="105" class="t" text-anchor="middle">6</text>
+<circle cx="425.0" cy="160" r="18" class="nd"/><text x="425.0" y="165" class="t" text-anchor="middle">5</text>
+<circle cx="495.0" cy="160" r="18" class="nd"/><text x="495.0" y="165" class="t" text-anchor="middle">7</text>
+<circle cx="300" cy="40" r="18" class="nd dim"/><text x="300" y="45" class="t" text-anchor="middle">3</text>
+<text x="300" y="70" class="t small" text-anchor="middle" font-size="11">3 gone</text>
+<text x="390" y="240" class="t small" text-anchor="middle">delete 3 (one child):</text>
+<text x="390" y="255" class="t newlab" text-anchor="middle" font-size="11">4.left = 2 (child moves up)</text>
+<path d="M636.3,51.7 L595.2,87.0" class="ptr" marker-end="url(#arr)"/>
+<path d="M663.7,51.7 L704.8,87.0" class="ptr" marker-end="url(#arr)"/>
+<path d="M570.9,115.5 L555.1,142.7" class="ptr" marker-end="url(#arr)"/>
+<path d="M710.9,115.5 L695.1,142.7" class="ptr" marker-end="url(#arr)"/>
+<circle cx="650" cy="40" r="18" class="nd"/><text x="650" y="45" class="t" text-anchor="middle">4</text>
+<circle cx="580" cy="100" r="18" class="nd"/><text x="580" y="105" class="t" text-anchor="middle">3</text>
+<circle cx="545.0" cy="160" r="18" class="nd"/><text x="545.0" y="165" class="t" text-anchor="middle">2</text>
+<circle cx="720" cy="100" r="18" class="nd newnd"/><text x="720" y="105" class="t" text-anchor="middle">7</text>
+<circle cx="685.0" cy="160" r="18" class="nd"/><text x="685.0" y="165" class="t" text-anchor="middle">5</text>
+<circle cx="755" cy="160" r="18" class="nd dim"/><text x="755" y="165" class="t" text-anchor="middle">7</text>
+<text x="755" y="190" class="t small" text-anchor="middle" font-size="11">old 7 gone</text>
+<text x="650" y="240" class="t small" text-anchor="middle">delete 6 (two children):</text>
+<text x="650" y="255" class="t newlab" text-anchor="middle" font-size="11">copy successor 7 up, remove old 7</text>
+    </svg>
+    <figcaption><b>Zero or one child: re-point the parent. Two children: copy the successor up, then delete the successor.</b> The in-order successor is found by stepping once to the right and then left as far as possible. Using the in-order predecessor (right-most node of the left subtree) also works; NeetCode uses the successor.</figcaption>
+  </figure>
+
+<pre><code><span class="c"># Return the minimum value node of the BST.</span>
+<span class="k">def</span> minValueNode(root):
+    curr = root
+    <span class="k">while</span> curr <span class="k">and</span> curr.left:
+        curr = curr.left
+    <span class="k">return</span> curr
+
+<span class="c"># Remove a node and return the root of the BST.</span>
+<span class="k">def</span> remove(root, val):
+    <span class="k">if not</span> root:
+        <span class="k">return None</span>
+
+    <span class="k">if</span> val &gt; root.val:
+        root.right = remove(root.right, val)
+    <span class="k">elif</span> val &lt; root.val:
+        root.left = remove(root.left, val)
+    <span class="k">else</span>:                                       <span class="c"># found the node to delete</span>
+        <span class="k">if not</span> root.left:
+            <span class="k">return</span> root.right                   <span class="c"># 0 or 1 child: hand the other side up</span>
+        <span class="k">elif not</span> root.right:
+            <span class="k">return</span> root.left
+        <span class="k">else</span>:                                   <span class="c"># 2 children</span>
+            minNode = minValueNode(root.right)   <span class="c"># in-order successor</span>
+            root.val = minNode.val               <span class="c"># copy it up</span>
+            root.right = remove(root.right, minNode.val)   <span class="c"># delete the copy below</span>
+    <span class="k">return</span> root</code></pre>
+
+  <p>Read the middle branch slowly. <code>if not root.left: return root.right</code> covers two situations at once: no children at all (then <code>root.right</code> is <code>None</code>, and the parent's pointer becomes <code>None</code>), and only a right child (the parent's pointer becomes that child). The parent re-attaches whatever is returned, the same trick as in <code>insert</code>.</p>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Call</th><th>Branch</th><th>Does</th><th>Returns</th></tr></thead>
+    <tbody>
+      <tr><td><code>remove(4, 6)</code></td><td>6 &gt; 4</td><td><code>root.right = remove(6, 6)</code></td><td>node 4</td></tr>
+      <tr><td><code>remove(6, 6)</code></td><td>found, two children</td><td><code>minValueNode(7)</code> gives 7; <code>root.val = 7</code>; <code>root.right = remove(7, 7)</code></td><td>the node, now holding 7</td></tr>
+      <tr><td><code>remove(7, 7)</code></td><td>found, no left child</td><td><code>return root.right</code>, which is <code>None</code></td><td><code>None</code></td></tr>
+      <tr><td>unwind</td><td>-</td><td>node(7).right = None; 4.right = node(7)</td><td>root 4, now <code>[4,3,7,2,null,5]</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Time and space</h3>
+  <p>Time is proportional to the height, essentially a binary search down the tree: O(log n) balanced, O(n) worst case (unbalanced). Space is the recursion: the number of recursive calls on the stack is also proportional to the height, so O(log n) best, O(n) worst.</p>
+
+  <div class="callout">
+    <span class="lab">The line people forget</span>
+    <p><code>root.right = remove(root.right, minNode.val)</code>. After copying the successor's value up, the successor still exists lower in the tree. If you skip this line the value appears twice and the tree is no longer a set. The recursive call is safe because the successor has no left child, so it is always case 1.</p>
+  </div>
+</section>
+
+<!-- ============================ 4 DFS ============================ -->
+<section id="dfs">
+  <h2><span class="num">4</span>Depth-first search</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>Exploring a cave with one rule: always take the left tunnel until it dead-ends, then walk back to the last fork and take the right tunnel. You go as deep as possible before you back up. That is depth-first.</p>
+  </div>
+
+  <p><dfn>DFS</dfn> is one of the most common interview algorithms. It is used to traverse trees and graphs; here, trees. To traverse an entire tree we must visit every node. DFS picks a direction, say left, and keeps following pointers as far down-left as possible until it hits <code>None</code>. Then it <dfn>backtracks</dfn> (returns to the parent) and goes right. Repeat until every node has been visited. "Go as deep as possible before backtracking."</p>
+  <p>There are three DFS orders, named after <em>when the parent is visited</em> relative to its children: <strong>inorder</strong>, <strong>preorder</strong>, <strong>postorder</strong>. All three are best written with recursion; each can also be written with an explicit stack (section 7). The tree for this lesson is <code>[4,3,6,2,null,5,7]</code>: root 4, left child 3 with left child 2, right child 6 with children 5 and 7.</p>
+
+  <figure>
+    <svg viewBox="0 0 770 228" role="img" aria-label="The same tree traversed inorder, preorder and postorder; the orange numbers show the order each node is printed.">
+<text x="125" y="20" class="t ptrlab" text-anchor="middle" font-size="11">INORDER  left, node, right</text>
+<path d="M111.7,62.1 L73.8,96.5" class="ptr" marker-end="url(#arr)"/>
+<path d="M138.3,62.1 L176.2,96.5" class="ptr" marker-end="url(#arr)"/>
+<path d="M50.3,125.8 L35.6,152.5" class="ptr" marker-end="url(#arr)"/>
+<path d="M182.3,125.8 L167.6,152.5" class="ptr" marker-end="url(#arr)"/>
+<path d="M199.7,125.8 L214.4,152.5" class="ptr" marker-end="url(#arr)"/>
+<circle cx="125" cy="50" r="18" class="nd"/><text x="125" y="55" class="t" text-anchor="middle">4</text>
+<circle cx="59" cy="110" r="18" class="nd"/><text x="59" y="115" class="t" text-anchor="middle">3</text>
+<circle cx="26.0" cy="170" r="18" class="nd"/><text x="26.0" y="175" class="t" text-anchor="middle">2</text>
+<circle cx="191" cy="110" r="18" class="nd"/><text x="191" y="115" class="t" text-anchor="middle">6</text>
+<circle cx="158.0" cy="170" r="18" class="nd"/><text x="158.0" y="175" class="t" text-anchor="middle">5</text>
+<circle cx="224.0" cy="170" r="18" class="nd"/><text x="224.0" y="175" class="t" text-anchor="middle">7</text>
+<text x="48.0" y="156" class="t newlab" text-anchor="start" font-size="12">1</text>
+<text x="81" y="96" class="t newlab" text-anchor="start" font-size="12">2</text>
+<text x="147" y="36" class="t newlab" text-anchor="start" font-size="12">3</text>
+<text x="180.0" y="156" class="t newlab" text-anchor="start" font-size="12">4</text>
+<text x="213" y="96" class="t newlab" text-anchor="start" font-size="12">5</text>
+<text x="246.0" y="156" class="t newlab" text-anchor="start" font-size="12">6</text>
+<text x="125" y="215" class="t small" text-anchor="middle" font-size="11">prints 2, 3, 4, 5, 6, 7</text>
+<text x="380" y="20" class="t ptrlab" text-anchor="middle" font-size="11">PREORDER  node, left, right</text>
+<path d="M366.7,62.1 L328.8,96.5" class="ptr" marker-end="url(#arr)"/>
+<path d="M393.3,62.1 L431.2,96.5" class="ptr" marker-end="url(#arr)"/>
+<path d="M305.3,125.8 L290.6,152.5" class="ptr" marker-end="url(#arr)"/>
+<path d="M437.3,125.8 L422.6,152.5" class="ptr" marker-end="url(#arr)"/>
+<path d="M454.7,125.8 L469.4,152.5" class="ptr" marker-end="url(#arr)"/>
+<circle cx="380" cy="50" r="18" class="nd"/><text x="380" y="55" class="t" text-anchor="middle">4</text>
+<circle cx="314" cy="110" r="18" class="nd"/><text x="314" y="115" class="t" text-anchor="middle">3</text>
+<circle cx="281.0" cy="170" r="18" class="nd"/><text x="281.0" y="175" class="t" text-anchor="middle">2</text>
+<circle cx="446" cy="110" r="18" class="nd"/><text x="446" y="115" class="t" text-anchor="middle">6</text>
+<circle cx="413.0" cy="170" r="18" class="nd"/><text x="413.0" y="175" class="t" text-anchor="middle">5</text>
+<circle cx="479.0" cy="170" r="18" class="nd"/><text x="479.0" y="175" class="t" text-anchor="middle">7</text>
+<text x="402" y="36" class="t newlab" text-anchor="start" font-size="12">1</text>
+<text x="336" y="96" class="t newlab" text-anchor="start" font-size="12">2</text>
+<text x="303.0" y="156" class="t newlab" text-anchor="start" font-size="12">3</text>
+<text x="468" y="96" class="t newlab" text-anchor="start" font-size="12">4</text>
+<text x="435.0" y="156" class="t newlab" text-anchor="start" font-size="12">5</text>
+<text x="501.0" y="156" class="t newlab" text-anchor="start" font-size="12">6</text>
+<text x="380" y="215" class="t small" text-anchor="middle" font-size="11">prints 4, 3, 2, 6, 5, 7</text>
+<text x="635" y="20" class="t ptrlab" text-anchor="middle" font-size="11">POSTORDER  left, right, node</text>
+<path d="M621.7,62.1 L583.8,96.5" class="ptr" marker-end="url(#arr)"/>
+<path d="M648.3,62.1 L686.2,96.5" class="ptr" marker-end="url(#arr)"/>
+<path d="M560.3,125.8 L545.6,152.5" class="ptr" marker-end="url(#arr)"/>
+<path d="M692.3,125.8 L677.6,152.5" class="ptr" marker-end="url(#arr)"/>
+<path d="M709.7,125.8 L724.4,152.5" class="ptr" marker-end="url(#arr)"/>
+<circle cx="635" cy="50" r="18" class="nd"/><text x="635" y="55" class="t" text-anchor="middle">4</text>
+<circle cx="569" cy="110" r="18" class="nd"/><text x="569" y="115" class="t" text-anchor="middle">3</text>
+<circle cx="536.0" cy="170" r="18" class="nd"/><text x="536.0" y="175" class="t" text-anchor="middle">2</text>
+<circle cx="701" cy="110" r="18" class="nd"/><text x="701" y="115" class="t" text-anchor="middle">6</text>
+<circle cx="668.0" cy="170" r="18" class="nd"/><text x="668.0" y="175" class="t" text-anchor="middle">5</text>
+<circle cx="734.0" cy="170" r="18" class="nd"/><text x="734.0" y="175" class="t" text-anchor="middle">7</text>
+<text x="558.0" y="156" class="t newlab" text-anchor="start" font-size="12">1</text>
+<text x="591" y="96" class="t newlab" text-anchor="start" font-size="12">2</text>
+<text x="690.0" y="156" class="t newlab" text-anchor="start" font-size="12">3</text>
+<text x="756.0" y="156" class="t newlab" text-anchor="start" font-size="12">4</text>
+<text x="723" y="96" class="t newlab" text-anchor="start" font-size="12">5</text>
+<text x="657" y="36" class="t newlab" text-anchor="start" font-size="12">6</text>
+<text x="635" y="215" class="t small" text-anchor="middle" font-size="11">prints 2, 3, 5, 7, 6, 4</text>
+    </svg>
+    <figcaption><b>Same tree, same left-first walk, three answers.</b> The only thing that changes between the three functions is where the <code>print</code> line sits: between the two recursive calls (inorder), before them (preorder), or after them (postorder). The orange numbers are the print order.</figcaption>
+  </figure>
+
+  <h3>Inorder: left subtree, then the node, then right subtree</h3>
+<pre><code><span class="k">def</span> inorder(root):
+    <span class="k">if not</span> root:
+        <span class="k">return</span>
+    inorder(root.left)
+    print(root.val)
+    inorder(root.right)</code></pre>
+  <p>Visit order: <code>[2, 3, 4, 5, 6, 7]</code>, which is sorted. Inorder prints sorted order <strong>only if the tree is a BST</strong>. All values to the left are smaller, so we hit the base case at the left-most (smallest) node first, print it, then its parent, then the parent's right subtree, and so on. Run the same function on a non-BST with the same shape, like <code>[1,2,3]</code>, and you get <code>[2, 1, 3]</code>.</p>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Step</th><th>Call stack (deepest on the right)</th><th>What happens</th><th>Printed so far</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>in(4)</td><td>call <code>inorder(4.left)</code></td><td>-</td></tr>
+      <tr><td>2</td><td>in(4) &gt; in(3)</td><td>call <code>inorder(3.left)</code></td><td>-</td></tr>
+      <tr><td>3</td><td>in(4) &gt; in(3) &gt; in(2)</td><td>call <code>inorder(2.left)</code></td><td>-</td></tr>
+      <tr><td>4</td><td>in(4) &gt; in(3) &gt; in(2) &gt; in(None)</td><td>base case, return</td><td>-</td></tr>
+      <tr><td>5</td><td>in(4) &gt; in(3) &gt; in(2)</td><td>print 2; call <code>inorder(2.right)</code> = None, returns; in(2) done</td><td>2</td></tr>
+      <tr><td>6</td><td>in(4) &gt; in(3)</td><td>print 3; call <code>inorder(3.right)</code> = None, returns; in(3) done</td><td>2 3</td></tr>
+      <tr><td>7</td><td>in(4)</td><td>print 4; call <code>inorder(4.right)</code></td><td>2 3 4</td></tr>
+      <tr><td>8</td><td>in(4) &gt; in(6) &gt; in(5) &gt; in(None)</td><td>slide down-left to 5, hit None, return</td><td>2 3 4</td></tr>
+      <tr><td>9</td><td>in(4) &gt; in(6) &gt; in(5)</td><td>print 5; right is None; in(5) done</td><td>2 3 4 5</td></tr>
+      <tr><td>10</td><td>in(4) &gt; in(6)</td><td>print 6; call <code>inorder(6.right)</code></td><td>2 3 4 5 6</td></tr>
+      <tr><td>11</td><td>in(4) &gt; in(6) &gt; in(7)</td><td>left None; print 7; right None; in(7) done</td><td>2 3 4 5 6 7</td></tr>
+      <tr><td>12</td><td>(empty)</td><td>in(6) returns, in(4) returns. Done.</td><td>2 3 4 5 6 7</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Preorder: the node first, then left subtree, then right subtree</h3>
+<pre><code><span class="k">def</span> preorder(root):
+    <span class="k">if not</span> root:
+        <span class="k">return</span>
+    print(root.val)
+    preorder(root.left)
+    preorder(root.right)</code></pre>
+  <p>Visit order: <code>[4, 3, 2, 6, 5, 7]</code>. The root always comes out first. Preorder is the order you would use to copy a tree or serialize it, because you see each parent before its children.</p>
+
+  <h3>Postorder: left subtree, right subtree, the node last</h3>
+<pre><code><span class="k">def</span> postorder(root):
+    <span class="k">if not</span> root:
+        <span class="k">return</span>
+    postorder(root.left)
+    postorder(root.right)
+    print(root.val)</code></pre>
+  <p>Visit order: <code>[2, 3, 5, 7, 6, 4]</code>. The root always comes out last. Postorder is the order for "finish the children, then use their results", such as computing a height or deleting a tree from the bottom.</p>
+
+  <h3>Time and space (all three)</h3>
+  <p>Time O(n): every node is visited exactly once, regardless of the height. Note: an inorder traversal of a BST builds a sorted array, which is the cheap way to get "all values in order" out of a BST. Space O(h) where h is the height, because that is how deep the call stack gets: O(log n) for a balanced tree, O(n) for a skewed one.</p>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>In an interview you usually collect instead of print. Pass a list down, or use a nested helper: <code>def dfs(node): if not node: return; dfs(node.left); out.append(node.val); dfs(node.right)</code>. The order rule is identical.</p>
+  </div>
+</section>
+
+<!-- ============================ 5 BFS ============================ -->
+<section id="bfs">
+  <h2><span class="num">5</span>Breadth-first search</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>Reading a family tree out loud: first the grandparent, then all the parents, then all the grandchildren. You finish one generation before you say a single name from the next one. That is breadth-first.</p>
+  </div>
+
+  <p>DFS prioritizes depth. <dfn>BFS</dfn> prioritizes breadth: visit all nodes on one level before moving to the next. For trees BFS is also called <dfn>level-order traversal</dfn>.</p>
+
+  <h3>Implementation: a queue, level by level</h3>
+  <p>BFS is written iteratively. We need a data structure that lets us finish a whole level before starting the next. That is a queue, specifically a <code>deque</code>, because it removes from the head and appends to the tail in O(1). Append children to the tail, remove parents from the head, and each level comes out left to right.</p>
+
+<pre><code><span class="k">from</span> collections <span class="k">import</span> deque
+
+<span class="k">def</span> bfs(root):
+    queue = deque()
+
+    <span class="k">if</span> root:
+        queue.append(root)
+
+    level = 0
+    <span class="k">while</span> len(queue) &gt; 0:
+        print(<span class="s">"level: "</span>, level)
+        <span class="k">for</span> i <span class="k">in</span> range(len(queue)):        <span class="c"># exactly the nodes of this level</span>
+            curr = queue.popleft()
+            print(curr.val)
+            <span class="k">if</span> curr.left:
+                queue.append(curr.left)
+            <span class="k">if</span> curr.right:
+                queue.append(curr.right)
+        level += 1</code></pre>
+
+  <ol>
+    <li>Append the root to the queue (if there is one).</li>
+    <li>While the queue is not empty: print the level number.</li>
+    <li>Loop <code>len(queue)</code> times. That number is the size of the current level, and it is read <em>once</em>, before the loop starts, so children appended during the loop are not counted as part of this level.</li>
+    <li>For each removed node, append its children, left then right.</li>
+    <li>After the level is done, <code>level += 1</code>.</li>
+    <li>The queue empties when every node has been visited, and the while loop ends.</li>
+  </ol>
+
+  <figure>
+    <svg viewBox="0 0 700 248" role="img" aria-label="Breadth-first search on the tree: the queue holds exactly one level at the start of each while-loop turn: 4, then 3 and 6, then 2, 5 and 7.">
+<path d="M176.3,51.7 L135.2,87.0" class="ptr" marker-end="url(#arr)"/>
+<path d="M203.7,51.7 L244.8,87.0" class="ptr" marker-end="url(#arr)"/>
+<path d="M110.9,115.5 L95.1,142.7" class="ptr" marker-end="url(#arr)"/>
+<path d="M250.9,115.5 L235.1,142.7" class="ptr" marker-end="url(#arr)"/>
+<path d="M269.1,115.5 L284.9,142.7" class="ptr" marker-end="url(#arr)"/>
+<circle cx="190" cy="40" r="18" class="nd"/><text x="190" y="45" class="t" text-anchor="middle">4</text>
+<circle cx="120" cy="100" r="18" class="nd"/><text x="120" y="105" class="t" text-anchor="middle">3</text>
+<circle cx="85.0" cy="160" r="18" class="nd"/><text x="85.0" y="165" class="t" text-anchor="middle">2</text>
+<circle cx="260" cy="100" r="18" class="nd"/><text x="260" y="105" class="t" text-anchor="middle">6</text>
+<circle cx="225.0" cy="160" r="18" class="nd"/><text x="225.0" y="165" class="t" text-anchor="middle">5</text>
+<circle cx="295.0" cy="160" r="18" class="nd"/><text x="295.0" y="165" class="t" text-anchor="middle">7</text>
+<path d="M75,40 L305,40" class="mem"/>
+<text x="68" y="44" class="t small" text-anchor="end" font-size="11">level 0</text>
+<path d="M75,100 L305,100" class="mem"/>
+<text x="68" y="104" class="t small" text-anchor="end" font-size="11">level 1</text>
+<path d="M75,160 L305,160" class="mem"/>
+<text x="68" y="164" class="t small" text-anchor="end" font-size="11">level 2</text>
+<text x="500" y="22" class="t ptrlab" text-anchor="middle" font-size="12">queue at the top of each while turn</text>
+<text x="390" y="64" class="t small" text-anchor="end" font-size="11">level 0</text>
+<rect x="404" y="40" width="40" height="36" class="nd"/><text x="424" y="63" class="t" text-anchor="middle">4</text>
+<text x="390" y="112" class="t small" text-anchor="end" font-size="11">level 1</text>
+<rect x="404" y="88" width="40" height="36" class="nd"/><text x="424" y="111" class="t" text-anchor="middle">3</text>
+<rect x="452" y="88" width="40" height="36" class="nd"/><text x="472" y="111" class="t" text-anchor="middle">6</text>
+<text x="390" y="160" class="t small" text-anchor="end" font-size="11">level 2</text>
+<rect x="404" y="136" width="40" height="36" class="nd"/><text x="424" y="159" class="t" text-anchor="middle">2</text>
+<rect x="452" y="136" width="40" height="36" class="nd"/><text x="472" y="159" class="t" text-anchor="middle">5</text>
+<rect x="500" y="136" width="40" height="36" class="nd"/><text x="520" y="159" class="t" text-anchor="middle">7</text>
+<text x="390" y="208" class="t small" text-anchor="end" font-size="11">done</text>
+<text x="404" y="208" class="t nulltxt" text-anchor="start" font-size="11">empty → loop ends</text>
+<text x="500" y="235" class="t small" text-anchor="middle" font-size="11">popleft one whole level; append its children behind</text>
+    </svg>
+    <figcaption><b>The queue holds exactly one level at the top of each while turn.</b> While level 1 (3, 6) is being popped, their children are appended behind them, so when the for loop ends the queue holds exactly level 2. Output: <code>level: 0, 4, level: 1, 3, 6, level: 2, 2, 5, 7</code>.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>While turn</th><th>Queue at start</th><th><code>len(queue)</code></th><th>Popped (printed)</th><th>Appended</th><th>Queue at end</th></tr></thead>
+    <tbody>
+      <tr><td>level 0</td><td>[4]</td><td>1</td><td>4</td><td>3, 6</td><td>[3, 6]</td></tr>
+      <tr><td>level 1</td><td>[3, 6]</td><td>2</td><td>3, then 6</td><td>2 (from 3); 5, 7 (from 6)</td><td>[2, 5, 7]</td></tr>
+      <tr><td>level 2</td><td>[2, 5, 7]</td><td>3</td><td>2, 5, 7</td><td>nothing (all leaves)</td><td>[]</td></tr>
+      <tr><td>check</td><td>[]</td><td>0</td><td>-</td><td>-</td><td>while loop exits</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Time and space</h3>
+  <p>Time O(n): each node is added to the queue once and removed once. Space O(n): the queue holds an entire level at a time, and in a full tree the last level holds roughly half of all nodes. Compare with DFS, whose stack holds one root-to-leaf path, O(h).</p>
+
+  <div class="callout">
+    <span class="lab">DFS or BFS?</span>
+    <p>If the question mentions <em>levels</em>, <em>nearest</em>, <em>shortest</em>, <em>left/right side view</em>, or <em>zigzag</em>, think BFS. If it asks for a property built from children (height, sum, is it balanced, does a path exist), think DFS. Both visit every node, O(n); they differ in order and in what they keep in memory.</p>
+  </div>
+</section>
+
+<!-- ============================ 6 SETS AND MAPS ============================ -->
+<section id="setsmaps">
+  <h2><span class="num">6</span>BST sets and maps</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>A paper phone book. Each name appears once (a set of names), each name has a number next to it (a map from name to number), and the pages are sorted, so you can flip to "K" without reading "A" to "J".</p>
+  </div>
+
+  <p>Sets and maps, like stacks and queues, are <dfn>interfaces</dfn>: a list of operations, not a fixed way of storing things. One way to implement them is with a tree, and then insertion, deletion, and search all run in O(log n).</p>
+
+  <h3>Sets</h3>
+  <p>A phone book with the names Alice, Brad, Collin. A <dfn>set</dfn> ensures <strong>unique</strong> values: adding "Alice" twice keeps one Alice. Implementing it with a BST also keeps the keys sorted (alphabetically here), because inorder traversal gives sorted order. This is a <dfn>TreeSet</dfn>.</p>
+
+  <h3>Maps</h3>
+  <p>A <dfn>map</dfn> works on key-value pairs. Built with a tree it is a <dfn>TreeMap</dfn>. The phone book maps names to phone numbers, sorted by key: <code>{'Alice': 123, 'Brad': 345, 'Collin': 678}</code>. The key could be the last name; the value can be a number, an object, any type. The only requirement is that <strong>keys must be comparable</strong>, because the tree needs an order to decide left or right. TreeMap operations run in O(log n).</p>
+
+  <figure>
+    <svg viewBox="0 0 660 190" role="img" aria-label="A TreeMap is a BST whose nodes hold a key used for ordering and a value attached to it; an inorder walk lists entries sorted by key.">
+<path d="M314.7,59.4 L217.0,119.5" class="ptr" marker-end="url(#arr)"/>
+<path d="M345.3,59.4 L443.0,119.5" class="ptr" marker-end="url(#arr)"/>
+<rect x="270" y="32" width="120" height="36" rx="18" class="nd"/>
+<line x1="342" y1="32" x2="342" y2="68" class="cell"/>
+<text x="306" y="55" class="t" text-anchor="middle" font-size="12">Brad</text>
+<text x="366" y="55" class="t ptrlab" text-anchor="middle" font-size="12">345</text>
+<rect x="140" y="112" width="120" height="36" rx="18" class="nd"/>
+<line x1="212" y1="112" x2="212" y2="148" class="cell"/>
+<text x="176" y="135" class="t" text-anchor="middle" font-size="12">Alice</text>
+<text x="236" y="135" class="t ptrlab" text-anchor="middle" font-size="12">123</text>
+<rect x="400" y="112" width="120" height="36" rx="18" class="nd"/>
+<line x1="472" y1="112" x2="472" y2="148" class="cell"/>
+<text x="436" y="135" class="t" text-anchor="middle" font-size="12">Collin</text>
+<text x="496" y="135" class="t ptrlab" text-anchor="middle" font-size="12">678</text>
+<text x="330" y="18" class="t small" text-anchor="middle">key (sorted by the BST)   ·   value (anything)</text>
+<text x="330" y="175" class="t small" text-anchor="middle">inorder walk → Alice:123, Brad:345, Collin:678 (sorted for free)</text>
+    </svg>
+    <figcaption><b>A TreeMap is the BST from section 2 with a value glued to every key.</b> Search, insert, and remove compare keys exactly like numbers. An inorder walk gives the entries sorted by key for free, which a hash map cannot do.</figcaption>
+  </figure>
+
+  <p>Here is a small TreeMap written on top of the insert and search you already know. Keys stay unique because equal keys overwrite the value instead of adding a node.</p>
+
+<pre><code><span class="k">class</span> TreeMap:
+    <span class="k">class</span> Node:
+        <span class="k">def</span> __init__(self, key, value):
+            self.key, self.value = key, value
+            self.left = self.right = <span class="k">None</span>
+
+    <span class="k">def</span> __init__(self):
+        self.root = <span class="k">None</span>
+
+    <span class="k">def</span> put(self, key, value):
+        <span class="k">def</span> ins(node):
+            <span class="k">if not</span> node:
+                <span class="k">return</span> TreeMap.Node(key, value)
+            <span class="k">if</span> key &lt; node.key:
+                node.left = ins(node.left)
+            <span class="k">elif</span> key &gt; node.key:
+                node.right = ins(node.right)
+            <span class="k">else</span>:
+                node.value = value          <span class="c"># same key: overwrite, keys stay unique</span>
+            <span class="k">return</span> node
+        self.root = ins(self.root)
+
+    <span class="k">def</span> get(self, key):
+        cur = self.root
+        <span class="k">while</span> cur:
+            <span class="k">if</span> key &lt; cur.key:
+                cur = cur.left
+            <span class="k">elif</span> key &gt; cur.key:
+                cur = cur.right
+            <span class="k">else</span>:
+                <span class="k">return</span> cur.value
+        <span class="k">return None</span>
+
+    <span class="k">def</span> items(self):                        <span class="c"># inorder = sorted by key</span>
+        out = []
+        <span class="k">def</span> walk(node):
+            <span class="k">if not</span> node:
+                <span class="k">return</span>
+            walk(node.left)
+            out.append((node.key, node.value))
+            walk(node.right)
+        walk(self.root)
+        <span class="k">return</span> out
+
+phone = TreeMap()
+phone.put(<span class="s">"Collin"</span>, 678)
+phone.put(<span class="s">"Alice"</span>, 123)
+phone.put(<span class="s">"Brad"</span>, 345)
+phone.get(<span class="s">"Brad"</span>)      <span class="c"># 345</span>
+phone.items()          <span class="c"># [('Alice', 123), ('Brad', 345), ('Collin', 678)]</span></code></pre>
+
+  <h3>In different languages</h3>
+  <p>Java and C++ ship a TreeMap in the standard library. Python and JavaScript do not; you install one.</p>
+
+<pre><code><span class="c"># Python: pip install sortedcontainers</span>
+<span class="k">from</span> sortedcontainers <span class="k">import</span> SortedDict
+treemap = SortedDict({<span class="s">'c'</span>: 3, <span class="s">'a'</span>: 1, <span class="s">'b'</span>: 2})
+list(treemap.keys())    <span class="c"># ['a', 'b', 'c']  - always sorted</span>
+
+<span class="c"># Java:        TreeMap treeMap = new TreeMap();</span>
+<span class="c"># JavaScript:  const TreeMap = require("treemap-js"); let map = new TreeMap();</span>
+<span class="c"># C++:         map&lt;string, string&gt; treeMap;</span></code></pre>
+
+  <p><code>sortedcontainers</code> also gives you <code>SortedList</code> (a sorted list with O(log n) insert, index, and <code>bisect_left</code>) and <code>SortedSet</code> (the TreeSet). Internally they are not trees but lists of lists; the interface and the Big-O are what matter in an interview.</p>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>Python's built-in <code>dict</code> and <code>set</code> are the <strong>hash-based</strong> alternative: O(1) average for get, put, and remove, but no order. Reach for a tree-based map only when you need "smallest key greater than x", "keys in a range", or sorted iteration. Hashing is the topic of a later lesson; trees are one way to build sets and maps, hashing is the other.</p>
+  </div>
+</section>
+
+<!-- ============================ PATTERNS ============================ -->
+<section id="patterns">
+  <h2><span class="num">7</span>Moves that solve most tree problems</h2>
+  <p>The lessons teach the structure and the traversals. Interview questions are those traversals with a small twist. Learn these five moves.</p>
+
+  <h3>Move 1: the recursive template, "combine(left, right)"</h3>
+  <p>Almost every tree function has this shape: handle <code>None</code>, ask both children, combine their two answers with the current node, return one value. Height, node count, sum, maximum path, "is it the same tree", "invert it" all fit.</p>
+
+<pre><code><span class="k">def</span> solve(root):
+    <span class="k">if not</span> root:
+        <span class="k">return</span> base            <span class="c"># 0, True, None, ... whatever an empty tree answers</span>
+    left = solve(root.left)
+    right = solve(root.right)
+    <span class="k">return</span> combine(left, right, root)
+
+<span class="k">def</span> max_depth(root):                 <span class="c"># LeetCode 104 (counts nodes)</span>
+    <span class="k">if not</span> root:
+        <span class="k">return</span> 0
+    left = max_depth(root.left)
+    right = max_depth(root.right)
+    <span class="k">return</span> 1 + max(left, right)
+
+<span class="k">def</span> invert(root):                    <span class="c"># LeetCode 226: swap every left and right</span>
+    <span class="k">if not</span> root:
+        <span class="k">return None</span>
+    root.left, root.right = invert(root.right), invert(root.left)
+    <span class="k">return</span> root
+
+<span class="k">def</span> same_tree(p, q):                 <span class="c"># LeetCode 100: two trees at once</span>
+    <span class="k">if not</span> p <span class="k">and not</span> q:
+        <span class="k">return True</span>
+    <span class="k">if not</span> p <span class="k">or not</span> q <span class="k">or</span> p.val != q.val:
+        <span class="k">return False</span>
+    <span class="k">return</span> same_tree(p.left, q.left) <span class="k">and</span> same_tree(p.right, q.right)</code></pre>
+
+  <figure>
+    <svg viewBox="0 0 640 250" role="img" aria-label="max_depth on the tree: every None returns 0, every node returns 1 plus the larger child answer, and the root returns 3.">
+<path d="M284.5,49.1 L197.3,99.9" class="ptr" marker-end="url(#arr)"/>
+<path d="M315.5,49.1 L402.7,99.9" class="ptr" marker-end="url(#arr)"/>
+<path d="M168.3,123.7 L133.0,164.8" class="ptr" marker-end="url(#arr)"/>
+<path d="M408.3,123.7 L373.0,164.8" class="ptr" marker-end="url(#arr)"/>
+<path d="M431.7,123.7 L467.0,164.8" class="ptr" marker-end="url(#arr)"/>
+<circle cx="300" cy="40" r="18" class="nd"/><text x="300" y="45" class="t" text-anchor="middle">4</text>
+<circle cx="180" cy="110" r="18" class="nd"/><text x="180" y="115" class="t" text-anchor="middle">3</text>
+<circle cx="120.0" cy="180" r="18" class="nd"/><text x="120.0" y="185" class="t" text-anchor="middle">2</text>
+<circle cx="420" cy="110" r="18" class="nd"/><text x="420" y="115" class="t" text-anchor="middle">6</text>
+<circle cx="360.0" cy="180" r="18" class="nd"/><text x="360.0" y="185" class="t" text-anchor="middle">5</text>
+<circle cx="480.0" cy="180" r="18" class="nd"/><text x="480.0" y="185" class="t" text-anchor="middle">7</text>
+<text x="324" y="28" class="t newlab" text-anchor="start" font-size="12">↑3</text>
+<text x="204" y="98" class="t newlab" text-anchor="start" font-size="12">↑2</text>
+<text x="444" y="98" class="t newlab" text-anchor="start" font-size="12">↑2</text>
+<text x="144.0" y="168" class="t newlab" text-anchor="start" font-size="12">↑1</text>
+<text x="384.0" y="168" class="t newlab" text-anchor="start" font-size="12">↑1</text>
+<text x="504.0" y="168" class="t newlab" text-anchor="start" font-size="12">↑1</text>
+<text x="98.0" y="222" class="t small" text-anchor="middle" font-size="11">0</text>
+<text x="142.0" y="222" class="t small" text-anchor="middle" font-size="11">0</text>
+<text x="202" y="152" class="t small" text-anchor="middle" font-size="11">0</text>
+<text x="338.0" y="222" class="t small" text-anchor="middle" font-size="11">0</text>
+<text x="382.0" y="222" class="t small" text-anchor="middle" font-size="11">0</text>
+<text x="458.0" y="222" class="t small" text-anchor="middle" font-size="11">0</text>
+<text x="502.0" y="222" class="t small" text-anchor="middle" font-size="11">0</text>
+<text x="300" y="235" class="t small" text-anchor="middle">max_depth: None → 0; each node returns 1 + max(left, right); the root answers 3</text>
+    </svg>
+    <figcaption><b>Answers flow upward, one number per node.</b> This is postorder in disguise: a node cannot answer until both children have. Trace it by writing each node's return value next to it, bottom row first.</figcaption>
+  </figure>
+
+  <p>When the answer is not the same thing the function returns, keep a side variable. Diameter (longest path, in edges) and "is balanced" both return a height upward while recording something else.</p>
+
+<pre><code><span class="k">def</span> diameter(root):                  <span class="c"># LeetCode 543</span>
+    best = 0
+
+    <span class="k">def</span> height(node):
+        <span class="k">nonlocal</span> best
+        <span class="k">if not</span> node:
+            <span class="k">return</span> 0
+        l = height(node.left)
+        r = height(node.right)
+        best = max(best, l + r)      <span class="c"># longest path THROUGH this node, in edges</span>
+        <span class="k">return</span> 1 + max(l, r)         <span class="c"># but hand the height upward</span>
+
+    height(root)
+    <span class="k">return</span> best
+
+<span class="k">def</span> is_balanced(root):               <span class="c"># LeetCode 110</span>
+    <span class="k">def</span> check(node):                 <span class="c"># returns height, or -1 if anything below is unbalanced</span>
+        <span class="k">if not</span> node:
+            <span class="k">return</span> 0
+        l = check(node.left)
+        <span class="k">if</span> l == -1:
+            <span class="k">return</span> -1
+        r = check(node.right)
+        <span class="k">if</span> r == -1:
+            <span class="k">return</span> -1
+        <span class="k">if</span> abs(l - r) &gt; 1:
+            <span class="k">return</span> -1
+        <span class="k">return</span> 1 + max(l, r)
+
+    <span class="k">return</span> check(root) != -1</code></pre>
+
+  <h3>Move 2: DFS with an explicit stack</h3>
+  <p>Same order as the recursive version, but you manage the stack yourself. Preorder is the easy one: pop a node, visit it, push right then left so that left is popped first. Inorder needs a "slide down-left, then pop, then step right" loop.</p>
+
+<pre><code><span class="k">def</span> preorder_iter(root):
+    out, stack = [], [root] <span class="k">if</span> root <span class="k">else</span> []
+    <span class="k">while</span> stack:
+        node = stack.pop()
+        out.append(node.val)
+        <span class="k">if</span> node.right:                 <span class="c"># push right first so left is popped first</span>
+            stack.append(node.right)
+        <span class="k">if</span> node.left:
+            stack.append(node.left)
+    <span class="k">return</span> out                         <span class="c"># [4, 3, 2, 6, 5, 7]</span>
+
+<span class="k">def</span> inorder_iter(root):
+    out, stack, cur = [], [], root
+    <span class="k">while</span> cur <span class="k">or</span> stack:
+        <span class="k">while</span> cur:                     <span class="c"># slide down-left, remembering the path</span>
+            stack.append(cur)
+            cur = cur.left
+        cur = stack.pop()              <span class="c"># nothing further left: visit</span>
+        out.append(cur.val)
+        cur = cur.right                <span class="c"># then go right</span>
+    <span class="k">return</span> out                         <span class="c"># [2, 3, 4, 5, 6, 7]</span></code></pre>
+
+  <p>The inorder stack version is also the tool for <strong>kth smallest in a BST</strong>: stop after k pops.</p>
+
+<pre><code><span class="k">def</span> kth_smallest(root, k):           <span class="c"># LeetCode 230</span>
+    stack, cur = [], root
+    <span class="k">while</span> cur <span class="k">or</span> stack:
+        <span class="k">while</span> cur:
+            stack.append(cur)
+            cur = cur.left
+        cur = stack.pop()
+        k -= 1
+        <span class="k">if</span> k == 0:
+            <span class="k">return</span> cur.val
+        cur = cur.right</code></pre>
+
+  <h3>Move 3: BFS with the level-size loop</h3>
+  <p>The lesson's <code>bfs</code> prints. Interview versions return a list per level. Freeze <code>size = len(queue)</code> before the inner loop; that number is the whole trick.</p>
+
+<pre><code><span class="k">def</span> level_order(root):               <span class="c"># LeetCode 102</span>
+    levels = []
+    queue = deque([root] <span class="k">if</span> root <span class="k">else</span> [])
+    <span class="k">while</span> queue:
+        size = len(queue)              <span class="c"># freeze the size: only this level</span>
+        level = []
+        <span class="k">for</span> _ <span class="k">in</span> range(size):
+            node = queue.popleft()
+            level.append(node.val)
+            <span class="k">if</span> node.left:
+                queue.append(node.left)
+            <span class="k">if</span> node.right:
+                queue.append(node.right)
+        levels.append(level)
+    <span class="k">return</span> levels                      <span class="c"># [[4], [3, 6], [2, 5, 7]]</span>
+
+<span class="k">def</span> right_side_view(root):           <span class="c"># LeetCode 199: last node of every level</span>
+    <span class="k">return</span> [level[-1] <span class="k">for</span> level <span class="k">in</span> level_order(root)]</code></pre>
+
+  <h3>Move 4: validate a BST with min / max bounds</h3>
+  <p>The trap: checking only <code>left.val &lt; node.val &lt; right.val</code> at each node is not enough. In <code>[5,4,7,null,6]</code>, node 6 is a valid right child of 4, but it sits in the <em>left</em> subtree of 5, where everything must be below 5. Carry a range down instead: every node must be strictly between <code>low</code> and <code>high</code>, and each step narrows one side.</p>
+
+<pre><code><span class="k">def</span> is_valid_bst(root, low=float(<span class="s">"-inf"</span>), high=float(<span class="s">"inf"</span>)):   <span class="c"># LeetCode 98</span>
+    <span class="k">if not</span> root:
+        <span class="k">return True</span>
+    <span class="k">if not</span> (low &lt; root.val &lt; high):
+        <span class="k">return False</span>
+    <span class="k">return</span> (is_valid_bst(root.left, low, root.val) <span class="k">and</span>
+            is_valid_bst(root.right, root.val, high))</code></pre>
+
+  <h3>Move 5: use the BST order to prune</h3>
+  <p>On a BST, do not visit both children. Compare and go one way, like <code>search</code>. Lowest common ancestor is the classic: the first node where the two targets split to different sides (or one of them equals the node) is the answer.</p>
+
+<pre><code><span class="k">def</span> lca_bst(root, p, q):             <span class="c"># LeetCode 235, p and q are values</span>
+    cur = root
+    <span class="k">while</span> cur:
+        <span class="k">if</span> p &lt; cur.val <span class="k">and</span> q &lt; cur.val:
+            cur = cur.left
+        <span class="k">elif</span> p &gt; cur.val <span class="k">and</span> q &gt; cur.val:
+            cur = cur.right
+        <span class="k">else</span>:
+            <span class="k">return</span> cur.val               <span class="c"># they split here (or one is here)</span></code></pre>
+</section>
+
+<!-- ============================ COMPLEXITY ============================ -->
+<section id="complexity">
+  <h2><span class="num">8</span>Big-O summary</h2>
+  <p>Say the word "balanced" every time you say O(log n). h is the height: about log n for a balanced tree, up to n for a skewed one.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Operation</th><th>Balanced BST</th><th>Skewed BST</th><th>Sorted array</th><th>Hash map / set</th></tr></thead>
+    <tbody>
+      <tr><td>Search</td><td class="big fast">O(log n)</td><td class="big slow">O(n)</td><td class="big fast">O(log n)</td><td class="big fast">O(1)*</td></tr>
+      <tr><td>Insert</td><td class="big fast">O(log n)</td><td class="big slow">O(n)</td><td class="big slow">O(n)</td><td class="big fast">O(1)*</td></tr>
+      <tr><td>Remove</td><td class="big fast">O(log n)</td><td class="big slow">O(n)</td><td class="big slow">O(n)</td><td class="big fast">O(1)*</td></tr>
+      <tr><td>Min or max</td><td class="big fast">O(log n)</td><td class="big slow">O(n)</td><td class="big fast">O(1)</td><td class="big slow">O(n)</td></tr>
+      <tr><td>All values in sorted order</td><td class="big fast">O(n) inorder</td><td class="big fast">O(n) inorder</td><td class="big fast">O(n)</td><td class="big slow">O(n log n) sort first</td></tr>
+      <tr><td>DFS (any order), time</td><td class="big fast">O(n)</td><td class="big fast">O(n)</td><td>-</td><td>-</td></tr>
+      <tr><td>DFS space (call stack or explicit stack)</td><td class="big fast">O(log n)</td><td class="big slow">O(n)</td><td>-</td><td>-</td></tr>
+      <tr><td>BFS time</td><td class="big fast">O(n)</td><td class="big fast">O(n)</td><td>-</td><td>-</td></tr>
+      <tr><td>BFS space (queue = widest level)</td><td class="big slow">O(n)</td><td class="big fast">O(1)</td><td>-</td><td>-</td></tr>
+      <tr><td>Space of the structure</td><td>O(n)</td><td>O(n)</td><td>O(n)</td><td>O(n)</td></tr>
+    </tbody>
+  </table></div>
+  <p>The hash map star means "average case"; hashing is a later topic. BFS space is O(n) on a balanced tree because the last level of a full tree holds about n/2 nodes; on a skewed tree each level has one node, so the queue never grows, which is the one place a skewed tree wins. DFS space is the opposite: it holds one root-to-leaf path, which is short on a balanced tree and the whole tree on a skewed one.</p>
+</section>
+
+<!-- ============================ MISTAKES ============================ -->
+<section id="mistakes">
+  <h2><span class="num">9</span>Mistakes to watch for</h2>
+  <div class="mistake">
+    <div>
+      <div class="bad">Forgetting the None base case</div>
+      <p><code>AttributeError: 'NoneType' object has no attribute 'left'</code>. First line of every recursive tree function: <code>if not root: return ...</code>. It covers the empty tree and every missing child at once.</p>
+    </div>
+    <div>
+      <div class="bad">Calling insert or remove and throwing away the result</div>
+      <p><code>insert(root, 5)</code> alone does nothing visible when the tree is empty, and <code>remove(root, 4)</code> cannot delete the root. Always write <code>root = insert(root, 5)</code>, and inside the function always write <code>root.left = insert(root.left, val)</code>. The return value is how the parent re-attaches the subtree.</p>
+    </div>
+    <div>
+      <div class="bad">Validating a BST by comparing only parent and child</div>
+      <p><code>[5,4,7,null,6]</code> passes a local check but is not a BST: 6 lives in the left subtree of 5. Carry <code>low</code> and <code>high</code> bounds down the recursion and tighten one side at each step.</p>
+    </div>
+    <div>
+      <div class="bad">Expecting inorder to be sorted on a plain binary tree</div>
+      <p>Inorder gives sorted output only when the tree is a BST. On <code>[1,2,3]</code> it gives <code>2, 1, 3</code>. Check what the problem promises before you rely on it.</p>
+    </div>
+    <div>
+      <div class="bad">Mixing height in nodes with height in edges</div>
+      <p>A single node has height 1 (nodes) or 0 (edges). LeetCode 104 wants nodes; diameter (543) wants edges. Read the example in the problem and match it, then keep one convention through the whole solution.</p>
+    </div>
+    <div>
+      <div class="bad">Losing the level boundary in BFS</div>
+      <p>Writing <code>while queue: node = queue.popleft(); ...</code> with no inner loop visits nodes in level order but never knows where a level ends. Freeze <code>size = len(queue)</code> and loop exactly that many times. And never use <code>list.pop(0)</code> as the queue; it is O(n) per pop. Use <code>deque.popleft()</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Deleting a 2-child node and leaving the successor behind</div>
+      <p>After <code>root.val = minNode.val</code> the value exists twice. You must also run <code>root.right = remove(root.right, minNode.val)</code>. The successor has no left child, so that second removal is always the easy case.</p>
+    </div>
+    <div>
+      <div class="bad">Claiming O(log n) without saying "balanced"</div>
+      <p>A plain BST built from sorted input is a linked list: every operation is O(n). Say "O(log n) if the tree is balanced, O(n) in the worst case". Interviewers listen for that sentence.</p>
+    </div>
+    <div>
+      <div class="bad">Pushing left before right in iterative preorder</div>
+      <p>A stack is LIFO. If you want the left child processed first, push it <em>last</em>. Push right, then left.</p>
+    </div>
+  </div>
+
+  <div class="cheat">
+    <h3>Interview one-liners</h3>
+    <ul>
+      <li>"A binary tree node is a linked list node with two pointers, left and right, pointing down; no cycles, so a leaf always exists."</li>
+      <li>"A BST keeps every left descendant smaller and every right descendant bigger, at every node, so search, insert, and delete are O(log n) if the tree is balanced, O(n) if skewed."</li>
+      <li>"To delete a node with two children, I replace it with its in-order successor, the left-most node of the right subtree, then delete that successor."</li>
+      <li>"Inorder, preorder, postorder are the same left-first DFS; only the position of the visit line changes. Inorder on a BST is sorted."</li>
+      <li>"DFS costs O(n) time and O(h) stack; BFS costs O(n) time and O(n) queue, because it holds a whole level."</li>
+      <li>"I validate a BST by passing min and max bounds down, not by comparing a node with its direct children."</li>
+      <li>"A TreeMap is a BST of keys with values attached, O(log n) per operation and sorted iteration; Python's <code>dict</code> is the hash version, O(1) average and unordered. For a tree-like map in Python I use <code>sortedcontainers.SortedDict</code>."</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================ PRACTICE ============================ -->
+<section id="practice">
+  <h2><span class="num">10</span>Practice, in this order</h2>
+  <p>Do these on LeetCode with the notes closed. The first five are the recursive template with different <code>combine</code> steps; do not move on until they feel like one problem.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Problem</th><th>Move it trains</th><th>Level</th></tr></thead>
+    <tbody>
+      <tr><td>104</td><td>Maximum Depth of Binary Tree</td><td>combine(left, right): 1 + max</td><td>Easy</td></tr>
+      <tr><td>226</td><td>Invert Binary Tree</td><td>combine: swap children, return root</td><td>Easy</td></tr>
+      <tr><td>100</td><td>Same Tree</td><td>recursion on two trees at once</td><td>Easy</td></tr>
+      <tr><td>572</td><td>Subtree of Another Tree</td><td>same_tree called at every node</td><td>Easy</td></tr>
+      <tr><td>543</td><td>Diameter of Binary Tree</td><td>return height, record best on the side</td><td>Easy</td></tr>
+      <tr><td>110</td><td>Balanced Binary Tree</td><td>return height or -1 sentinel</td><td>Easy</td></tr>
+      <tr><td>94</td><td>Binary Tree Inorder Traversal</td><td>inorder, recursive then with a stack</td><td>Easy</td></tr>
+      <tr><td>700</td><td>Search in a Binary Search Tree</td><td>BST search (lesson 17)</td><td>Easy</td></tr>
+      <tr><td>701</td><td>Insert into a Binary Search Tree</td><td>BST insert, re-attach the return value</td><td>Medium</td></tr>
+      <tr><td>102</td><td>Binary Tree Level Order Traversal</td><td>BFS level-size loop</td><td>Medium</td></tr>
+      <tr><td>199</td><td>Binary Tree Right Side View</td><td>BFS, keep the last node per level</td><td>Medium</td></tr>
+      <tr><td>235</td><td>Lowest Common Ancestor of a BST</td><td>prune with the BST order</td><td>Medium</td></tr>
+      <tr><td>230</td><td>Kth Smallest Element in a BST</td><td>inorder with early stop</td><td>Medium</td></tr>
+      <tr><td>98</td><td>Validate Binary Search Tree</td><td>min / max bounds</td><td>Medium</td></tr>
+      <tr><td>450</td><td>Delete Node in a BST</td><td>three removal cases, in-order successor</td><td>Medium</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Your next step today:</strong> LeetCode 104. Write it from memory, then draw the return value next to every node of <code>[4,3,6,2,null,5,7]</code> and check that the root gets 3.</p>
+</section>
+
+<!-- ============================ QUIZ ============================ -->
+<section id="quiz">
+  <h2><span class="num">11</span>Self-check</h2>
+  <p>Answer out loud before opening. If you cannot answer in one breath, reread that section.</p>
+
+  <details><summary><span class="q">Q1</span>How is a TreeNode different from a ListNode, and what is the same?</summary><div><p>Same: a value plus pointers to other nodes, and "no node" is <code>None</code>. Different: a ListNode has one pointer, <code>next</code>, pointing forward; a TreeNode has two, <code>left</code> and <code>right</code>, pointing down to its children, and the pointers never form a cycle.</p></div></details>
+
+  <details><summary><span class="q">Q2</span>In the tree <code>[2,1,3,null,null,null,4]</code>, what are the root, the leaves, the height in nodes, and the height in edges?</summary><div><p>Root 2. Leaves 1 and 4 (1 is on depth 2, 4 on depth 3). Height 3 counting nodes on the path 2, 3, 4; height 2 counting the edges between them. The tree has 4 nodes and therefore 3 edges.</p></div></details>
+
+  <details><summary><span class="q">Q3</span>State the BST property precisely. Why is "left child smaller, right child bigger" not enough?</summary><div><p>Every node in the whole left subtree is smaller than the node, and every node in the whole right subtree is bigger, and this holds at every node. Checking only direct children misses cases like <code>[5,4,7,null,6]</code>, where 6 is a fine right child of 4 but violates "everything under 5's left is below 5".</p></div></details>
+
+  <details><summary><span class="q">Q4</span>Why prefer a BST over a sorted array, when both search in O(log n)?</summary><div><p>Insert and delete. A sorted array shifts elements, O(n). A balanced BST walks down and changes a pointer, O(log n).</p></div></details>
+
+  <details><summary><span class="q">Q5</span>Trace it: search for 4 in <code>[2,1,3,null,null,null,4]</code>. List every call and its comparison.</summary><div><p><code>search(2, 4)</code>: 4 &gt; 2, go right. <code>search(3, 4)</code>: 4 &gt; 3, go right. <code>search(4, 4)</code>: equal, return True. Three calls; node 1 is never visited. True is passed back through the two outer calls.</p></div></details>
+
+  <details><summary><span class="q">Q6</span>In <code>insert</code>, why is the recursive call written as <code>root.left = insert(root.left, val)</code> and not just <code>insert(root.left, val)</code>?</summary><div><p>When the walk reaches <code>None</code>, the call returns a brand new node. The only way that node becomes part of the tree is if the parent stores the returned value in its pointer. The assignment re-attaches the subtree every time, unchanged or grown.</p></div></details>
+
+  <details><summary><span class="q">Q7</span>Trace it: remove 6 from <code>[4,3,6,2,null,5,7]</code>. What is the tree after each step?</summary><div><p>6 has two children. Its in-order successor is the left-most node of its right subtree: 7. Copy: node 6 now holds 7, tree is <code>[4,3,7,2,null,5,7]</code> with a duplicate. Then <code>remove(right subtree, 7)</code>: the leaf 7 has no left child, return its right (<code>None</code>). Final: <code>[4,3,7,2,null,5]</code>, still a valid BST.</p></div></details>
+
+  <details><summary><span class="q">Q8</span>Write inorder, preorder, and postorder for <code>[4,3,6,2,null,5,7]</code> without looking.</summary><div><p>Inorder <code>[2,3,4,5,6,7]</code> (sorted, because it is a BST). Preorder <code>[4,3,2,6,5,7]</code> (root first). Postorder <code>[2,3,5,7,6,4]</code> (root last).</p></div></details>
+
+  <details><summary><span class="q">Q9</span>What is the time and space complexity of DFS on a tree, and why does space depend on the shape?</summary><div><p>Time O(n): each node once. Space O(h): the call stack holds the current root-to-leaf path. Balanced tree, h is about log n. Skewed tree, h is n.</p></div></details>
+
+  <details><summary><span class="q">Q10</span>In BFS, what does <code>for i in range(len(queue))</code> guarantee, and what breaks if you drop it?</summary><div><p><code>len(queue)</code> is evaluated once, before the loop, so the inner loop processes exactly the nodes of the current level even though children are appended during it. Without it you still visit nodes in level order, but you cannot tell where one level ends and the next begins, so per-level answers (level lists, right side view) are impossible.</p></div></details>
+
+  <details><summary><span class="q">Q11</span>Trace it: BFS on <code>[4,3,6,2,null,5,7]</code>. Give the queue at the start of each while turn.</summary><div><p>Turn 1: <code>[4]</code>, pop 4, append 3 and 6. Turn 2: <code>[3, 6]</code>, pop 3 (append 2), pop 6 (append 5, 7). Turn 3: <code>[2, 5, 7]</code>, pop all three, nothing appended. Queue is empty, loop ends. Printed order 4, 3, 6, 2, 5, 7.</p></div></details>
+
+  <details><summary><span class="q">Q12</span>What is a TreeMap, what must be true about its keys, and what is the Python equivalent?</summary><div><p>A map (key to value) stored as a BST of keys, so get, put, and remove are O(log n) and iteration is sorted by key. Keys must be comparable so the tree can decide left or right; values can be anything. Python has no built-in TreeMap: use <code>sortedcontainers.SortedDict</code>, or the built-in <code>dict</code> if you only need O(1) average lookups and do not care about order.</p></div></details>
+</section>
+
+<nav class="pager" aria-label="Previous and next topic">
+  <a class="prev" href="05-binary-search.html"><small>Previous</small>Binary Search</a>
+  <a class="next" href="07-backtracking.html"><small>Next</small>Backtracking</a>
+</nav>
+
+<footer>
+  Source: NeetCode "Algorithms and Data Structures for Beginners", lessons 16 (Binary Trees), 17 (Binary Search Trees), 18 (BST Insert and Remove), 19 (Depth-First Search), 20 (Breadth-First Search), 21 (BST Sets and Maps). All Python in these notes was run and tested. Orange in every diagram marks what changed or the order of visits.
+</footer>
+</div>
+</body>
+</html>

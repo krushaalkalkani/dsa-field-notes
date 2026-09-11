@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linked Lists · DSA Field Notes</title>
+<meta name="description" content="Singly linked lists, doubly linked lists, and queues - pointer diagrams, tested Python, Big-O, mistakes, practice, self-check.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arr"/></marker>
+    <marker id="arrNew" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrNew"/></marker>
+    <marker id="arrOld" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrOld"/></marker>
+    <marker id="arrCur" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrCur"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="site-head">
+  <a class="brand" href="../index.html">DSA <span>Field Notes</span></a>
+  <div class="crumbs"><a href="../index.html">Course map</a> <span>/</span> <span>02 Linked Lists</span></div>
+</header>
+<header class="top">
+  <div class="eyebrow">NeetCode · DSA for Beginners · Lessons 5-7</div>
+  <h1>Linked List Field Notes</h1>
+  <p class="lede">Singly linked lists, doubly linked lists, and queues. Every diagram shows exactly which pointer moved. Read the notes, then close them and rebuild the code from memory.</p>
+</header>
+
+<nav class="sections" aria-label="Sections">
+  <a href="#why">Why</a>
+  <a href="#singly">Singly</a>
+  <a href="#doubly">Doubly</a>
+  <a href="#queue">Queue</a>
+  <a href="#patterns">Patterns</a>
+  <a href="#complexity">Big-O</a>
+  <a href="#mistakes">Mistakes</a>
+  <a href="#practice">Practice</a>
+  <a href="#quiz">Self-check</a>
+</nav>
+
+<!-- ============================ WHY ============================ -->
+<section id="why">
+  <h2><span class="num">0</span>Why linked lists exist</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>An <strong>array</strong> is a row of numbered lockers, all next to each other. A <strong>linked list</strong> is a treasure hunt: each clue is stored anywhere in the building, and each clue tells you where the next clue is. To reach clue 3, you must first read clue 1 and clue 2.</p>
+  </div>
+
+  <p>Both store items in order. The difference is <em>where the items live in memory</em> and <em>how you find the next one</em>.</p>
+
+  <figure>
+    <svg viewBox="0 0 700 250" role="img" aria-label="An array stores values in neighboring memory addresses. A linked list stores nodes anywhere and connects them with next pointers.">
+      <!-- Array row -->
+      <text x="20" y="24" class="t ptrlab">ARRAY</text>
+      <text x="90" y="24" class="t small">values sit side by side, so index math finds any item instantly</text>
+      <g>
+        <rect x="20" y="40" width="60" height="44" class="nd"/><text x="50" y="67" class="t" text-anchor="middle">red</text>
+        <rect x="80" y="40" width="60" height="44" class="nd"/><text x="110" y="67" class="t" text-anchor="middle">blue</text>
+        <rect x="140" y="40" width="60" height="44" class="nd"/><text x="170" y="67" class="t" text-anchor="middle">green</text>
+        <rect x="200" y="40" width="60" height="44" class="nd"/><text x="230" y="67" class="t" text-anchor="middle">yellow</text>
+        <text x="50" y="100" class="t small" text-anchor="middle">@100</text>
+        <text x="110" y="100" class="t small" text-anchor="middle">@104</text>
+        <text x="170" y="100" class="t small" text-anchor="middle">@108</text>
+        <text x="230" y="100" class="t small" text-anchor="middle">@112</text>
+      </g>
+      <text x="290" y="67" class="t small">arr[2]  =  start + 2 × size  →  O(1)</text>
+
+      <!-- Linked list scattered -->
+      <text x="20" y="140" class="t ptrlab">LINKED LIST</text>
+      <text x="130" y="140" class="t small">nodes are scattered; each one stores the address of the next</text>
+      <rect x="20" y="120" width="660" height="120" class="mem"/>
+      <!-- node red @100 -->
+      <rect x="40" y="170" width="110" height="44" class="nd"/>
+      <line x1="100" y1="170" x2="100" y2="214" class="cell"/>
+      <text x="70" y="197" class="t" text-anchor="middle">red</text>
+      <text x="40" y="228" class="t small">@100</text>
+      <circle cx="125" cy="192" r="3.5" class="dot"/>
+      <!-- node blue @340 -->
+      <rect x="440" y="170" width="110" height="44" class="nd"/>
+      <line x1="500" y1="170" x2="500" y2="214" class="cell"/>
+      <text x="470" y="197" class="t" text-anchor="middle">blue</text>
+      <text x="440" y="228" class="t small">@340</text>      <circle cx="525" cy="192" r="3.5" class="dot"/>
+      <!-- node green @212 -->
+      <rect x="240" y="170" width="110" height="44" class="nd"/>
+      <line x1="300" y1="170" x2="300" y2="214" class="cell"/>
+      <text x="270" y="197" class="t" text-anchor="middle">green</text>
+      <text x="240" y="228" class="t small">@212</text>
+      <text x="325" y="197" class="t nulltxt" text-anchor="middle">∅</text>
+      <!-- arrows: red -> blue (jump over green), blue -> green (goes back) -->
+      <path d="M125,192 C 200,150 370,150 440,185" class="ptr" marker-end="url(#arr)"/>
+      <text x="285" y="158" class="t small" text-anchor="middle">next = @340</text>
+      <path d="M525,192 C 560,235 400,240 352,200" class="ptr" marker-end="url(#arr)"/>
+      <text x="600" y="228" class="t small" text-anchor="middle">next = @212</text>
+    </svg>
+    <figcaption><b>Same order, different storage.</b> The list order is red → blue → green, but the nodes sit at addresses 100, 340, 212. Order comes from the pointers, not from the position in memory. <b>Contiguous</b> means "side by side in memory". Arrays are contiguous; linked lists are not.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Question</th><th>Array</th><th>Linked list</th></tr></thead>
+    <tbody>
+      <tr><td>Get item at position i</td><td class="big fast">O(1)</td><td class="big slow">O(n)</td></tr>
+      <tr><td>Insert or delete in the middle (you already stand at that node)</td><td class="big slow">O(n) shifting</td><td class="big fast">O(1)</td></tr>
+      <tr><td>Memory per item</td><td>value only</td><td>value + pointer(s)</td></tr>
+      <tr><td>Grow without copying</td><td>No (dynamic array copies)</td><td>Yes</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============================ SINGLY ============================ -->
+<section id="singly">
+  <h2><span class="num">1</span>Singly linked list</h2>
+
+  <h3>The node: two things in a box</h3>
+  <p>A <dfn>ListNode</dfn> is an object with exactly two fields. <code>val</code> holds the data. <code>next</code> holds a <dfn>reference</dfn> (also called a <dfn>pointer</dfn>): the memory address of another node. In Python, "no node" is written <code>None</code>. NeetCode's videos say <code>null</code>; it is the same idea.</p>
+
+  <figure>
+    <svg viewBox="0 0 420 120" role="img" aria-label="A ListNode has a val field holding data and a next field holding a reference to another node, or None.">
+      <rect x="120" y="30" width="180" height="56" class="nd"/>
+      <line x1="220" y1="30" x2="220" y2="86" class="cell"/>
+      <text x="170" y="63" class="t" text-anchor="middle" font-size="15">"red"</text>
+      <circle cx="260" cy="58" r="4" class="dot"/>
+      <text x="170" y="20" class="t small" text-anchor="middle">val</text>
+      <text x="260" y="20" class="t small" text-anchor="middle">next</text>
+      <path d="M260,58 L 360,58" class="ptr" marker-end="url(#arr)"/>
+      <text x="372" y="63" class="t small">another node, or None</text>
+      <text x="210" y="108" class="t small" text-anchor="middle">one ListNode object</text>
+    </svg>
+    <figcaption><b>The only thing to memorize.</b> A node is data plus one arrow. Everything else in this topic is "change which box an arrow points at".</figcaption>
+  </figure>
+
+<pre><code><span class="k">class</span> ListNode:
+    <span class="k">def</span> __init__(self, val):
+        self.val = val
+        self.next = <span class="k">None</span>     <span class="c"># a new node points nowhere</span></code></pre>
+
+  <h3>Building a chain by hand</h3>
+  <p>Create three nodes, then set each <code>next</code> to the following node. Only the last node keeps <code>next = None</code>.</p>
+
+<pre><code>ListNode1 = ListNode(<span class="s">"red"</span>)
+ListNode2 = ListNode(<span class="s">"blue"</span>)
+ListNode3 = ListNode(<span class="s">"green"</span>)
+
+ListNode1.next = ListNode2    <span class="c"># red  → blue</span>
+ListNode2.next = ListNode3    <span class="c"># blue → green</span>
+ListNode3.next = <span class="k">None</span>         <span class="c"># green is the end (already None, shown for clarity)</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 620 130" role="img" aria-label="Three nodes red, blue, green linked by next pointers. Head points to red, tail points to green, and green's next is None.">
+      <!-- head / tail labels -->
+      <text x="75" y="22" class="t ptrlab" text-anchor="middle">head</text>
+      <path d="M75,28 L75,50" class="ptr" marker-end="url(#arr)"/>
+      <text x="415" y="22" class="t ptrlab" text-anchor="middle">tail</text>
+      <path d="M415,28 L415,50" class="ptr" marker-end="url(#arr)"/>
+      <!-- nodes -->
+      <g>
+        <rect x="20" y="52" width="110" height="44" class="nd"/><line x1="80" y1="52" x2="80" y2="96" class="cell"/>
+        <text x="50" y="79" class="t" text-anchor="middle">red</text><circle cx="105" cy="74" r="3.5" class="dot"/>
+        <path d="M105,74 L188,74" class="ptr" marker-end="url(#arr)"/>
+      </g>
+      <g>
+        <rect x="190" y="52" width="110" height="44" class="nd"/><line x1="250" y1="52" x2="250" y2="96" class="cell"/>
+        <text x="220" y="79" class="t" text-anchor="middle">blue</text><circle cx="275" cy="74" r="3.5" class="dot"/>
+        <path d="M275,74 L358,74" class="ptr" marker-end="url(#arr)"/>
+      </g>
+      <g>
+        <rect x="360" y="52" width="110" height="44" class="nd"/><line x1="420" y1="52" x2="420" y2="96" class="cell"/>
+        <text x="390" y="79" class="t" text-anchor="middle">green</text>
+        <text x="445" y="79" class="t nulltxt" text-anchor="middle">∅</text>
+      </g>
+      <text x="480" y="79" class="t small">← next = None (end of list)</text>
+      <text x="75" y="118" class="t small" text-anchor="middle">ListNode1</text>
+      <text x="245" y="118" class="t small" text-anchor="middle">ListNode2</text>
+      <text x="415" y="118" class="t small" text-anchor="middle">ListNode3</text>
+    </svg>
+    <figcaption><b>Head and tail.</b> <code>head</code> is a pointer to the first node; <code>tail</code> points to the last one. If the list has one node, head and tail point to the same node. If the list is empty, both are <code>None</code>.</figcaption>
+  </figure>
+
+  <h3>Traversal: walk the chain</h3>
+  <p><dfn>Traverse</dfn> means "visit every node from first to last". You cannot jump. You start at the head and follow <code>next</code> until you hit <code>None</code>.</p>
+
+<pre><code>cur = head            <span class="c"># cur = "the node I am standing on"</span>
+<span class="k">while</span> cur:            <span class="c"># stops when cur becomes None</span>
+    print(cur.val)
+    cur = cur.next    <span class="c"># step forward</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 620 150" role="img" aria-label="Traversal trace: cur starts at red, moves to blue, then green, then becomes None and the loop stops.">
+      <g>
+        <rect x="20" y="60" width="110" height="44" class="nd"/><line x1="80" y1="60" x2="80" y2="104" class="cell"/>
+        <text x="50" y="87" class="t" text-anchor="middle">red</text><circle cx="105" cy="82" r="3.5" class="dot"/>
+        <path d="M105,82 L188,82" class="ptr" marker-end="url(#arr)"/>
+      </g>
+      <g>
+        <rect x="190" y="60" width="110" height="44" class="nd"/><line x1="250" y1="60" x2="250" y2="104" class="cell"/>
+        <text x="220" y="87" class="t" text-anchor="middle">blue</text><circle cx="275" cy="82" r="3.5" class="dot"/>
+        <path d="M275,82 L358,82" class="ptr" marker-end="url(#arr)"/>
+      </g>
+      <g>
+        <rect x="360" y="60" width="110" height="44" class="nd"/><line x1="420" y1="60" x2="420" y2="104" class="cell"/>
+        <text x="390" y="87" class="t" text-anchor="middle">green</text>
+        <text x="445" y="87" class="t nulltxt" text-anchor="middle">∅</text>
+      </g>
+      <!-- cur positions -->
+      <text x="75" y="26" class="t mono" text-anchor="middle">cur ①</text>
+      <path d="M75,32 L75,58" class="cur" marker-end="url(#arrCur)"/>
+      <text x="245" y="26" class="t mono" text-anchor="middle">cur ②</text>
+      <path d="M245,32 L245,58" class="cur" marker-end="url(#arrCur)"/>
+      <text x="415" y="26" class="t mono" text-anchor="middle">cur ③</text>
+      <path d="M415,32 L415,58" class="cur" marker-end="url(#arrCur)"/>
+      <text x="545" y="26" class="t mono" text-anchor="middle">cur ④ = None</text>
+      <text x="545" y="50" class="t small" text-anchor="middle">loop stops</text>
+      <text x="320" y="135" class="t small" text-anchor="middle">4 checks of "while cur", 3 nodes printed → O(n)</text>
+    </svg>
+    <figcaption><b>The loop runs once per node, then one more check that fails.</b> Time is O(n) where n is the number of nodes.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Loop turn</th><th><code>cur</code> is</th><th><code>while cur</code>?</th><th>prints</th><th>then <code>cur = cur.next</code> →</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>red node</td><td>True</td><td>red</td><td>blue node</td></tr>
+      <tr><td>2</td><td>blue node</td><td>True</td><td>blue</td><td>green node</td></tr>
+      <tr><td>3</td><td>green node</td><td>True</td><td>green</td><td>None</td></tr>
+      <tr><td>4</td><td>None</td><td>False</td><td>-</td><td>exit loop</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p><code>cur.next</code> is a <em>node object</em>, not a value. To read the next value write <code>cur.next.val</code>. Writing <code>print(cur.next)</code> prints something like <code>&lt;ListNode object at 0x1f3...&gt;</code>.</p>
+  </div>
+
+  <h3>Append at the tail: 2 lines</h3>
+  <p>Because we keep a <code>tail</code> pointer, adding to the end does not need a walk. Two pointer changes, O(1).</p>
+
+<pre><code>ListNode4 = ListNode(<span class="s">"yellow"</span>)
+tail.next = ListNode4     <span class="c"># step 1: old last node now points to the new node</span>
+tail = ListNode4          <span class="c"># step 2: move the tail label to the new node</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 660 180" role="img" aria-label="Appending yellow: first green's next is set to yellow, then tail is moved from green to yellow.">
+      <g>
+        <rect x="20" y="70" width="110" height="44" class="nd"/><line x1="80" y1="70" x2="80" y2="114" class="cell"/>
+        <text x="50" y="97" class="t" text-anchor="middle">red</text><circle cx="105" cy="92" r="3.5" class="dot"/>
+        <path d="M105,92 L188,92" class="ptr" marker-end="url(#arr)"/>
+      </g>
+      <g>
+        <rect x="190" y="70" width="110" height="44" class="nd"/><line x1="250" y1="70" x2="250" y2="114" class="cell"/>
+        <text x="220" y="97" class="t" text-anchor="middle">blue</text><circle cx="275" cy="92" r="3.5" class="dot"/>
+        <path d="M275,92 L358,92" class="ptr" marker-end="url(#arr)"/>
+      </g>
+      <g>
+        <rect x="360" y="70" width="110" height="44" class="nd"/><line x1="420" y1="70" x2="420" y2="114" class="cell"/>
+        <text x="390" y="97" class="t" text-anchor="middle">green</text><circle cx="445" cy="92" r="3.5" class="dot newd"/>
+        <path d="M445,92 L528,92" class="ptr newp" marker-end="url(#arrNew)"/>
+        <text x="487" y="82" class="t newlab" text-anchor="middle" font-size="11">①</text>
+      </g>
+      <g>
+        <rect x="530" y="70" width="110" height="44" class="nd newnd"/><line x1="590" y1="70" x2="590" y2="114" class="cell"/>
+        <text x="560" y="97" class="t" text-anchor="middle">yellow</text>
+        <text x="615" y="97" class="t nulltxt" text-anchor="middle">∅</text>
+      </g>
+      <!-- tail old and new -->
+      <text x="415" y="30" class="t small" text-anchor="middle" style="text-decoration:line-through">tail</text>
+      <path d="M415,36 L415,68" class="ptr old" marker-end="url(#arrOld)"/>
+      <text x="585" y="30" class="t newlab" text-anchor="middle">tail ②</text>
+      <path d="M585,36 L585,68" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="330" y="160" class="t small" text-anchor="middle">① tail.next = ListNode4      ② tail = ListNode4      (no shifting, no copying)</text>
+    </svg>
+    <figcaption><b>Orange = what changed.</b> Step ① draws the arrow from green to yellow. Step ② moves the <code>tail</code> label. Do them in this order: if you move <code>tail</code> first, you lose your handle on green and cannot set its <code>next</code>.</figcaption>
+  </figure>
+
+  <h3>Delete a node: skip it</h3>
+  <p>To delete a node you never "erase" it. You make the node before it point <em>past</em> it. Suppose we delete blue (the node after head):</p>
+
+<pre><code>head.next = head.next.next
+<span class="c"># head.next      is blue</span>
+<span class="c"># head.next.next is green</span>
+<span class="c"># so: red now points to green; blue is skipped</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 620 170" role="img" aria-label="Deleting blue: red's next is changed from blue to green. Blue is no longer reachable.">
+      <text x="75" y="22" class="t ptrlab" text-anchor="middle">head</text>
+      <path d="M75,28 L75,58" class="ptr" marker-end="url(#arr)"/>
+      <g>
+        <rect x="20" y="60" width="110" height="44" class="nd"/><line x1="80" y1="60" x2="80" y2="104" class="cell"/>
+        <text x="50" y="87" class="t" text-anchor="middle">red</text><circle cx="105" cy="82" r="3.5" class="dot newd"/>
+        <path d="M105,82 L188,82" class="ptr old" marker-end="url(#arrOld)"/>
+        <path d="M105,82 C 160,20 300,20 358,78" class="ptr newp" marker-end="url(#arrNew)"/>
+        <text x="232" y="38" class="t newlab" text-anchor="middle" font-size="11">head.next = head.next.next</text>
+      </g>
+      <g>
+        <rect x="190" y="60" width="110" height="44" class="nd dim"/><line x1="250" y1="60" x2="250" y2="104" class="cell" opacity=".35"/>
+        <text x="220" y="87" class="t" text-anchor="middle" opacity=".35">blue</text><circle cx="275" cy="82" r="3.5" class="dot" opacity=".35"/>
+        <path d="M275,82 L358,82" class="ptr" opacity=".35" marker-end="url(#arr)"/>
+        <text x="245" y="130" class="t small" text-anchor="middle">nobody points here anymore</text>
+        <text x="245" y="146" class="t small" text-anchor="middle">→ garbage collected</text>
+      </g>
+      <g>
+        <rect x="360" y="60" width="110" height="44" class="nd"/><line x1="420" y1="60" x2="420" y2="104" class="cell"/>
+        <text x="390" y="87" class="t" text-anchor="middle">green</text>
+        <text x="445" y="87" class="t nulltxt" text-anchor="middle">∅</text>
+      </g>
+    </svg>
+    <figcaption><b>One pointer change deletes a node.</b> Blue still exists for a moment, but nothing points to it. Python's <dfn>garbage collector</dfn> (automatic memory cleanup) frees it. In C you would free it yourself. If blue were the tail, you must also move <code>tail</code> to red.</figcaption>
+  </figure>
+
+  <div class="callout">
+    <span class="lab">The star in O(1)*</span>
+    <p>Insert and delete are O(1) <em>only if you already hold a reference to the node just before the spot</em>. If you must walk from the head to find that spot, the walk costs O(n). NeetCode marks this with a star in the table. Interviewers ask about it.</p>
+  </div>
+
+  <h3>Circular list: the infinite loop trap</h3>
+  <p>If the last node's <code>next</code> points back to an earlier node, the list has no end. <code>while cur:</code> never sees <code>None</code> and runs forever.</p>
+
+  <figure>
+    <svg viewBox="0 0 520 140" role="img" aria-label="A circular linked list: green's next points back to red, so traversal never reaches None.">
+      <g>
+        <rect x="20" y="40" width="110" height="44" class="nd"/><line x1="80" y1="40" x2="80" y2="84" class="cell"/>
+        <text x="50" y="67" class="t" text-anchor="middle">red</text><circle cx="105" cy="62" r="3.5" class="dot"/>
+        <path d="M105,62 L188,62" class="ptr" marker-end="url(#arr)"/>
+      </g>
+      <g>
+        <rect x="190" y="40" width="110" height="44" class="nd"/><line x1="250" y1="40" x2="250" y2="84" class="cell"/>
+        <text x="220" y="67" class="t" text-anchor="middle">blue</text><circle cx="275" cy="62" r="3.5" class="dot"/>
+        <path d="M275,62 L358,62" class="ptr" marker-end="url(#arr)"/>
+      </g>
+      <g>
+        <rect x="360" y="40" width="110" height="44" class="nd"/><line x1="420" y1="40" x2="420" y2="84" class="cell"/>
+        <text x="390" y="67" class="t" text-anchor="middle">green</text><circle cx="445" cy="62" r="3.5" class="dot"/>
+        <path d="M445,62 C 445,120 75,120 75,88" class="ptr" marker-end="url(#arr)"/>
+        <text x="260" y="122" class="t nulltxt" text-anchor="middle" font-size="12">green.next = red  → no None → while loop never ends</text>
+      </g>
+    </svg>
+    <figcaption><b>Cycles are detected with two pointers (slow and fast), which you covered earlier as Floyd's algorithm.</b> The pattern is in section 4.</figcaption>
+  </figure>
+
+  <h3>Full class with head and tail</h3>
+<pre><code><span class="k">class</span> SinglyLinkedList:
+    <span class="k">def</span> __init__(self):
+        self.head = <span class="k">None</span>
+        self.tail = <span class="k">None</span>
+
+    <span class="k">def</span> append(self, val):
+        node = ListNode(val)
+        <span class="k">if</span> self.tail:                <span class="c"># list has nodes</span>
+            self.tail.next = node
+            self.tail = node
+        <span class="k">else</span>:                        <span class="c"># list is empty: head and tail are the same node</span>
+            self.head = self.tail = node
+
+    <span class="k">def</span> delete_after(self, node):
+        <span class="c"># removes node.next (the node AFTER the one you hold)</span>
+        <span class="k">if</span> node <span class="k">is None or</span> node.next <span class="k">is None</span>:
+            <span class="k">return</span>
+        removed = node.next
+        node.next = removed.next
+        <span class="k">if</span> removed <span class="k">is</span> self.tail:      <span class="c"># deleted the last node? move tail back</span>
+            self.tail = node
+
+    <span class="k">def</span> to_list(self):
+        out, cur = [], self.head
+        <span class="k">while</span> cur:
+            out.append(cur.val)
+            cur = cur.next
+        <span class="k">return</span> out</code></pre>
+</section>
+
+<!-- ============================ DOUBLY ============================ -->
+<section id="doubly">
+  <h2><span class="num">2</span>Doubly linked list</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>A train. Each car is hooked to the car in front <em>and</em> the car behind. You can walk from the engine to the back, or from the back to the engine. The engine has nothing in front (<code>prev = None</code>); the last car has nothing behind (<code>next = None</code>).</p>
+  </div>
+
+  <p>Same as a singly linked list, plus one extra pointer per node: <code>prev</code>, which points to the previous node. Cost: a little more memory and one more pointer to update on every change. Benefit: you can walk backwards, and you can delete a node when you only hold that node (no need for the node before it).</p>
+
+  <figure>
+    <svg viewBox="0 0 640 150" role="img" aria-label="Doubly linked list of three nodes, each with prev, val and next fields. Next pointers go right, prev pointers go left. Head's prev and tail's next are None.">
+      <text x="90" y="22" class="t ptrlab" text-anchor="middle">head</text>
+      <path d="M90,28 L90,52" class="ptr" marker-end="url(#arr)"/>
+      <text x="530" y="22" class="t ptrlab" text-anchor="middle">tail</text>
+      <path d="M530,28 L530,52" class="ptr" marker-end="url(#arr)"/>
+      <!-- node 1 -->
+      <g>
+        <rect x="20" y="54" width="140" height="44" class="nd"/>
+        <line x1="60" y1="54" x2="60" y2="98" class="cell"/><line x1="120" y1="54" x2="120" y2="98" class="cell"/>
+        <text x="40" y="81" class="t nulltxt" text-anchor="middle">∅</text>
+        <text x="90" y="81" class="t" text-anchor="middle">1</text>
+        <circle cx="140" cy="76" r="3.5" class="dot"/>
+        <path d="M140,70 L238,70" class="ptr" marker-end="url(#arr)"/>
+      </g>
+      <!-- node 2 -->
+      <g>
+        <rect x="240" y="54" width="140" height="44" class="nd"/>
+        <line x1="280" y1="54" x2="280" y2="98" class="cell"/><line x1="340" y1="54" x2="340" y2="98" class="cell"/>
+        <circle cx="260" cy="76" r="3.5" class="dot"/>
+        <text x="310" y="81" class="t" text-anchor="middle">2</text>
+        <circle cx="360" cy="76" r="3.5" class="dot"/>
+        <path d="M260,84 L162,84" class="ptr prevp" marker-end="url(#arr)"/>
+        <path d="M360,70 L458,70" class="ptr" marker-end="url(#arr)"/>
+      </g>
+      <!-- node 3 -->
+      <g>
+        <rect x="460" y="54" width="140" height="44" class="nd"/>
+        <line x1="500" y1="54" x2="500" y2="98" class="cell"/><line x1="560" y1="54" x2="560" y2="98" class="cell"/>
+        <circle cx="480" cy="76" r="3.5" class="dot"/>
+        <text x="530" y="81" class="t" text-anchor="middle">3</text>
+        <text x="580" y="81" class="t nulltxt" text-anchor="middle">∅</text>
+        <path d="M480,84 L382,84" class="ptr prevp" marker-end="url(#arr)"/>
+      </g>
+      <text x="40" y="118" class="t small" text-anchor="middle">prev</text>
+      <text x="90" y="118" class="t small" text-anchor="middle">val</text>
+      <text x="140" y="118" class="t small" text-anchor="middle">next</text>
+      <text x="320" y="140" class="t small" text-anchor="middle">bold arrows = next (→)   faded arrows = prev (←)</text>
+    </svg>
+    <figcaption><b>Three fields per node.</b> <code>prev = None</code> tells you "I am the head". <code>next = None</code> tells you "I am the tail".</figcaption>
+  </figure>
+
+<pre><code><span class="k">class</span> DNode:
+    <span class="k">def</span> __init__(self, val):
+        self.val = val
+        self.prev = <span class="k">None</span>
+        self.next = <span class="k">None</span></code></pre>
+
+  <h3>Insert at end: 3 lines, in order</h3>
+<pre><code>ListNode4 = DNode(4)
+tail.next = ListNode4      <span class="c"># ① old tail → new node</span>
+ListNode4.prev = tail      <span class="c"># ② new node ← old tail</span>
+tail = tail.next           <span class="c"># ③ move the tail label</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 640 170" role="img" aria-label="Inserting node 4 at the end of a doubly linked list: set 3.next to 4, set 4.prev to 3, then move tail to 4.">
+      <!-- node 3 -->
+      <g>
+        <rect x="120" y="60" width="140" height="44" class="nd"/>
+        <line x1="160" y1="60" x2="160" y2="104" class="cell"/><line x1="220" y1="60" x2="220" y2="104" class="cell"/>
+        <circle cx="140" cy="82" r="3.5" class="dot"/>
+        <path d="M140,90 L60,90" class="ptr prevp" marker-end="url(#arr)"/>
+        <text x="190" y="87" class="t" text-anchor="middle">3</text>
+        <circle cx="240" cy="82" r="3.5" class="dot newd"/>
+        <path d="M240,76 L338,76" class="ptr newp" marker-end="url(#arrNew)"/>
+        <text x="290" y="66" class="t newlab" text-anchor="middle" font-size="11">①</text>
+      </g>
+      <!-- node 4 -->
+      <g>
+        <rect x="340" y="60" width="140" height="44" class="nd newnd"/>
+        <line x1="380" y1="60" x2="380" y2="104" class="cell"/><line x1="440" y1="60" x2="440" y2="104" class="cell"/>
+        <circle cx="360" cy="82" r="3.5" class="dot newd"/>
+        <path d="M360,90 L262,90" class="ptr newp" marker-end="url(#arrNew)"/>
+        <text x="300" y="118" class="t newlab" text-anchor="middle" font-size="11">②</text>
+        <text x="410" y="87" class="t" text-anchor="middle">4</text>
+        <text x="460" y="87" class="t nulltxt" text-anchor="middle">∅</text>
+      </g>
+      <text x="190" y="30" class="t small" text-anchor="middle" style="text-decoration:line-through">tail</text>
+      <path d="M190,36 L190,58" class="ptr old" marker-end="url(#arrOld)"/>
+      <text x="410" y="30" class="t newlab" text-anchor="middle">tail ③</text>
+      <path d="M410,36 L410,58" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="320" y="152" class="t small" text-anchor="middle">two arrows must be drawn, one in each direction, before tail moves</text>
+    </svg>
+    <figcaption><b>Every link in a doubly linked list is two arrows.</b> Forget <code>prev</code> and walking backwards will skip the new node.</figcaption>
+  </figure>
+
+  <h3>Delete at end</h3>
+  <p>Here <code>prev</code> pays off. In a singly linked list you cannot delete the tail in O(1) because you do not know the node before it. In a doubly linked list, <code>tail.prev</code> gives it to you instantly.</p>
+
+<pre><code>ListNode2 = tail.prev      <span class="c"># ① grab the node before the tail</span>
+ListNode2.next = <span class="k">None</span>       <span class="c"># ② cut the forward arrow</span>
+tail = ListNode2           <span class="c"># ③ move the tail label back</span>
+<span class="c"># optional: old_tail.prev = None  (helps garbage collection, not required)</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 640 170" role="img" aria-label="Deleting the tail of a doubly linked list: node 2's next is set to None and tail moves back to node 2. Node 3 is dropped.">
+      <g>
+        <rect x="120" y="60" width="140" height="44" class="nd"/>
+        <line x1="160" y1="60" x2="160" y2="104" class="cell"/><line x1="220" y1="60" x2="220" y2="104" class="cell"/>
+        <circle cx="140" cy="82" r="3.5" class="dot"/>
+        <path d="M140,90 L60,90" class="ptr prevp" marker-end="url(#arr)"/>
+        <text x="190" y="87" class="t" text-anchor="middle">2</text>
+        <text x="240" y="87" class="t nulltxt" text-anchor="middle">∅</text>
+        <path d="M244,76 L338,76" class="ptr old" marker-end="url(#arrOld)"/>
+        <text x="290" y="66" class="t newlab" text-anchor="middle" font-size="11">② next = None</text>
+      </g>
+      <g>
+        <rect x="340" y="60" width="140" height="44" class="nd dim"/>
+        <line x1="380" y1="60" x2="380" y2="104" class="cell" opacity=".35"/><line x1="440" y1="60" x2="440" y2="104" class="cell" opacity=".35"/>
+        <circle cx="360" cy="82" r="3.5" class="dot" opacity=".35"/>
+        <path d="M360,90 L262,90" class="ptr prevp" opacity=".35" marker-end="url(#arr)"/>
+        <text x="410" y="87" class="t" text-anchor="middle" opacity=".35">3</text>
+        <text x="460" y="87" class="t nulltxt" text-anchor="middle" opacity=".35">∅</text>
+        <text x="410" y="130" class="t small" text-anchor="middle">unreachable → freed</text>
+      </g>
+      <text x="190" y="30" class="t newlab" text-anchor="middle">tail ③</text>
+      <path d="M190,36 L190,58" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="410" y="30" class="t small" text-anchor="middle" style="text-decoration:line-through">tail</text>
+      <path d="M410,36 L410,58" class="ptr old" marker-end="url(#arrOld)"/>
+      <text x="320" y="156" class="t small" text-anchor="middle">① ListNode2 = tail.prev  is what makes this O(1)</text>
+    </svg>
+    <figcaption><b>O(1) insert and delete at both ends.</b> This is why a doubly linked list can act as a stack <em>or</em> a queue.</figcaption>
+  </figure>
+
+  <h3>Front operations (the animations in the lesson)</h3>
+  <p>Same idea, mirrored. Insert at front: new node's <code>next</code> is the old head, old head's <code>prev</code> is the new node, then move <code>head</code>. Delete at front: grab <code>head.next</code>, set its <code>prev</code> to <code>None</code>, move <code>head</code>.</p>
+
+<pre><code><span class="k">class</span> DoublyLinkedList:
+    <span class="k">def</span> __init__(self):
+        self.head = <span class="k">None</span>
+        self.tail = <span class="k">None</span>
+
+    <span class="k">def</span> insert_end(self, val):
+        node = DNode(val)
+        <span class="k">if</span> self.tail:
+            self.tail.next = node
+            node.prev = self.tail
+            self.tail = node
+        <span class="k">else</span>:
+            self.head = self.tail = node
+
+    <span class="k">def</span> insert_front(self, val):
+        node = DNode(val)
+        <span class="k">if</span> self.head:
+            node.next = self.head
+            self.head.prev = node
+            self.head = node
+        <span class="k">else</span>:
+            self.head = self.tail = node
+
+    <span class="k">def</span> delete_end(self):
+        <span class="k">if not</span> self.tail:
+            <span class="k">return None</span>
+        val = self.tail.val
+        <span class="k">if</span> self.tail <span class="k">is</span> self.head:        <span class="c"># only one node → list becomes empty</span>
+            self.head = self.tail = <span class="k">None</span>
+        <span class="k">else</span>:
+            before = self.tail.prev
+            before.next = <span class="k">None</span>
+            self.tail = before
+        <span class="k">return</span> val
+
+    <span class="k">def</span> delete_front(self):
+        <span class="k">if not</span> self.head:
+            <span class="k">return None</span>
+        val = self.head.val
+        <span class="k">if</span> self.head <span class="k">is</span> self.tail:
+            self.head = self.tail = <span class="k">None</span>
+        <span class="k">else</span>:
+            after = self.head.next
+            after.prev = <span class="k">None</span>
+            self.head = after
+        <span class="k">return</span> val</code></pre>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>Every method has <strong>three cases</strong>: empty list, one node, many nodes. Most bugs live in the first two. When you write a linked list method, test those two first.</p>
+  </div>
+</section>
+
+<!-- ============================ QUEUE ============================ -->
+<section id="queue">
+  <h2><span class="num">3</span>Queue</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>A line at the bank. New people join at the back. The teller serves the person at the front. First in, first out. That rule has a name: <dfn>FIFO</dfn>.</p>
+  </div>
+
+  <p>A queue is not a new structure; it is a linked list with two rules. Add only at the back (<dfn>enqueue</dfn>). Remove only from the front (<dfn>dequeue</dfn>). NeetCode names the two ends <code>left</code> (front) and <code>right</code> (back). Compare with a stack, which is LIFO: last in, first out.</p>
+
+  <figure>
+    <svg viewBox="0 0 660 190" role="img" aria-label="Queue as a linked list. Dequeue removes from the left end where the left pointer is; enqueue adds at the right end where the right pointer is.">
+      <text x="120" y="24" class="t ptrlab" text-anchor="middle">left (front)</text>
+      <path d="M120,30 L120,58" class="ptr" marker-end="url(#arr)"/>
+      <text x="460" y="24" class="t ptrlab" text-anchor="middle">right (back)</text>
+      <path d="M460,30 L460,58" class="ptr" marker-end="url(#arr)"/>
+      <g>
+        <rect x="65" y="60" width="110" height="44" class="nd"/><line x1="125" y1="60" x2="125" y2="104" class="cell"/>
+        <text x="95" y="87" class="t" text-anchor="middle">A</text><circle cx="150" cy="82" r="3.5" class="dot"/>
+        <path d="M150,82 L233,82" class="ptr" marker-end="url(#arr)"/>
+      </g>
+      <g>
+        <rect x="235" y="60" width="110" height="44" class="nd"/><line x1="295" y1="60" x2="295" y2="104" class="cell"/>
+        <text x="265" y="87" class="t" text-anchor="middle">B</text><circle cx="320" cy="82" r="3.5" class="dot"/>
+        <path d="M320,82 L403,82" class="ptr" marker-end="url(#arr)"/>
+      </g>
+      <g>
+        <rect x="405" y="60" width="110" height="44" class="nd"/><line x1="465" y1="60" x2="465" y2="104" class="cell"/>
+        <text x="435" y="87" class="t" text-anchor="middle">C</text>
+        <text x="490" y="87" class="t nulltxt" text-anchor="middle">∅</text>
+      </g>
+      <!-- dequeue out arrow -->
+      <path d="M60,82 L14,82" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="40" y="128" class="t newlab" text-anchor="middle" font-size="12">dequeue</text>
+      <text x="40" y="144" class="t small" text-anchor="middle">returns A</text>
+      <!-- enqueue in arrow -->
+      <path d="M560,82 L520,82" class="ptr newp" marker-end="url(#arrNew)"/>
+      <rect x="565" y="60" width="80" height="44" class="nd newnd"/>
+      <text x="605" y="87" class="t" text-anchor="middle">D</text>
+      <text x="605" y="128" class="t newlab" text-anchor="middle" font-size="12">enqueue</text>
+      <text x="605" y="144" class="t small" text-anchor="middle">goes after C</text>
+      <text x="330" y="178" class="t small" text-anchor="middle">served in order: A, B, C, D  — first in, first out</text>
+    </svg>
+    <figcaption><b>Two pointers, two doors.</b> <code>left</code> is the head (exit door), <code>right</code> is the tail (entry door). Both operations touch only the ends, so both are O(1).</figcaption>
+  </figure>
+
+  <h3>The full queue, with the empty-list cases handled</h3>
+<pre><code><span class="k">class</span> Queue:
+    <span class="k">def</span> __init__(self):
+        self.left = <span class="k">None</span>     <span class="c"># front: dequeue here</span>
+        self.right = <span class="k">None</span>    <span class="c"># back:  enqueue here</span>
+
+    <span class="k">def</span> enqueue(self, val):
+        newNode = ListNode(val)
+        <span class="k">if</span> self.right:                   <span class="c"># queue is non-empty</span>
+            self.right.next = newNode
+            self.right = self.right.next
+        <span class="k">else</span>:                            <span class="c"># queue is empty</span>
+            self.left = self.right = newNode
+
+    <span class="k">def</span> dequeue(self):
+        <span class="k">if not</span> self.left:                <span class="c"># queue is empty: nothing to return</span>
+            <span class="k">return None</span>
+        val = self.left.val
+        self.left = self.left.next
+        <span class="k">if not</span> self.left:                <span class="c"># we just removed the last node</span>
+            self.right = <span class="k">None</span>            <span class="c"># right must not point at a dead node</span>
+        <span class="k">return</span> val</code></pre>
+
+  <div class="callout">
+    <span class="lab">The line people forget</span>
+    <p><code>if not self.left: self.right = None</code>. After removing the last node, <code>right</code> still points to it. The next <code>enqueue</code> would then attach to a node that is not in the queue, and <code>left</code> stays <code>None</code>. The queue silently breaks.</p>
+  </div>
+
+  <h3>In real Python code</h3>
+  <p>Do not build a queue from scratch in an interview unless asked. Use <code>collections.deque</code>. A <dfn>deque</dfn> ("deck", double-ended queue) supports O(1) add and remove at both ends.</p>
+
+<pre><code><span class="k">from</span> collections <span class="k">import</span> deque
+
+q = deque()
+q.append(1)        <span class="c"># enqueue at the back</span>
+q.append(2)
+q.popleft()        <span class="c"># dequeue from the front → 1</span>
+q.appendleft(0)    <span class="c"># also allowed: add at front</span>
+q.pop()            <span class="c"># also allowed: remove from back</span>
+
+<span class="c"># NEVER do this for a queue:</span>
+lst = [1, 2, 3]
+lst.pop(0)         <span class="c"># O(n): every element shifts left</span></code></pre>
+
+  <p>Where you will use a queue next: <strong>breadth-first search</strong> (BFS) on trees and graphs. BFS is "visit everything 1 step away, then everything 2 steps away". A queue keeps that order for you. Trees are the next big topic in the course.</p>
+</section>
+
+<!-- ============================ PATTERNS ============================ -->
+<section id="patterns">
+  <h2><span class="num">4</span>Three moves that solve most linked list problems</h2>
+  <p>The lessons teach the structure. Interviews test these three moves on top of it. Learn them as muscle memory.</p>
+
+  <h3>Move 1: Reverse with prev / cur / nxt</h3>
+  <p>Walk the list once. At each node, save where you are going, flip the arrow to point backwards, then move both markers forward.</p>
+
+<pre><code><span class="k">def</span> reverse_list(head):
+    prev, cur = <span class="k">None</span>, head
+    <span class="k">while</span> cur:
+        nxt = cur.next      <span class="c"># 1. save next  (or you lose the rest of the list)</span>
+        cur.next = prev     <span class="c"># 2. flip the arrow</span>
+        prev = cur          <span class="c"># 3. move prev forward</span>
+        cur = nxt           <span class="c"># 4. move cur forward</span>
+    <span class="k">return</span> prev             <span class="c"># prev is the new head</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 640 170" role="img" aria-label="One step of reversing a list: prev is at node 1, cur at node 2, nxt saved at node 3. Node 2's next is flipped to point at node 1.">
+      <text x="75" y="24" class="t mono" text-anchor="middle">prev</text>
+      <path d="M75,30 L75,58" class="cur" marker-end="url(#arrCur)"/>
+      <text x="245" y="24" class="t mono" text-anchor="middle">cur</text>
+      <path d="M245,30 L245,58" class="cur" marker-end="url(#arrCur)"/>
+      <text x="415" y="24" class="t mono" text-anchor="middle">nxt (saved)</text>
+      <path d="M415,30 L415,58" class="cur" marker-end="url(#arrCur)"/>
+      <g>
+        <rect x="20" y="60" width="110" height="44" class="nd"/><line x1="80" y1="60" x2="80" y2="104" class="cell"/>
+        <text x="50" y="87" class="t" text-anchor="middle">1</text>
+        <text x="105" y="87" class="t nulltxt" text-anchor="middle">∅</text>
+        <text x="75" y="128" class="t small" text-anchor="middle">already flipped</text>
+      </g>
+      <g>
+        <rect x="190" y="60" width="110" height="44" class="nd"/><line x1="250" y1="60" x2="250" y2="104" class="cell"/>
+        <text x="220" y="87" class="t" text-anchor="middle">2</text><circle cx="275" cy="82" r="3.5" class="dot newd"/>
+        <path d="M275,82 L358,82" class="ptr old" marker-end="url(#arrOld)"/>
+        <path d="M275,82 C 250,130 160,130 132,90" class="ptr newp" marker-end="url(#arrNew)"/>
+        <text x="205" y="150" class="t newlab" text-anchor="middle" font-size="11">cur.next = prev</text>
+      </g>
+      <g>
+        <rect x="360" y="60" width="110" height="44" class="nd"/><line x1="420" y1="60" x2="420" y2="104" class="cell"/>
+        <text x="390" y="87" class="t" text-anchor="middle">3</text><circle cx="445" cy="82" r="3.5" class="dot"/>
+        <path d="M445,82 L528,82" class="ptr" marker-end="url(#arr)"/>
+        <text x="415" y="128" class="t small" text-anchor="middle">not yet touched</text>
+      </g>
+      <g>
+        <rect x="530" y="60" width="90" height="44" class="nd"/><line x1="590" y1="60" x2="590" y2="104" class="cell"/>
+        <text x="560" y="87" class="t" text-anchor="middle">4</text>
+        <text x="605" y="87" class="t nulltxt" text-anchor="middle">∅</text>
+      </g>
+    </svg>
+    <figcaption><b>The dashed arrow is why you save <code>nxt</code> first.</b> The moment you flip <code>cur.next</code>, node 3 and everything after it are unreachable from <code>cur</code>. <code>nxt</code> is your only way there.</figcaption>
+  </figure>
+
+  <h3>Move 2: Dummy node</h3>
+  <p>Deleting the head is a special case because nothing points to it. Fix: put a fake node in front so <em>every</em> real node has a node before it. Return <code>dummy.next</code> at the end.</p>
+
+<pre><code><span class="k">def</span> remove_value(head, target):
+    dummy = ListNode(0)
+    dummy.next = head
+    cur = dummy                        <span class="c"># cur always stands BEFORE the node we inspect</span>
+    <span class="k">while</span> cur.next:
+        <span class="k">if</span> cur.next.val == target:
+            cur.next = cur.next.next   <span class="c"># skip it (same trick as section 1)</span>
+        <span class="k">else</span>:
+            cur = cur.next
+    <span class="k">return</span> dummy.next                  <span class="c"># the real head, even if the old head was removed</span></code></pre>
+
+  <h3>Move 3: Slow and fast pointers</h3>
+  <p>Two walkers. Slow moves 1 step, fast moves 2. When fast hits the end, slow is at the middle. If the list has a cycle, fast laps slow and they meet.</p>
+
+<pre><code><span class="k">def</span> middle(head):
+    slow = fast = head
+    <span class="k">while</span> fast <span class="k">and</span> fast.next:
+        slow = slow.next
+        fast = fast.next.next
+    <span class="k">return</span> slow
+
+<span class="k">def</span> has_cycle(head):
+    slow = fast = head
+    <span class="k">while</span> fast <span class="k">and</span> fast.next:
+        slow = slow.next
+        fast = fast.next.next
+        <span class="k">if</span> slow <span class="k">is</span> fast:
+            <span class="k">return True</span>
+    <span class="k">return False</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 640 130" role="img" aria-label="Slow and fast pointers on a five node list: after two steps slow is at node 3 and fast is at node 5, the end.">
+      <g>
+        <rect x="20" y="50" width="100" height="40" class="nd"/><text x="70" y="75" class="t" text-anchor="middle">1</text>
+        <path d="M120,70 L148,70" class="ptr" marker-end="url(#arr)"/>
+        <rect x="150" y="50" width="100" height="40" class="nd"/><text x="200" y="75" class="t" text-anchor="middle">2</text>
+        <path d="M250,70 L278,70" class="ptr" marker-end="url(#arr)"/>
+        <rect x="280" y="50" width="100" height="40" class="nd"/><text x="330" y="75" class="t" text-anchor="middle">3</text>
+        <path d="M380,70 L408,70" class="ptr" marker-end="url(#arr)"/>
+        <rect x="410" y="50" width="100" height="40" class="nd"/><text x="460" y="75" class="t" text-anchor="middle">4</text>
+        <path d="M510,70 L538,70" class="ptr" marker-end="url(#arr)"/>
+        <rect x="540" y="50" width="80" height="40" class="nd"/><text x="580" y="75" class="t" text-anchor="middle">5</text>
+      </g>
+      <text x="330" y="22" class="t newlab" text-anchor="middle">slow (2 steps)</text>
+      <path d="M330,28 L330,48" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="580" y="22" class="t ptrlab" text-anchor="middle">fast (4 steps)</text>
+      <path d="M580,28 L580,48" class="ptr" marker-end="url(#arr)"/>
+      <text x="320" y="118" class="t small" text-anchor="middle">fast.next is None → stop → slow is the middle. Even length? slow lands on the second middle.</text>
+    </svg>
+    <figcaption><b>Guard with <code>while fast and fast.next</code>.</b> <code>fast.next.next</code> crashes if <code>fast.next</code> is <code>None</code>. This guard is the most common bug in this pattern.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================ COMPLEXITY ============================ -->
+<section id="complexity">
+  <h2><span class="num">5</span>Big-O summary</h2>
+  <p>Say these out loud in interviews. The star always means: "if I already hold a reference to the node at that spot".</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Operation</th><th>Singly LL</th><th>Doubly LL</th><th>Queue (LL)</th><th>Python list</th></tr></thead>
+    <tbody>
+      <tr><td>Access by index</td><td class="big slow">O(n)</td><td class="big slow">O(n)</td><td>-</td><td class="big fast">O(1)</td></tr>
+      <tr><td>Search by value</td><td class="big slow">O(n)</td><td class="big slow">O(n)</td><td>-</td><td class="big slow">O(n)</td></tr>
+      <tr><td>Insert at end (have tail)</td><td class="big fast">O(1)</td><td class="big fast">O(1)</td><td class="big fast">O(1) enqueue</td><td class="big fast">O(1)*</td></tr>
+      <tr><td>Delete at end</td><td class="big slow">O(n)</td><td class="big fast">O(1)</td><td>-</td><td class="big fast">O(1)</td></tr>
+      <tr><td>Insert / delete at front</td><td class="big fast">O(1)</td><td class="big fast">O(1)</td><td class="big fast">O(1) dequeue</td><td class="big slow">O(n)</td></tr>
+      <tr><td>Insert / delete in middle</td><td class="big fast">O(1)*</td><td class="big fast">O(1)*</td><td>-</td><td class="big slow">O(n)</td></tr>
+      <tr><td>Walk backwards</td><td>no</td><td>yes</td><td>-</td><td>yes</td></tr>
+    </tbody>
+  </table></div>
+  <p>Why singly delete-at-end is O(n): you need the node <em>before</em> the tail, and a singly list gives you no way to go back. You must walk from the head. Python list's O(1)* at end is "amortized": occasionally it copies to a bigger array.</p>
+</section>
+
+<!-- ============================ MISTAKES ============================ -->
+<section id="mistakes">
+  <h2><span class="num">6</span>Mistakes to watch for</h2>
+  <div class="mistake">
+    <div>
+      <div class="bad">Losing the rest of the list</div>
+      <p>You overwrite <code>cur.next</code> before saving it. Everything after <code>cur</code> is gone. Always <code>nxt = cur.next</code> first.</p>
+    </div>
+    <div>
+      <div class="bad">Reading a node as a value</div>
+      <p><code>cur.next</code> is an object. Compare or print <code>cur.next.val</code>. You made this exact mistake earlier; it is normal.</p>
+    </div>
+    <div>
+      <div class="bad">Calling .next on None</div>
+      <p><code>AttributeError: 'NoneType' object has no attribute 'next'</code>. Guard every step: <code>while cur and cur.next</code>, <code>while fast and fast.next</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Forgetting to move tail (or right)</div>
+      <p>After append, <code>tail</code> must point at the new node. After removing the last node, <code>tail</code> (or the queue's <code>right</code>) must be updated or set to <code>None</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Skipping the empty and one-node cases</div>
+      <p>First line of every method: what if the list is empty? Second: what if it has one node? Write those branches before the general case.</p>
+    </div>
+    <div>
+      <div class="bad">Wrong order of pointer updates</div>
+      <p>In a doubly linked list, draw the arrow to the new node <em>before</em> moving <code>head</code> or <code>tail</code>. Move the label last.</p>
+    </div>
+    <div>
+      <div class="bad">Using list.pop(0) as a queue</div>
+      <p>O(n) every time. Use <code>collections.deque</code> and <code>popleft()</code>.</p>
+    </div>
+    <div>
+      <div class="bad">Mixing the node class and the list class</div>
+      <p><code>val / next / prev</code> belong to the node. <code>head / tail / left / right</code> belong to the list or queue. Do not put <code>self.val</code> inside <code>Queue.__init__</code>.</p>
+    </div>
+  </div>
+
+  <div class="cheat">
+    <h3>Interview one-liners</h3>
+    <ul>
+      <li>"A linked list trades O(1) random access for O(1) insert and delete at a known position."</li>
+      <li>"Nodes are not contiguous in memory, so there is no index math; I have to traverse."</li>
+      <li>"Insert and delete are O(1) only if I already hold the node before the position; otherwise the walk is O(n)."</li>
+      <li>"A doubly linked list costs one extra pointer per node and buys O(1) delete-at-tail and backward traversal."</li>
+      <li>"A queue is FIFO; with a linked list both enqueue and dequeue are O(1). In Python I use <code>collections.deque</code>."</li>
+      <li>"For head-edge cases I use a dummy node. For middle or cycle questions I use slow and fast pointers."</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================ PRACTICE ============================ -->
+<section id="practice">
+  <h2><span class="num">7</span>Practice, in this order</h2>
+  <p>Notes do not make you good at this. Solving does. Do these on LeetCode with no notes open, then check against the templates above.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Problem</th><th>Move it trains</th><th>Level</th></tr></thead>
+    <tbody>
+      <tr><td>206</td><td>Reverse Linked List</td><td>prev / cur / nxt</td><td>Easy</td></tr>
+      <tr><td>21</td><td>Merge Two Sorted Lists</td><td>dummy node + walk two lists</td><td>Easy</td></tr>
+      <tr><td>203</td><td>Remove Linked List Elements</td><td>dummy node + skip</td><td>Easy</td></tr>
+      <tr><td>876</td><td>Middle of the Linked List</td><td>slow / fast</td><td>Easy</td></tr>
+      <tr><td>141</td><td>Linked List Cycle</td><td>slow / fast (Floyd)</td><td>Easy</td></tr>
+      <tr><td>707</td><td>Design Linked List</td><td>full doubly list, all edge cases</td><td>Medium</td></tr>
+      <tr><td>1472</td><td>Design Browser History</td><td>doubly list, prev and next</td><td>Medium</td></tr>
+      <tr><td>19</td><td>Remove Nth Node From End</td><td>dummy + two pointers with a gap</td><td>Medium</td></tr>
+      <tr><td>2</td><td>Add Two Numbers</td><td>dummy + build a new list</td><td>Medium</td></tr>
+      <tr><td>1700</td><td>Number of Students Unable to Eat Lunch</td><td>queue simulation with deque</td><td>Easy</td></tr>
+      <tr><td>225</td><td>Implement Stack using Queues</td><td>queue rotation</td><td>Easy</td></tr>
+      <tr><td>143</td><td>Reorder List</td><td>middle + reverse + merge (all three moves)</td><td>Medium</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Your next step today:</strong> LeetCode 206. Write it from memory, run it, then read the reverse diagram again and compare.</p>
+</section>
+
+<!-- ============================ QUIZ ============================ -->
+<section id="quiz">
+  <h2><span class="num">8</span>Self-check</h2>
+  <p>Answer out loud before opening. If you cannot answer in one breath, reread that section.</p>
+
+  <details><summary><span class="q">Q1</span>What are the two fields of a singly linked list node, and what does each hold?</summary><div><p><code>val</code> holds the data. <code>next</code> holds a reference (address) to the next node, or <code>None</code> if this is the last node.</p></div></details>
+
+  <details><summary><span class="q">Q2</span>Why is accessing the 100th node O(n) in a linked list but O(1) in an array?</summary><div><p>Array elements are contiguous, so the address of index i is <code>start + i × size</code>: one multiplication. Linked list nodes are scattered; the only way to reach node 100 is to follow 99 <code>next</code> pointers.</p></div></details>
+
+  <details><summary><span class="q">Q3</span>Write the two lines that append <code>node</code> to a singly linked list that has a tail. Why does the order matter?</summary><div><p><code>tail.next = node</code> then <code>tail = node</code>. If you move <code>tail</code> first, you no longer have a reference to the old last node, so you cannot connect it to the new one.</p></div></details>
+
+  <details><summary><span class="q">Q4</span>What does <code>head.next = head.next.next</code> do?</summary><div><p>It deletes the second node. <code>head</code> now points at what used to be the third node. The second node becomes unreachable and is garbage collected.</p></div></details>
+
+  <details><summary><span class="q">Q5</span>Explain the star in "Insert O(1)*".</summary><div><p>The insert itself is one or two pointer changes, O(1). But that assumes you already hold the node just before the insertion point. If you have to walk to it from the head, the walk is O(n).</p></div></details>
+
+  <details><summary><span class="q">Q6</span>Deleting the tail: why O(n) in a singly list but O(1) in a doubly list?</summary><div><p>To delete the tail you must set the previous node's <code>next</code> to <code>None</code>. A singly list cannot go backwards, so you walk from the head to find that node. A doubly list gives it to you instantly as <code>tail.prev</code>.</p></div></details>
+
+  <details><summary><span class="q">Q7</span>Insert node X at the end of a doubly linked list. Write the three lines in the correct order.</summary><div><p><code>tail.next = X</code>, <code>X.prev = tail</code>, <code>tail = X</code>. (The first two can swap; <code>tail = X</code> must be last.)</p></div></details>
+
+  <details><summary><span class="q">Q8</span>In <code>dequeue</code>, why do we set <code>self.right = None</code> when <code>self.left</code> becomes <code>None</code>?</summary><div><p>We just removed the last node. <code>right</code> still points at it. If we leave it, the next <code>enqueue</code> sees a non-empty queue and attaches after a node that is no longer in the queue, while <code>left</code> stays <code>None</code>. The queue is corrupted.</p></div></details>
+
+  <details><summary><span class="q">Q9</span>What happens when you run <code>while cur:</code> on a circular linked list?</summary><div><p>Infinite loop. No node has <code>next = None</code>, so <code>cur</code> never becomes <code>None</code>. Detect cycles with slow and fast pointers.</p></div></details>
+
+  <details><summary><span class="q">Q10</span>In the reverse-list loop, which line must come first and why?</summary><div><p><code>nxt = cur.next</code>. The next line, <code>cur.next = prev</code>, overwrites the only pointer to the rest of the list. Without saving it, everything after <code>cur</code> is lost.</p></div></details>
+
+  <details><summary><span class="q">Q11</span>Which Python tool should you use for a queue, and which method removes from the front?</summary><div><p><code>collections.deque</code>, and <code>popleft()</code>. <code>list.pop(0)</code> is O(n) because every element shifts.</p></div></details>
+
+  <details><summary><span class="q">Q12</span>Trace it: list is 1 → 2 → 3 → 4. Run <code>middle(head)</code>. What are <code>slow</code> and <code>fast</code> after each loop turn, and what is returned?</summary><div><p>Start: slow=1, fast=1. Turn 1: slow=2, fast=3. Turn 2: slow=3, fast=None (4.next). Loop stops because <code>fast</code> is None. Returns node 3, the second middle of an even-length list.</p></div></details>
+</section>
+
+<nav class="pager" aria-label="Previous and next topic">
+  <a class="prev" href="01-arrays.html"><small>Previous</small>Arrays</a>
+  <a class="next" href="03-recursion.html"><small>Next</small>Recursion</a>
+</nav>
+
+<footer>
+  Source: NeetCode "Algorithms and Data Structures for Beginners", lessons 5 (Singly Linked Lists), 6 (Doubly Linked Lists), 7 (Queues). All Python in these notes was run and tested. Orange in every diagram marks the pointer that changed.
+</footer>
+</div>
+</body>
+</html>

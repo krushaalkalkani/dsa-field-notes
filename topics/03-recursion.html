@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recursion · DSA Field Notes</title>
+<meta name="description" content="One-branch recursion (factorial) and two-branch recursion (fibonacci) - call chains, the call stack, recursion trees, why fib is O(2^n), tested Python, mistakes, practice, self-check.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arr"/></marker>
+    <marker id="arrNew" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrNew"/></marker>
+    <marker id="arrOld" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrOld"/></marker>
+    <marker id="arrCur" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrCur"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="site-head">
+  <a class="brand" href="../index.html">DSA <span>Field Notes</span></a>
+  <div class="crumbs"><a href="../index.html">Course map</a> <span>/</span> <span>03 Recursion</span></div>
+</header>
+<header class="top">
+  <div class="eyebrow">NeetCode · DSA for Beginners · Lessons 8-9</div>
+  <h1>Recursion Field Notes</h1>
+  <p class="lede">A function that calls itself. One branch (factorial) and two branches (fibonacci). After this page you can trace any recursive call by hand, draw its call stack or call tree, say its Big-O, and turn it into a loop when the loop is simpler.</p>
+</header>
+
+<nav class="sections" aria-label="Sections">
+  <a href="#why">Why</a>
+  <a href="#factorial">Factorial</a>
+  <a href="#stack">Call stack</a>
+  <a href="#fibonacci">Fibonacci</a>
+  <a href="#patterns">Patterns</a>
+  <a href="#complexity">Big-O</a>
+  <a href="#mistakes">Mistakes</a>
+  <a href="#practice">Practice</a>
+  <a href="#quiz">Self-check</a>
+</nav>
+
+<!-- ============================ WHY ============================ -->
+<section id="why">
+  <h2><span class="num">0</span>Why recursion exists</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>A gift box. You open it and find a smaller box inside. You open that one and find a smaller box again. You keep opening until you reach the smallest box, which holds the gift. Then you close the boxes back up from the inside out. The smallest box is the <strong>base case</strong>. Every larger box "contains a smaller version of the same problem": that is the <strong>recursive case</strong>.</p>
+  </div>
+
+  <p><dfn>Recursion</dfn> is when a function calls itself, usually with a different (smaller) input. A function that does this is a <dfn>recursive function</dfn>. It breaks a problem into smaller sub-problems of the same shape, and then solves them <em>in reverse order</em>: the smallest one is finished first, and the biggest one is finished last.</p>
+
+  <p>Every recursive function has exactly two parts:</p>
+  <ul>
+    <li><strong>Base case</strong>: the input is so small that you answer directly, with no further call. Without it the function never stops.</li>
+    <li><strong>Recursive case</strong>: the function calls itself on a smaller input and uses that result to build its own answer.</li>
+  </ul>
+
+  <p>There are two shapes. <dfn>One-branch</dfn> recursion makes one recursive call per step (factorial, lesson 8). <dfn>Multi-branch</dfn> recursion makes two or more (fibonacci, lesson 9), which draws a tree of calls. It is usually possible to convert recursion to iteration and back. Sometimes the loop is simpler, sometimes the recursion is. Trees and graphs, which come later in the course, are where recursion is the natural choice.</p>
+
+  <figure>
+    <svg viewBox="0 0 660 225" role="img" aria-label="Nested boxes labeled factorial(5) down to factorial(1). The innermost box is the base case. Opening boxes is the recursive case, closing them is the unwind.">
+      <!-- nested boxes -->
+      <rect x="20" y="30" width="320" height="170" class="nd"/>
+      <text x="28" y="46" class="t mono">factorial(5)</text>
+      <rect x="42" y="52" width="276" height="126" class="nd"/>
+      <text x="50" y="68" class="t mono">factorial(4)</text>
+      <rect x="64" y="74" width="232" height="82" class="nd"/>
+      <text x="72" y="90" class="t mono">factorial(3)</text>
+      <rect x="86" y="96" width="188" height="42" class="nd"/>
+      <text x="94" y="110" class="t mono">factorial(2)</text>
+      <rect x="100" y="116" width="160" height="18" class="nd newnd"/>
+      <text x="180" y="129" class="t newlab" text-anchor="middle" font-size="11">factorial(1) = 1</text>
+      <text x="180" y="215" class="t small" text-anchor="middle">each box holds one smaller box (one branch)</text>
+
+      <!-- right side explanation -->
+      <text x="370" y="52" class="t ptrlab">OPEN  =  recursive case</text>
+      <text x="370" y="70" class="t small">factorial(n) cannot answer alone;</text>
+      <text x="370" y="86" class="t small">it needs the box inside: factorial(n - 1)</text>
+
+      <text x="370" y="120" class="t newlab">STOP  =  base case</text>
+      <text x="370" y="138" class="t small">the smallest box has nothing inside;</text>
+      <text x="370" y="154" class="t small">factorial(1) answers 1 with no new call</text>
+
+      <text x="370" y="188" class="t ptrlab">CLOSE  =  unwind</text>
+      <text x="370" y="206" class="t small">answers travel back out, inside to outside</text>
+    </svg>
+    <figcaption><b>Open, stop, close.</b> Opening boxes is the "going down" half of recursion. Reaching the orange box is the base case. Closing boxes is the "coming back up" half, where the sub-answers are pieced together. Both halves matter; beginners only picture the first one.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================ FACTORIAL ============================ -->
+<section id="factorial">
+  <h2><span class="num">1</span>One branch: factorial</h2>
+
+  <h3>n! as a smaller copy of itself</h3>
+  <p><dfn>n factorial</dfn>, written <code>n!</code>, is the product of all whole numbers from n down to 1: <code>n! = n × (n-1) × (n-2) × ... × 1</code>. Example: <code>5! = 5 × 4 × 3 × 2 × 1 = 120</code>.</p>
+  <p>Look at the same product again: <code>5! = 5 × 4!</code>, and <code>4! = 4 × 3!</code>, and so on. Each factorial is "n times a smaller factorial". That is the recursive case. The chain has to end somewhere: <code>1! = 1</code> and, by definition, <code>0! = 1</code>. That is the base case.</p>
+
+<pre><code><span class="c"># Recursive implementation of n! (n-factorial) calculation</span>
+<span class="k">def</span> factorial(n):
+    <span class="c"># Base case: n = 0 or 1</span>
+    <span class="k">if</span> n &lt;= <span class="s">1</span>:
+        <span class="k">return</span> <span class="s">1</span>
+    <span class="c"># Recursive case: n! = n * (n - 1)!</span>
+    <span class="k">return</span> n * factorial(n - <span class="s">1</span>)</code></pre>
+
+  <p>Two things to notice. The base case comes <em>first</em>, so it is checked before any new call. And the recursive call is on a <em>smaller</em> input (<code>n - 1</code>), so every call moves toward the base case.</p>
+
+  <h3>Trace factorial(5): down, then up</h3>
+  <p><code>factorial(5)</code> wants to return <code>5 * factorial(4)</code>. It cannot finish until <code>factorial(4)</code> answers. So it waits, and <code>factorial(4)</code> calls <code>factorial(3)</code>, which calls <code>factorial(2)</code>, which calls <code>factorial(1)</code>. That last one is the base case and returns 1 without calling anyone. Now the waiting calls finish in reverse: <code>2 × 1 = 2</code> (that is 2!), <code>3 × 2 = 6</code>, <code>4 × 6 = 24</code>, <code>5 × 24 = 120</code>.</p>
+
+  <figure>
+    <svg viewBox="0 0 660 305" role="img" aria-label="factorial(5) calls factorial(4), which calls factorial(3), then factorial(2), then factorial(1). factorial(1) is the base case and returns 1. Then 2, 6, 24 and finally 120 are returned back up the chain.">
+      <text x="20" y="18" class="t ptrlab">GOING DOWN: each call waits</text>
+      <!-- boxes -->
+      <rect x="230" y="40" width="200" height="28" class="nd"/>
+      <text x="240" y="58" class="t mono">factorial(5)</text>
+      <text x="420" y="58" class="t newlab" text-anchor="end" font-size="12">5 × 24 = 120</text>
+
+      <rect x="230" y="92" width="200" height="28" class="nd"/>
+      <text x="240" y="110" class="t mono">factorial(4)</text>
+      <text x="420" y="110" class="t newlab" text-anchor="end" font-size="12">4 × 6 = 24</text>
+
+      <rect x="230" y="144" width="200" height="28" class="nd"/>
+      <text x="240" y="162" class="t mono">factorial(3)</text>
+      <text x="420" y="162" class="t newlab" text-anchor="end" font-size="12">3 × 2 = 6</text>
+
+      <rect x="230" y="196" width="200" height="28" class="nd"/>
+      <text x="240" y="214" class="t mono">factorial(2)</text>
+      <text x="420" y="214" class="t newlab" text-anchor="end" font-size="12">2 × 1 = 2</text>
+
+      <rect x="230" y="248" width="200" height="28" class="nd newnd"/>
+      <text x="240" y="266" class="t mono">factorial(1)</text>
+      <text x="420" y="266" class="t newlab" text-anchor="end" font-size="12">return 1</text>
+
+      <!-- down arrows (teal) -->
+      <path d="M250,68 L250,90" class="ptr" marker-end="url(#arr)"/>
+      <path d="M250,120 L250,142" class="ptr" marker-end="url(#arr)"/>
+      <path d="M250,172 L250,194" class="ptr" marker-end="url(#arr)"/>
+      <path d="M250,224 L250,246" class="ptr" marker-end="url(#arr)"/>
+      <text x="220" y="84" class="t small" text-anchor="end">① calls factorial(4)</text>
+      <text x="220" y="136" class="t small" text-anchor="end">② calls factorial(3)</text>
+      <text x="220" y="188" class="t small" text-anchor="end">③ calls factorial(2)</text>
+      <text x="220" y="240" class="t small" text-anchor="end">④ calls factorial(1)</text>
+
+      <!-- up arrows (orange) -->
+      <path d="M410,248 L410,70" class="ptr newp" marker-end="url(#arrNew)" style="display:none"/>
+      <path d="M410,246 L410,122" class="ptr newp" marker-end="url(#arrNew)" style="display:none"/>
+      <path d="M410,246 L410,226" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M410,194 L410,174" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M410,142 L410,122" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M410,90 L410,70" class="ptr newp" marker-end="url(#arrNew)"/>
+      <path d="M410,38 L410,16" class="ptr newp" marker-end="url(#arrNew)"/>
+      <text x="440" y="240" class="t newlab" font-size="11">⑥ returns 1</text>
+      <text x="440" y="188" class="t newlab" font-size="11">⑦ returns 2   (= 2!)</text>
+      <text x="440" y="136" class="t newlab" font-size="11">⑧ returns 6   (= 3!)</text>
+      <text x="440" y="84" class="t newlab" font-size="11">⑨ returns 24  (= 4!)</text>
+      <text x="440" y="20" class="t newlab" font-size="11">⑩ returns 120 = the answer</text>
+
+      <text x="330" y="295" class="t small" text-anchor="middle">⑤ base case: n ≤ 1, return 1, no further call</text>
+    </svg>
+    <figcaption><b>Nothing is multiplied on the way down.</b> Steps ① to ④ only make calls. All the arithmetic (orange) happens on the way up, ⑥ to ⑩, after the base case ⑤. The answer for the biggest call is the last thing computed.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Step</th><th>Call</th><th><code>n &lt;= 1</code>?</th><th>Does</th><th>Waits for</th><th>Returns</th></tr></thead>
+    <tbody>
+      <tr><td>①</td><td><code>factorial(5)</code></td><td>no</td><td><code>5 * factorial(4)</code></td><td><code>factorial(4)</code></td><td>(later) 5 × 24 = <strong>120</strong></td></tr>
+      <tr><td>②</td><td><code>factorial(4)</code></td><td>no</td><td><code>4 * factorial(3)</code></td><td><code>factorial(3)</code></td><td>(later) 4 × 6 = 24</td></tr>
+      <tr><td>③</td><td><code>factorial(3)</code></td><td>no</td><td><code>3 * factorial(2)</code></td><td><code>factorial(2)</code></td><td>(later) 3 × 2 = 6</td></tr>
+      <tr><td>④</td><td><code>factorial(2)</code></td><td>no</td><td><code>2 * factorial(1)</code></td><td><code>factorial(1)</code></td><td>(later) 2 × 1 = 2</td></tr>
+      <tr><td>⑤</td><td><code>factorial(1)</code></td><td><strong>yes</strong></td><td><code>return 1</code></td><td>nobody</td><td>1, immediately</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>Read the table top to bottom for the calls, then bottom to top for the returns. Step ⑤ returns first; step ① returns last. That is what "solve the sub-problems in reverse order" means.</p>
+
+  <h3>See it happen: a traced version</h3>
+  <p>Add a <code>depth</code> argument and print with indentation. This is the single best way to build intuition; do it once for every recursive function you write this week.</p>
+
+<pre><code><span class="k">def</span> factorial_traced(n, depth=<span class="s">0</span>):
+    pad = <span class="s">"    "</span> * depth
+    print(f<span class="s">"{pad}factorial({n}) called"</span>)
+    <span class="k">if</span> n &lt;= <span class="s">1</span>:
+        print(f<span class="s">"{pad}base case -&gt; return 1"</span>)
+        <span class="k">return</span> <span class="s">1</span>
+    sub = factorial_traced(n - <span class="s">1</span>, depth + <span class="s">1</span>)   <span class="c"># wait here until the smaller call returns</span>
+    print(f<span class="s">"{pad}factorial({n}) = {n} * {sub} = {n * sub}"</span>)
+    <span class="k">return</span> n * sub
+
+factorial_traced(<span class="s">5</span>)
+<span class="c"># factorial(5) called</span>
+<span class="c">#     factorial(4) called</span>
+<span class="c">#         factorial(3) called</span>
+<span class="c">#             factorial(2) called</span>
+<span class="c">#                 factorial(1) called</span>
+<span class="c">#                 base case -&gt; return 1</span>
+<span class="c">#             factorial(2) = 2 * 1 = 2</span>
+<span class="c">#         factorial(3) = 3 * 2 = 6</span>
+<span class="c">#     factorial(4) = 4 * 6 = 24</span>
+<span class="c"># factorial(5) = 5 * 24 = 120</span></code></pre>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>The line <code>sub = factorial_traced(n - 1, ...)</code> is where the function <em>pauses</em>. Everything after that line runs only when the smaller call has fully finished. Five copies of the function are alive at the same time, each paused at that line with its own <code>n</code>.</p>
+  </div>
+
+  <div class="callout">
+    <span class="lab">No base case = no end</span>
+    <p>If you delete <code>if n &lt;= 1: return 1</code>, <code>factorial(5)</code> calls <code>factorial(4)</code>, ... <code>factorial(0)</code>, <code>factorial(-1)</code>, and so on forever. Each call uses a little memory, so the program crashes with a <dfn>stack overflow</dfn>: the call stack ran out of room. In Python the crash is <code>RecursionError: maximum recursion depth exceeded</code>. Section 2 explains the stack.</p>
+  </div>
+</section>
+
+<!-- ============================ CALL STACK ============================ -->
+<section id="stack">
+  <h2><span class="num">2</span>The call stack: where the space goes</h2>
+
+  <div class="analogy">
+    <div class="tag">Analogy</div>
+    <p>A pile of sticky notes. Each time a function is called you write its variables on a note and put it on top of the pile. When that function returns, you throw the top note away and continue with the note under it. The pile is the <strong>call stack</strong>. Its height is the recursion depth.</p>
+  </div>
+
+  <p><code>factorial</code> creates no list, no dictionary, nothing. So why is its space O(n)? Because recursion uses an <dfn>implicit stack</dfn>: the <dfn>function call stack</dfn> that the language keeps for you. Each call gets a <dfn>stack frame</dfn> holding its own <code>n</code> and the place to return to. That is how "return from this call to the previous one" works at all. <code>factorial(5)</code> has five frames alive at once, so the stack holds n frames: O(n) space even though you wrote no data structure.</p>
+
+  <figure>
+    <svg viewBox="0 0 690 230" role="img" aria-label="Ten snapshots of the call stack for factorial(5). It grows one frame per call up to five frames, then shrinks one frame per return, each return handing back 1, 2, 6, 24 and finally 120.">
+      <!-- t1 -->
+      <rect x="20" y="155" width="58" height="20" class="nd newnd"/><text x="49" y="169" class="t mono" text-anchor="middle" font-size="11">f(5)</text>
+      <!-- t2 -->
+      <rect x="86" y="155" width="58" height="20" class="nd"/><text x="115" y="169" class="t mono" text-anchor="middle" font-size="11">f(5)</text>
+      <rect x="86" y="135" width="58" height="20" class="nd newnd"/><text x="115" y="149" class="t mono" text-anchor="middle" font-size="11">f(4)</text>
+      <!-- t3 -->
+      <rect x="152" y="155" width="58" height="20" class="nd"/><text x="181" y="169" class="t mono" text-anchor="middle" font-size="11">f(5)</text>
+      <rect x="152" y="135" width="58" height="20" class="nd"/><text x="181" y="149" class="t mono" text-anchor="middle" font-size="11">f(4)</text>
+      <rect x="152" y="115" width="58" height="20" class="nd newnd"/><text x="181" y="129" class="t mono" text-anchor="middle" font-size="11">f(3)</text>
+      <!-- t4 -->
+      <rect x="218" y="155" width="58" height="20" class="nd"/><text x="247" y="169" class="t mono" text-anchor="middle" font-size="11">f(5)</text>
+      <rect x="218" y="135" width="58" height="20" class="nd"/><text x="247" y="149" class="t mono" text-anchor="middle" font-size="11">f(4)</text>
+      <rect x="218" y="115" width="58" height="20" class="nd"/><text x="247" y="129" class="t mono" text-anchor="middle" font-size="11">f(3)</text>
+      <rect x="218" y="95" width="58" height="20" class="nd newnd"/><text x="247" y="109" class="t mono" text-anchor="middle" font-size="11">f(2)</text>
+      <!-- t5 peak -->
+      <rect x="284" y="155" width="58" height="20" class="nd"/><text x="313" y="169" class="t mono" text-anchor="middle" font-size="11">f(5)</text>
+      <rect x="284" y="135" width="58" height="20" class="nd"/><text x="313" y="149" class="t mono" text-anchor="middle" font-size="11">f(4)</text>
+      <rect x="284" y="115" width="58" height="20" class="nd"/><text x="313" y="129" class="t mono" text-anchor="middle" font-size="11">f(3)</text>
+      <rect x="284" y="95" width="58" height="20" class="nd"/><text x="313" y="109" class="t mono" text-anchor="middle" font-size="11">f(2)</text>
+      <rect x="284" y="75" width="58" height="20" class="nd newnd"/><text x="313" y="89" class="t mono" text-anchor="middle" font-size="11">f(1)</text>
+      <text x="313" y="52" class="t small" text-anchor="middle">peak: 5 frames</text>
+      <!-- t6: f(1) popped -->
+      <rect x="350" y="155" width="58" height="20" class="nd"/><text x="379" y="169" class="t mono" text-anchor="middle" font-size="11">f(5)</text>
+      <rect x="350" y="135" width="58" height="20" class="nd"/><text x="379" y="149" class="t mono" text-anchor="middle" font-size="11">f(4)</text>
+      <rect x="350" y="115" width="58" height="20" class="nd"/><text x="379" y="129" class="t mono" text-anchor="middle" font-size="11">f(3)</text>
+      <rect x="350" y="95" width="58" height="20" class="nd"/><text x="379" y="109" class="t mono" text-anchor="middle" font-size="11">f(2)</text>
+      <rect x="350" y="75" width="58" height="20" class="nd dim"/><text x="379" y="89" class="t mono" text-anchor="middle" font-size="11" opacity=".35">f(1)</text>
+      <text x="379" y="66" class="t newlab" text-anchor="middle" font-size="11">↑ 1</text>
+      <!-- t7: f(2) popped -->
+      <rect x="416" y="155" width="58" height="20" class="nd"/><text x="445" y="169" class="t mono" text-anchor="middle" font-size="11">f(5)</text>
+      <rect x="416" y="135" width="58" height="20" class="nd"/><text x="445" y="149" class="t mono" text-anchor="middle" font-size="11">f(4)</text>
+      <rect x="416" y="115" width="58" height="20" class="nd"/><text x="445" y="129" class="t mono" text-anchor="middle" font-size="11">f(3)</text>
+      <rect x="416" y="95" width="58" height="20" class="nd dim"/><text x="445" y="109" class="t mono" text-anchor="middle" font-size="11" opacity=".35">f(2)</text>
+      <text x="445" y="86" class="t newlab" text-anchor="middle" font-size="11">↑ 2</text>
+      <!-- t8: f(3) popped -->
+      <rect x="482" y="155" width="58" height="20" class="nd"/><text x="511" y="169" class="t mono" text-anchor="middle" font-size="11">f(5)</text>
+      <rect x="482" y="135" width="58" height="20" class="nd"/><text x="511" y="149" class="t mono" text-anchor="middle" font-size="11">f(4)</text>
+      <rect x="482" y="115" width="58" height="20" class="nd dim"/><text x="511" y="129" class="t mono" text-anchor="middle" font-size="11" opacity=".35">f(3)</text>
+      <text x="511" y="106" class="t newlab" text-anchor="middle" font-size="11">↑ 6</text>
+      <!-- t9: f(4) popped -->
+      <rect x="548" y="155" width="58" height="20" class="nd"/><text x="577" y="169" class="t mono" text-anchor="middle" font-size="11">f(5)</text>
+      <rect x="548" y="135" width="58" height="20" class="nd dim"/><text x="577" y="149" class="t mono" text-anchor="middle" font-size="11" opacity=".35">f(4)</text>
+      <text x="577" y="126" class="t newlab" text-anchor="middle" font-size="11">↑ 24</text>
+      <!-- t10: f(5) popped -->
+      <rect x="614" y="155" width="58" height="20" class="nd dim"/><text x="643" y="169" class="t mono" text-anchor="middle" font-size="11" opacity=".35">f(5)</text>
+      <text x="643" y="146" class="t newlab" text-anchor="middle" font-size="11">↑ 120</text>
+      <!-- floor -->
+      <line x1="20" y1="176" x2="672" y2="176" class="cell"/>
+      <text x="49" y="192" class="t small" text-anchor="middle">t1</text>
+      <text x="115" y="192" class="t small" text-anchor="middle">t2</text>
+      <text x="181" y="192" class="t small" text-anchor="middle">t3</text>
+      <text x="247" y="192" class="t small" text-anchor="middle">t4</text>
+      <text x="313" y="192" class="t small" text-anchor="middle">t5</text>
+      <text x="379" y="192" class="t small" text-anchor="middle">t6</text>
+      <text x="445" y="192" class="t small" text-anchor="middle">t7</text>
+      <text x="511" y="192" class="t small" text-anchor="middle">t8</text>
+      <text x="577" y="192" class="t small" text-anchor="middle">t9</text>
+      <text x="643" y="192" class="t small" text-anchor="middle">t10</text>
+      <text x="181" y="214" class="t ptrlab" text-anchor="middle" font-size="11">grows: push one frame per call</text>
+      <text x="511" y="214" class="t newlab" text-anchor="middle" font-size="11">shrinks: pop one frame per return</text>
+    </svg>
+    <figcaption><b>The stack is tallest exactly when the base case runs.</b> Orange outline = the frame pushed in that step; faded = the frame popped, with the value it hands down (orange). The top frame is always the one running; the frames under it are paused at their recursive call.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>factorial(n)</th><th>Cost</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Time</td><td class="big fast">O(n)</td><td>n calls (n, n-1, ..., 1), each does one comparison and one multiplication: O(1) work per call</td></tr>
+      <tr><td>Space</td><td class="big slow">O(n)</td><td>n frames on the call stack at the peak; no explicit data structure, but the implicit stack still counts</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Stack overflow and Python's recursion limit</h3>
+  <p>The call stack has a fixed size. Go too deep and you get a <dfn>stack overflow</dfn>. Python guards this with a depth limit, 1000 frames by default, and raises <code>RecursionError</code> when you cross it. You can raise the limit for a deep but correct recursion (a linked list of 5000 nodes, for example). It does not fix a missing base case; it only delays the crash.</p>
+
+<pre><code><span class="k">import</span> sys
+sys.getrecursionlimit()          <span class="c"># 1000 by default in CPython</span>
+sys.setrecursionlimit(<span class="s">10_000</span>)    <span class="c"># allow deeper recursion (use with care)</span>
+
+factorial(<span class="s">3000</span>)                  <span class="c"># ok now; RecursionError under the default limit</span>
+
+<span class="k">def</span> no_base_case(n):
+    <span class="k">return</span> n * no_base_case(n - <span class="s">1</span>)   <span class="c"># 5, 4, 3, ..., -900, ... never stops</span>
+
+no_base_case(<span class="s">5</span>)   <span class="c"># RecursionError: maximum recursion depth exceeded</span></code></pre>
+
+  <div class="callout">
+    <span class="lab">Interview note</span>
+    <p>If an interviewer asks "what if n is a million?", the honest answer is: recursion would blow the stack, so I would convert to a loop (next heading) or use an explicit stack. Saying <code>sys.setrecursionlimit</code> alone is not a real fix at that size.</p>
+  </div>
+
+  <h3>Iteration vs recursion</h3>
+  <p>The same product with a loop. NeetCode's version stores the running answer in <code>res</code> and decrements <code>n</code> until it reaches 1:</p>
+
+<pre><code>n = <span class="s">5</span>
+res = <span class="s">1</span>
+<span class="k">while</span> n &gt; <span class="s">1</span>:
+    res = res * n
+    n -= <span class="s">1</span>
+<span class="c"># res is 120, n is 1</span>
+
+<span class="c"># the same thing as a function</span>
+<span class="k">def</span> factorial_iter(n):
+    res = <span class="s">1</span>
+    <span class="k">while</span> n &gt; <span class="s">1</span>:
+        res = res * n
+        n -= <span class="s">1</span>
+    <span class="k">return</span> res</code></pre>
+
+  <div class="tbl"><table>
+    <thead><tr><th></th><th>Recursive <code>factorial</code></th><th>Iterative <code>factorial_iter</code></th></tr></thead>
+    <tbody>
+      <tr><td>Time</td><td class="big fast">O(n)</td><td class="big fast">O(n)</td></tr>
+      <tr><td>Space</td><td class="big slow">O(n) call stack</td><td class="big fast">O(1) two variables</td></tr>
+      <tr><td>Where the answer lives</td><td>spread across n paused frames</td><td>in <code>res</code></td></tr>
+      <tr><td>Reads best when</td><td>the problem is a tree (later lessons)</td><td>the problem is a straight line, like this one</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>For factorial the loop is simpler and cheaper. That is not always true. For trees, where every node has two children, the recursive version is usually a few lines and the loop needs you to manage your own stack. Rule: iterative is more space-efficient (no call stack); recursive is often shorter and clearer for branching problems.</p>
+</section>
+
+<!-- ============================ FIBONACCI ============================ -->
+<section id="fibonacci">
+  <h2><span class="num">3</span>Two branches: fibonacci</h2>
+
+  <p>Multi-branch recursion, where a function calls itself more than once, is more common in practice than one-branch. The classic example is the Fibonacci sequence. It starts <code>0, 1</code>, and each next number is the sum of the two before it:</p>
+  <p><code>0, 1, 1, 2, 3, 5, 8, 13, 21, 34, ...</code></p>
+  <p>Base cases: <code>F(0) = 0</code> and <code>F(1) = 1</code>. Recursive case: <code>F(n) = F(n-1) + F(n-2)</code>. A formula that defines a value in terms of smaller values of itself is called a <dfn>recurrence relation</dfn>: <code>fib(n) = fib(n-1) + fib(n-2)</code>. You will meet recurrence relations again in dynamic programming.</p>
+
+<pre><code><span class="c"># Recursive implementation to calculate the n-th Fibonacci number</span>
+<span class="k">def</span> fibonacci(n):
+    <span class="c"># Base case: n = 0 or 1</span>
+    <span class="k">if</span> n &lt;= <span class="s">1</span>:
+        <span class="k">return</span> n
+    <span class="c"># Recursive case: fib(n) = fib(n - 1) + fib(n - 2)</span>
+    <span class="k">return</span> fibonacci(n - <span class="s">1</span>) + fibonacci(n - <span class="s">2</span>)</code></pre>
+
+  <p>Note the base case returns <code>n</code> itself, not 1: <code>fibonacci(0)</code> is 0 and <code>fibonacci(1)</code> is 1. The last line calls the function <em>twice</em>. That is a <dfn>branch factor</dfn> of two: every call spawns two more, so the calls form a tree instead of a chain.</p>
+
+  <h3>Trace fibonacci(5): a tree, not a chain</h3>
+  <p><code>fibonacci(5) = fibonacci(4) + fibonacci(3)</code>. Python evaluates the left call first, so <code>fibonacci(4)</code> runs to completion (it calls <code>fibonacci(3) + fibonacci(2)</code>, and so on down to 1 or 0) before <code>fibonacci(3)</code> on the right even starts. Then the values come back up: <code>fibonacci(4) = 3</code>, <code>fibonacci(3) = 2</code>, so <code>fibonacci(5) = 5</code>.</p>
+
+  <figure>
+    <svg viewBox="0 0 680 320" role="img" aria-label="The recursion tree of fibonacci(5): 15 calls. F(3) is computed twice and F(2) three times. Return values are shown beside each node; the root returns 5.">
+      <!-- repeated F(3) subtree regions -->
+      <rect x="28" y="126" width="224" height="170" class="mem"/>
+      <rect x="436" y="66" width="222" height="166" class="mem"/>
+      <text x="140" y="310" class="t small" text-anchor="middle">F(3): the 1st time</text>
+      <text x="547" y="248" class="t small" text-anchor="middle">F(3): the 2nd time, same work</text>
+
+      <!-- edges: parent (x, y+16) -> child (x, y-16) -->
+      <line x1="405" y1="46" x2="250" y2="74" class="ptr"/>
+      <line x1="405" y1="46" x2="560" y2="74" class="ptr"/>
+      <line x1="250" y1="106" x2="160" y2="134" class="ptr"/>
+      <line x1="250" y1="106" x2="340" y2="134" class="ptr"/>
+      <line x1="560" y1="106" x2="500" y2="134" class="ptr"/>
+      <line x1="560" y1="106" x2="620" y2="134" class="ptr"/>
+      <line x1="160" y1="166" x2="100" y2="194" class="ptr"/>
+      <line x1="160" y1="166" x2="220" y2="194" class="ptr"/>
+      <line x1="340" y1="166" x2="300" y2="194" class="ptr"/>
+      <line x1="340" y1="166" x2="380" y2="194" class="ptr"/>
+      <line x1="500" y1="166" x2="460" y2="194" class="ptr"/>
+      <line x1="500" y1="166" x2="540" y2="194" class="ptr"/>
+      <line x1="100" y1="226" x2="60" y2="254" class="ptr"/>
+      <line x1="100" y1="226" x2="140" y2="254" class="ptr"/>
+
+      <!-- level 0 -->
+      <circle cx="405" cy="30" r="16" class="nd"/><text x="405" y="34" class="t mono" text-anchor="middle" font-size="11">F(5)</text>
+      <text x="419" y="18" class="t newlab" font-size="10">=5</text>
+      <!-- level 1 -->
+      <circle cx="250" cy="90" r="16" class="nd"/><text x="250" y="94" class="t mono" text-anchor="middle" font-size="11">F(4)</text>
+      <text x="236" y="78" class="t newlab" font-size="10" text-anchor="end">=3</text>
+      <circle cx="560" cy="90" r="16" class="nd"/><text x="560" y="94" class="t mono" text-anchor="middle" font-size="11">F(3)</text>
+      <text x="574" y="78" class="t newlab" font-size="10">=2</text>
+      <!-- level 2 -->
+      <circle cx="160" cy="150" r="16" class="nd"/><text x="160" y="154" class="t mono" text-anchor="middle" font-size="11">F(3)</text>
+      <text x="146" y="138" class="t newlab" font-size="10" text-anchor="end">=2</text>
+      <circle cx="340" cy="150" r="16" class="nd newnd"/><text x="340" y="154" class="t mono" text-anchor="middle" font-size="11">F(2)</text>
+      <text x="354" y="138" class="t newlab" font-size="10">=1</text>
+      <circle cx="500" cy="150" r="16" class="nd newnd"/><text x="500" y="154" class="t mono" text-anchor="middle" font-size="11">F(2)</text>
+      <text x="486" y="138" class="t newlab" font-size="10" text-anchor="end">=1</text>
+      <circle cx="620" cy="150" r="16" class="nd"/><text x="620" y="154" class="t mono" text-anchor="middle" font-size="11">F(1)</text>
+      <text x="634" y="138" class="t newlab" font-size="10">=1</text>
+      <!-- level 3 -->
+      <circle cx="100" cy="210" r="16" class="nd newnd"/><text x="100" y="214" class="t mono" text-anchor="middle" font-size="11">F(2)</text>
+      <text x="86" y="198" class="t newlab" font-size="10" text-anchor="end">=1</text>
+      <circle cx="220" cy="210" r="16" class="nd"/><text x="220" y="214" class="t mono" text-anchor="middle" font-size="11">F(1)</text>
+      <text x="234" y="198" class="t newlab" font-size="10">=1</text>
+      <circle cx="300" cy="210" r="16" class="nd"/><text x="300" y="214" class="t mono" text-anchor="middle" font-size="11">F(1)</text>
+      <text x="286" y="198" class="t newlab" font-size="10" text-anchor="end">=1</text>
+      <circle cx="380" cy="210" r="16" class="nd"/><text x="380" y="214" class="t mono" text-anchor="middle" font-size="11">F(0)</text>
+      <text x="394" y="198" class="t newlab" font-size="10">=0</text>
+      <circle cx="460" cy="210" r="16" class="nd"/><text x="460" y="214" class="t mono" text-anchor="middle" font-size="11">F(1)</text>
+      <text x="446" y="198" class="t newlab" font-size="10" text-anchor="end">=1</text>
+      <circle cx="540" cy="210" r="16" class="nd"/><text x="540" y="214" class="t mono" text-anchor="middle" font-size="11">F(0)</text>
+      <text x="554" y="198" class="t newlab" font-size="10">=0</text>
+      <!-- level 4 -->
+      <circle cx="60" cy="270" r="16" class="nd"/><text x="60" y="274" class="t mono" text-anchor="middle" font-size="11">F(1)</text>
+      <text x="46" y="258" class="t newlab" font-size="10" text-anchor="end">=1</text>
+      <circle cx="140" cy="270" r="16" class="nd"/><text x="140" y="274" class="t mono" text-anchor="middle" font-size="11">F(0)</text>
+      <text x="154" y="258" class="t newlab" font-size="10">=0</text>
+
+      <text x="430" y="310" class="t small" text-anchor="middle">orange ring = F(2) computed 3 times · 15 calls in total for n = 5</text>
+    </svg>
+    <figcaption><b>The same sub-problem is solved again and again.</b> <code>F(3)</code> is computed twice (dashed regions) and <code>F(2)</code> three times (orange rings), each time from scratch. That repeated work is why plain recursive fibonacci is slow, and it is exactly what memoization and dynamic programming remove (section 4, move 4). Values in orange are what each call returns; left children finish before right children.</figcaption>
+  </figure>
+
+  <h3>Trace table: fibonacci(4), every call and every return</h3>
+  <p>The tree hides the order. This table shows the real order of events for <code>fibonacci(4)</code>: 9 calls, 9 returns, and the stack after each event (bottom on the left, top on the right).</p>
+
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Event</th><th>Call stack after it</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>call <code>F(4)</code></td><td><code>[F4]</code></td><td>needs F(3) + F(2)</td></tr>
+      <tr><td>2</td><td>call <code>F(3)</code> (left)</td><td><code>[F4, F3]</code></td><td>needs F(2) + F(1)</td></tr>
+      <tr><td>3</td><td>call <code>F(2)</code> (left)</td><td><code>[F4, F3, F2]</code></td><td>needs F(1) + F(0)</td></tr>
+      <tr><td>4</td><td>call <code>F(1)</code> (left)</td><td><code>[F4, F3, F2, F1]</code></td><td>base case</td></tr>
+      <tr><td>5</td><td>return from <code>F(1)</code></td><td><code>[F4, F3, F2]</code></td><td>1</td></tr>
+      <tr><td>6</td><td>call <code>F(0)</code> (right)</td><td><code>[F4, F3, F2, F0]</code></td><td>base case</td></tr>
+      <tr><td>7</td><td>return from <code>F(0)</code></td><td><code>[F4, F3, F2]</code></td><td>0</td></tr>
+      <tr><td>8</td><td>return from <code>F(2)</code></td><td><code>[F4, F3]</code></td><td>1 + 0 = <strong>1</strong></td></tr>
+      <tr><td>9</td><td>call <code>F(1)</code> (right)</td><td><code>[F4, F3, F1]</code></td><td>base case</td></tr>
+      <tr><td>10</td><td>return from <code>F(1)</code></td><td><code>[F4, F3]</code></td><td>1</td></tr>
+      <tr><td>11</td><td>return from <code>F(3)</code></td><td><code>[F4]</code></td><td>1 + 1 = <strong>2</strong></td></tr>
+      <tr><td>12</td><td>call <code>F(2)</code> (right)</td><td><code>[F4, F2]</code></td><td>needs F(1) + F(0), again</td></tr>
+      <tr><td>13</td><td>call <code>F(1)</code> (left)</td><td><code>[F4, F2, F1]</code></td><td>base case</td></tr>
+      <tr><td>14</td><td>return from <code>F(1)</code></td><td><code>[F4, F2]</code></td><td>1</td></tr>
+      <tr><td>15</td><td>call <code>F(0)</code> (right)</td><td><code>[F4, F2, F0]</code></td><td>base case</td></tr>
+      <tr><td>16</td><td>return from <code>F(0)</code></td><td><code>[F4, F2]</code></td><td>0</td></tr>
+      <tr><td>17</td><td>return from <code>F(2)</code></td><td><code>[F4]</code></td><td>1 + 0 = <strong>1</strong></td></tr>
+      <tr><td>18</td><td>return from <code>F(4)</code></td><td><code>[]</code></td><td>2 + 1 = <strong>3</strong></td></tr>
+    </tbody>
+  </table></div>
+
+  <p>Two facts fall out of the table. The stack never holds more than 4 frames (n frames in general), so space is O(n). And <code>F(2)</code> was fully recomputed at step 12 even though step 8 already knew the answer.</p>
+
+  <h3>Count the calls</h3>
+  <p>A quick experiment before the theory: add a counter.</p>
+
+<pre><code>calls = <span class="s">0</span>
+
+<span class="k">def</span> fib_counted(n):
+    <span class="k">global</span> calls
+    calls += <span class="s">1</span>
+    <span class="k">if</span> n &lt;= <span class="s">1</span>:
+        <span class="k">return</span> n
+    <span class="k">return</span> fib_counted(n - <span class="s">1</span>) + fib_counted(n - <span class="s">2</span>)
+
+<span class="c"># n:      4    5    10     20</span>
+<span class="c"># calls:  9   15   177  21891     roughly doubles every time n grows by 1</span></code></pre>
+
+  <h3>Time complexity: count the tree level by level</h3>
+  <p>Look at the tree by <dfn>levels</dfn> (rows). Level 0 has 1 node, the root. Each node makes two calls, so level 1 can hold 2 nodes, level 2 can hold 4, level 3 can hold 8. Each level can hold twice the previous one. The deepest level is n (the path <code>n, n-1, n-2, ..., 0</code> down the left side). So the total number of nodes is at most:</p>
+  <p><code>1 + 2 + 4 + 8 + ... + 2^n</code></p>
+  <p>This is a <dfn>geometric series</dfn>, the same kind you met when a dynamic array doubles its capacity. The last term dominates: the sum is <code>2^(n+1) - 1</code>, which is less than <code>2 × 2^n</code>. Drop the constant and the total number of nodes is O(2^n). Each node is one function call that does one addition of two values, O(1) work. So the time complexity is <span class="big slow">O(2^n)</span>.</p>
+
+  <figure>
+    <svg viewBox="0 0 660 195" role="img" aria-label="A perfect binary tree drawn level by level: 1 node, then 2, 4, 8. The level counts are powers of two and their sum is 2 to the n plus 1, minus 1.">
+      <!-- edges -->
+      <line x1="235" y1="35" x2="135" y2="55" class="ptr"/><line x1="235" y1="35" x2="335" y2="55" class="ptr"/>
+      <line x1="135" y1="75" x2="85" y2="95" class="ptr"/><line x1="135" y1="75" x2="185" y2="95" class="ptr"/>
+      <line x1="335" y1="75" x2="285" y2="95" class="ptr"/><line x1="335" y1="75" x2="385" y2="95" class="ptr"/>
+      <line x1="85" y1="115" x2="60" y2="135" class="ptr"/><line x1="85" y1="115" x2="110" y2="135" class="ptr"/>
+      <line x1="185" y1="115" x2="160" y2="135" class="ptr"/><line x1="185" y1="115" x2="210" y2="135" class="ptr"/>
+      <line x1="285" y1="115" x2="260" y2="135" class="ptr"/><line x1="285" y1="115" x2="310" y2="135" class="ptr"/>
+      <line x1="385" y1="115" x2="360" y2="135" class="ptr"/><line x1="385" y1="115" x2="410" y2="135" class="ptr"/>
+      <!-- nodes -->
+      <circle cx="235" cy="25" r="10" class="nd"/>
+      <circle cx="135" cy="65" r="10" class="nd"/><circle cx="335" cy="65" r="10" class="nd"/>
+      <circle cx="85" cy="105" r="10" class="nd"/><circle cx="185" cy="105" r="10" class="nd"/><circle cx="285" cy="105" r="10" class="nd"/><circle cx="385" cy="105" r="10" class="nd"/>
+      <circle cx="60" cy="145" r="10" class="nd newnd"/><circle cx="110" cy="145" r="10" class="nd newnd"/><circle cx="160" cy="145" r="10" class="nd newnd"/><circle cx="210" cy="145" r="10" class="nd newnd"/>
+      <circle cx="260" cy="145" r="10" class="nd newnd"/><circle cx="310" cy="145" r="10" class="nd newnd"/><circle cx="360" cy="145" r="10" class="nd newnd"/><circle cx="410" cy="145" r="10" class="nd newnd"/>
+      <!-- level labels -->
+      <text x="450" y="29" class="t mono">level 0:  1 node   = 2^0</text>
+      <text x="450" y="69" class="t mono">level 1:  2 nodes  = 2^1</text>
+      <text x="450" y="109" class="t mono">level 2:  4 nodes  = 2^2</text>
+      <text x="450" y="149" class="t newlab" font-size="12">level 3:  8 nodes  = 2^3</text>
+      <text x="450" y="166" class="t small">... level n: 2^n nodes</text>
+      <text x="235" y="186" class="t small" text-anchor="middle">1 + 2 + 4 + 8 + ... + 2^n  =  2^(n+1) - 1  →  O(2^n) calls</text>
+    </svg>
+    <figcaption><b>Each level doubles, and the last level is bigger than all the others combined.</b> That is why the sum of a geometric series is "about twice the last term", and why the last term alone sets the Big-O. The real fibonacci tree is thinner than this (the <code>n-2</code> branch is shorter), so 2^n is an upper bound; the true growth is about 1.618^n, still exponential.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>fibonacci(n), plain recursion</th><th>Cost</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Time</td><td class="big slow">O(2^n)</td><td>up to 2^(n+1) - 1 calls, O(1) work each</td></tr>
+      <tr><td>Space</td><td class="big slow">O(n)</td><td>the call stack is at most n deep at any moment (one root-to-leaf path), even though the tree has 2^n nodes</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>Space is about the <em>height</em> of the tree, not its size. Only one root-to-leaf path is on the stack at a time; finished branches have been popped. NeetCode's article states the O(2^n) time; the O(n) space is the standard fact that goes with it.</p>
+  </div>
+</section>
+
+<!-- ============================ PATTERNS ============================ -->
+<section id="patterns">
+  <h2><span class="num">4</span>Four moves that make recursion routine</h2>
+  <p>The lessons teach factorial and fibonacci. Interviews test whether you can set up <em>any</em> recursion cleanly, and whether you know when to leave it. These four moves cover that.</p>
+
+  <h3>Move 1: Base case first (the checklist)</h3>
+  <p>Before typing the recursive call, answer three questions in this order. Write the base case first, physically at the top of the function.</p>
+  <ol>
+    <li><strong>What is the smallest input?</strong> Empty list, <code>n = 0</code>, <code>None</code> node, <code>l &gt;= r</code>. Return its answer directly. This is the base case.</li>
+    <li><strong>How do I make the input smaller by one step?</strong> <code>n - 1</code>, <code>i + 1</code>, <code>node.next</code>, <code>n // 2</code>. Call yourself on that. Every call must move toward the base case.</li>
+    <li><strong>Given the smaller answer, how do I build mine?</strong> <code>n * sub</code>, <code>nums[i] + sub</code>, <code>left + right</code>. Trust that the recursive call returns the right thing. Do not trace it in your head; that is the whole point.</li>
+  </ol>
+
+<pre><code><span class="k">def</span> sum_list(nums, i=<span class="s">0</span>):
+    <span class="k">if</span> i == len(nums):              <span class="c"># 1. base case FIRST: nothing left to add</span>
+        <span class="k">return</span> <span class="s">0</span>
+    <span class="k">return</span> nums[i] + sum_list(nums, i + <span class="s">1</span>)   <span class="c"># 2. shrink   3. combine</span>
+
+sum_list([<span class="s">2</span>, <span class="s">3</span>, <span class="s">4</span>, <span class="s">1</span>, <span class="s">6</span>])   <span class="c"># 16</span>
+sum_list([])                <span class="c"># 0  (the base case handles empty input for free)</span></code></pre>
+
+  <div class="callout keep">
+    <span class="lab">Keep in mind</span>
+    <p>Pass an index (<code>i + 1</code>), not a slice (<code>nums[1:]</code>). A slice copies the rest of the list on every call and turns O(n) into O(n²).</p>
+  </div>
+
+  <h3>Move 2: Recursion to iteration</h3>
+  <p>When the interviewer worries about stack depth, or when the recursion is one-branch and the answer is built on the way up, convert to a loop. Two recipes:</p>
+  <ul>
+    <li><strong>One branch, combine on the way up</strong> (factorial, sum): keep the running answer in a variable and loop toward the base case. You saw this in section 2.</li>
+    <li><strong>Two branches</strong> (fibonacci): go <em>bottom-up</em>. Start from the base cases and build forward, keeping only the last two values. This is the seed of dynamic programming.</li>
+    <li><strong>Anything else</strong>: replace the call stack with your own list used as a stack. The trees lesson uses this for iterative traversals.</li>
+  </ul>
+
+<pre><code><span class="k">def</span> fib_iter(n):
+    a, b = <span class="s">0</span>, <span class="s">1</span>                     <span class="c"># a = fib(i), b = fib(i + 1), starting at i = 0</span>
+    <span class="k">for</span> _ <span class="k">in</span> range(n):
+        a, b = b, a + b             <span class="c"># slide the window one step forward</span>
+    <span class="k">return</span> a                        <span class="c"># O(n) time, O(1) space, no stack</span>
+
+<span class="k">def</span> sum_list_iter(nums):
+    stack = [<span class="s">0</span>]                     <span class="c"># our own stack replaces the call stack</span>
+    total = <span class="s">0</span>
+    <span class="k">while</span> stack:
+        i = stack.pop()
+        <span class="k">if</span> i == len(nums):           <span class="c"># the old base case</span>
+            <span class="k">continue</span>
+        total += nums[i]
+        stack.append(i + <span class="s">1</span>)         <span class="c"># the old recursive call</span>
+    <span class="k">return</span> total</code></pre>
+
+  <h3>Move 3: Helper function with an accumulator</h3>
+  <p>Sometimes the public function signature is fixed (LeetCode gives you <code>reverseString(s)</code>) but your recursion needs extra state: an index, two pointers, a running total. Write an inner <dfn>helper</dfn> that takes the extra arguments, and call it once. An <dfn>accumulator</dfn> is an argument that carries the answer-so-far <em>down</em> the calls, so nothing is left to do on the way up.</p>
+
+<pre><code><span class="k">def</span> factorial_acc(n):
+    <span class="k">def</span> helper(n, acc):
+        <span class="k">if</span> n &lt;= <span class="s">1</span>:
+            <span class="k">return</span> acc               <span class="c"># the answer is already finished</span>
+        <span class="k">return</span> helper(n - <span class="s">1</span>, acc * n)  <span class="c"># multiply BEFORE the call, not after</span>
+    <span class="k">return</span> helper(n, <span class="s">1</span>)
+
+<span class="k">def</span> reverseString(s):                <span class="c"># LeetCode 344: reverse list s in place</span>
+    <span class="k">def</span> helper(l, r):
+        <span class="k">if</span> l &gt;= r:                   <span class="c"># pointers met or crossed: done</span>
+            <span class="k">return</span>
+        s[l], s[r] = s[r], s[l]
+        helper(l + <span class="s">1</span>, r - <span class="s">1</span>)
+    helper(<span class="s">0</span>, len(s) - <span class="s">1</span>)</code></pre>
+
+  <figure>
+    <svg viewBox="0 0 660 118" role="img" aria-label="factorial with an accumulator: helper(5,1) calls helper(4,5), then helper(3,20), helper(2,60), helper(1,120). The base case returns 120 directly.">
+      <rect x="20" y="30" width="110" height="34" class="nd"/><text x="75" y="52" class="t mono" text-anchor="middle">helper(5, 1)</text>
+      <rect x="148" y="30" width="110" height="34" class="nd"/><text x="203" y="52" class="t mono" text-anchor="middle">helper(4, 5)</text>
+      <rect x="276" y="30" width="110" height="34" class="nd"/><text x="331" y="52" class="t mono" text-anchor="middle">helper(3, 20)</text>
+      <rect x="404" y="30" width="110" height="34" class="nd"/><text x="459" y="52" class="t mono" text-anchor="middle">helper(2, 60)</text>
+      <rect x="532" y="30" width="110" height="34" class="nd newnd"/><text x="587" y="52" class="t mono" text-anchor="middle">helper(1, 120)</text>
+      <path d="M130,47 L146,47" class="ptr" marker-end="url(#arr)"/>
+      <path d="M258,47 L274,47" class="ptr" marker-end="url(#arr)"/>
+      <path d="M386,47 L402,47" class="ptr" marker-end="url(#arr)"/>
+      <path d="M514,47 L530,47" class="ptr" marker-end="url(#arr)"/>
+      <text x="139" y="22" class="t newlab" text-anchor="middle" font-size="11">1×5</text>
+      <text x="267" y="22" class="t newlab" text-anchor="middle" font-size="11">5×4</text>
+      <text x="395" y="22" class="t newlab" text-anchor="middle" font-size="11">20×3</text>
+      <text x="523" y="22" class="t newlab" text-anchor="middle" font-size="11">60×2</text>
+      <text x="560" y="84" class="t newlab" text-anchor="middle" font-size="11">n ≤ 1 → return 120</text>
+      <text x="300" y="106" class="t small" text-anchor="middle">acc travels DOWN; on the way UP every frame passes 120 along unchanged</text>
+    </svg>
+    <figcaption><b>Compare with the first factorial diagram.</b> There, the multiplications (orange) happened on the way up. Here they happen on the way down, and the base case already holds the final answer. Both are O(n) time and O(n) stack in Python, but the accumulator version is the one that converts to a loop almost mechanically: <code>acc</code> becomes <code>res</code>.</figcaption>
+  </figure>
+
+  <h3>Move 4: Memoization, a one-line preview</h3>
+  <p>The fibonacci tree computed <code>F(2)</code> three times. <dfn>Memoization</dfn> means "remember each answer the first time, and look it up after that". In Python it is one decorator, and it turns O(2^n) into O(n) because each distinct <code>n</code> is computed once. The full treatment, including the bottom-up table version, is on the <a href="11-dynamic-programming.html">Dynamic Programming page</a>.</p>
+
+<pre><code><span class="k">from</span> functools <span class="k">import</span> lru_cache
+
+<span class="k">@lru_cache</span>(maxsize=<span class="k">None</span>)          <span class="c"># remembers every (n -&gt; result) pair</span>
+<span class="k">def</span> fib_memo(n):
+    <span class="k">if</span> n &lt;= <span class="s">1</span>:
+        <span class="k">return</span> n
+    <span class="k">return</span> fib_memo(n - <span class="s">1</span>) + fib_memo(n - <span class="s">2</span>)
+
+fib_memo(<span class="s">50</span>)    <span class="c"># 12586269025, instantly. Plain recursion would take ~20 billion calls.</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 680 320" role="img" aria-label="The same fibonacci(5) tree with memoization: only the left spine is computed. The second F(3), the second F(2) and one F(1) are cache hits, and their subtrees never run.">
+      <!-- faded edges to skipped subtrees -->
+      <line x1="340" y1="166" x2="300" y2="194" class="ptr old"/>
+      <line x1="340" y1="166" x2="380" y2="194" class="ptr old"/>
+      <line x1="560" y1="106" x2="500" y2="134" class="ptr old"/>
+      <line x1="560" y1="106" x2="620" y2="134" class="ptr old"/>
+      <line x1="500" y1="166" x2="460" y2="194" class="ptr old"/>
+      <line x1="500" y1="166" x2="540" y2="194" class="ptr old"/>
+      <!-- live edges -->
+      <line x1="405" y1="46" x2="250" y2="74" class="ptr"/>
+      <line x1="405" y1="46" x2="560" y2="74" class="ptr newp"/>
+      <line x1="250" y1="106" x2="160" y2="134" class="ptr"/>
+      <line x1="250" y1="106" x2="340" y2="134" class="ptr newp"/>
+      <line x1="160" y1="166" x2="100" y2="194" class="ptr"/>
+      <line x1="160" y1="166" x2="220" y2="194" class="ptr newp"/>
+      <line x1="100" y1="226" x2="60" y2="254" class="ptr"/>
+      <line x1="100" y1="226" x2="140" y2="254" class="ptr"/>
+
+      <!-- computed nodes -->
+      <circle cx="405" cy="30" r="16" class="nd"/><text x="405" y="34" class="t mono" text-anchor="middle" font-size="11">F(5)</text>
+      <text x="419" y="18" class="t newlab" font-size="10">=5</text>
+      <circle cx="250" cy="90" r="16" class="nd"/><text x="250" y="94" class="t mono" text-anchor="middle" font-size="11">F(4)</text>
+      <text x="236" y="78" class="t newlab" font-size="10" text-anchor="end">=3</text>
+      <circle cx="160" cy="150" r="16" class="nd"/><text x="160" y="154" class="t mono" text-anchor="middle" font-size="11">F(3)</text>
+      <text x="146" y="138" class="t newlab" font-size="10" text-anchor="end">=2</text>
+      <circle cx="100" cy="210" r="16" class="nd"/><text x="100" y="214" class="t mono" text-anchor="middle" font-size="11">F(2)</text>
+      <text x="86" y="198" class="t newlab" font-size="10" text-anchor="end">=1</text>
+      <circle cx="60" cy="270" r="16" class="nd"/><text x="60" y="274" class="t mono" text-anchor="middle" font-size="11">F(1)</text>
+      <text x="46" y="258" class="t newlab" font-size="10" text-anchor="end">=1</text>
+      <circle cx="140" cy="270" r="16" class="nd"/><text x="140" y="274" class="t mono" text-anchor="middle" font-size="11">F(0)</text>
+      <text x="154" y="258" class="t newlab" font-size="10">=0</text>
+
+      <!-- cache hits -->
+      <circle cx="220" cy="210" r="16" class="nd newnd"/><text x="220" y="214" class="t mono" text-anchor="middle" font-size="11">F(1)</text>
+      <text x="234" y="198" class="t newlab" font-size="10">hit</text>
+      <circle cx="340" cy="150" r="16" class="nd newnd"/><text x="340" y="154" class="t mono" text-anchor="middle" font-size="11">F(2)</text>
+      <text x="354" y="138" class="t newlab" font-size="10">hit</text>
+      <circle cx="560" cy="90" r="16" class="nd newnd"/><text x="560" y="94" class="t mono" text-anchor="middle" font-size="11">F(3)</text>
+      <text x="574" y="78" class="t newlab" font-size="10">hit</text>
+
+      <!-- skipped nodes -->
+      <circle cx="300" cy="210" r="16" class="nd dim"/><text x="300" y="214" class="t mono" text-anchor="middle" font-size="11" opacity=".35">F(1)</text>
+      <circle cx="380" cy="210" r="16" class="nd dim"/><text x="380" y="214" class="t mono" text-anchor="middle" font-size="11" opacity=".35">F(0)</text>
+      <circle cx="500" cy="150" r="16" class="nd dim"/><text x="500" y="154" class="t mono" text-anchor="middle" font-size="11" opacity=".35">F(2)</text>
+      <circle cx="620" cy="150" r="16" class="nd dim"/><text x="620" y="154" class="t mono" text-anchor="middle" font-size="11" opacity=".35">F(1)</text>
+      <circle cx="460" cy="210" r="16" class="nd dim"/><text x="460" y="214" class="t mono" text-anchor="middle" font-size="11" opacity=".35">F(1)</text>
+      <circle cx="540" cy="210" r="16" class="nd dim"/><text x="540" y="214" class="t mono" text-anchor="middle" font-size="11" opacity=".35">F(0)</text>
+
+      <text x="500" y="262" class="t small" text-anchor="middle">faded = never runs; the answer came from the cache</text>
+      <text x="340" y="310" class="t small" text-anchor="middle">6 computations + 3 cache hits = 9 calls instead of 15; n = 50: 99 calls instead of ~20 billion</text>
+    </svg>
+    <figcaption><b>With a cache, the tree collapses to its left spine.</b> Every <code>n</code> from 0 to 5 is computed once (plain nodes), and the three repeated calls (orange rings) are answered from memory without opening their subtrees. Calls become O(n) and the stack is still O(n).</figcaption>
+  </figure>
+</section>
+
+<!-- ============================ COMPLEXITY ============================ -->
+<section id="complexity">
+  <h2><span class="num">5</span>Big-O summary</h2>
+  <p>Say the time and the space separately, and say where the space comes from ("the call stack") even when there is no data structure.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Function</th><th>Shape</th><th>Time</th><th>Space</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td><code>factorial(n)</code> recursive</td><td>one branch</td><td class="big fast">O(n)</td><td class="big slow">O(n)</td><td>n calls, O(1) each; n frames on the stack at the peak</td></tr>
+      <tr><td><code>factorial_iter(n)</code></td><td>loop</td><td class="big fast">O(n)</td><td class="big fast">O(1)</td><td>same n steps, two variables, no stack</td></tr>
+      <tr><td><code>fibonacci(n)</code> plain recursive</td><td>two branches</td><td class="big slow">O(2^n)</td><td class="big slow">O(n)</td><td>up to 2^(n+1) - 1 calls; stack depth is the tree height, n</td></tr>
+      <tr><td><code>fib_memo(n)</code> with <code>lru_cache</code></td><td>two branches + cache</td><td class="big fast">O(n)</td><td class="big slow">O(n)</td><td>each n computed once; cache and stack both hold n entries</td></tr>
+      <tr><td><code>fib_iter(n)</code> bottom-up</td><td>loop</td><td class="big fast">O(n)</td><td class="big fast">O(1)</td><td>keeps only the last two values</td></tr>
+      <tr><td>General rule: one branch, depth d</td><td></td><td class="big fast">O(d)</td><td class="big slow">O(d)</td><td>a chain of d calls</td></tr>
+      <tr><td>General rule: b branches, depth d</td><td></td><td class="big slow">O(b^d)</td><td class="big slow">O(d)</td><td>a tree with b^d leaves; only one path is on the stack at a time</td></tr>
+    </tbody>
+  </table></div>
+  <p>The last two rows are the ones to memorize. Time counts every node in the call tree. Space counts the height of that tree, because that is the most frames that are ever alive together.</p>
+</section>
+
+<!-- ============================ MISTAKES ============================ -->
+<section id="mistakes">
+  <h2><span class="num">6</span>Mistakes to watch for</h2>
+  <div class="mistake">
+    <div>
+      <div class="bad">Missing or unreachable base case</div>
+      <p>No <code>if n &lt;= 1: return</code>, or a base case that the input can skip past (checking <code>n == 0</code> when n can start negative). Result: <code>RecursionError</code>. Write the base case first, and make sure every recursive call moves toward it.</p>
+    </div>
+    <div>
+      <div class="bad">Forgetting to return the recursive call</div>
+      <p><code>factorial(n - 1)</code> on its own line does the work and throws the result away; the function returns <code>None</code>. Write <code>return n * factorial(n - 1)</code>. Same for helpers: if the helper computes the answer, return it from the outer function too.</p>
+    </div>
+    <div>
+      <div class="bad">Wrong base value</div>
+      <p><code>factorial</code> returns 1 at the base case (the empty product). <code>fibonacci</code> returns <code>n</code> (0 for 0, 1 for 1). <code>sum</code> returns 0. Returning the wrong "nothing" value shifts every answer.</p>
+    </div>
+    <div>
+      <div class="bad">Tracing the whole tree in your head</div>
+      <p>You will get lost by depth 3. Trust the recursive call: assume <code>fibonacci(n - 1)</code> is correct and only check that the base case and the combine step are right. Trace on paper only when debugging.</p>
+    </div>
+    <div>
+      <div class="bad">Saying "O(1) space" for recursion</div>
+      <p>There is no list, but there is a call stack. One-branch recursion of depth n is O(n) space. Interviewers listen for this.</p>
+    </div>
+    <div>
+      <div class="bad">Slicing instead of indexing</div>
+      <p><code>helper(nums[1:])</code> copies the rest of the list on every call: O(n²) time and memory. Pass an index <code>i + 1</code> and keep one list.</p>
+    </div>
+    <div>
+      <div class="bad">Using plain recursion on fibonacci-shaped problems</div>
+      <p>If the same sub-problem appears twice in the tree (climbing stairs, fibonacci, grid paths), plain recursion is exponential. Add <code>@lru_cache</code> or a memo dictionary, or go bottom-up.</p>
+    </div>
+    <div>
+      <div class="bad">Mutable default argument as a memo</div>
+      <p><code>def fib(n, memo={})</code> works but the dictionary is shared across every call of the function forever, including different test cases. Prefer <code>@lru_cache</code>, or create the dictionary in the outer function and pass it to a helper.</p>
+    </div>
+    <div>
+      <div class="bad">Deep recursion on big linear inputs</div>
+      <p>A recursive walk over a 100,000-node linked list crosses Python's 1000-frame limit. For long chains use a loop; keep recursion for trees, where depth is usually log n.</p>
+    </div>
+  </div>
+
+  <div class="cheat">
+    <h3>Interview one-liners</h3>
+    <ul>
+      <li>"A recursive function has a base case that answers directly and a recursive case that calls itself on a smaller input."</li>
+      <li>"The sub-problems are solved in reverse order: the base case finishes first, the original call finishes last."</li>
+      <li>"Recursion is not free in space: each call adds a frame to the call stack, so depth n means O(n) space."</li>
+      <li>"One-branch recursion of depth n is O(n) time. Two-branch recursion of depth n is O(2^n) time because the call tree has about 2^n nodes; the last level dominates the geometric series."</li>
+      <li>"Space is the height of the call tree, not its size; only one root-to-leaf path is on the stack at a time."</li>
+      <li>"Plain recursive fibonacci recomputes the same sub-problems; memoization makes each n cost once, so O(n)."</li>
+      <li>"Any recursion can be made iterative with an explicit stack; for one-branch cases a loop with an accumulator is enough."</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================ PRACTICE ============================ -->
+<section id="practice">
+  <h2><span class="num">7</span>Practice, in this order</h2>
+  <p>For each one, write the base case first, say the time and space out loud, then code it. Several of these have a loop solution; do the recursive version anyway, that is what this page trains.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Problem</th><th>Move it trains</th><th>Level</th></tr></thead>
+    <tbody>
+      <tr><td>509</td><td>Fibonacci Number</td><td>two-branch recursion, then add <code>@lru_cache</code>, then bottom-up loop</td><td>Easy</td></tr>
+      <tr><td>1137</td><td>N-th Tribonacci Number</td><td>three-branch recurrence; memo or loop with three variables</td><td>Easy</td></tr>
+      <tr><td>70</td><td>Climbing Stairs</td><td>fibonacci in disguise; recognize the recurrence <code>f(n) = f(n-1) + f(n-2)</code></td><td>Easy</td></tr>
+      <tr><td>344</td><td>Reverse String (recursive version)</td><td>helper with two pointers <code>l, r</code>; base case <code>l &gt;= r</code></td><td>Easy</td></tr>
+      <tr><td>231</td><td>Power of Two</td><td>one-branch on <code>n // 2</code>; base cases <code>n == 1</code> and odd n</td><td>Easy</td></tr>
+      <tr><td>206</td><td>Reverse Linked List (recursive version)</td><td>trust the call: reverse the rest, then fix two pointers on the way up</td><td>Easy</td></tr>
+      <tr><td>21</td><td>Merge Two Sorted Lists (recursive version)</td><td>base case: one list empty; pick the smaller head, recurse on the rest</td><td>Easy</td></tr>
+      <tr><td>404</td><td>Sum of Left Leaves</td><td>two-branch recursion on a tree; combine <code>left + right</code></td><td>Easy</td></tr>
+      <tr><td>24</td><td>Swap Nodes in Pairs (recursive version)</td><td>one-branch on <code>head.next.next</code>; rewire on the way up</td><td>Medium</td></tr>
+      <tr><td>50</td><td>Pow(x, n)</td><td>halve the input: <code>power(x, n // 2)</code> squared, O(log n) depth; handle negative n</td><td>Medium</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>The recursive reverse for 206, since it is the one people find hardest to picture:</p>
+<pre><code><span class="k">def</span> reverseList(head):
+    <span class="k">if</span> head <span class="k">is None or</span> head.next <span class="k">is None</span>:   <span class="c"># base case: empty or single node</span>
+        <span class="k">return</span> head
+    new_head = reverseList(head.next)       <span class="c"># trust: reverses everything after head</span>
+    head.next.next = head                   <span class="c"># the old "next" now points back at head</span>
+    head.next = <span class="k">None</span>                        <span class="c"># head becomes the tail</span>
+    <span class="k">return</span> new_head                         <span class="c"># same new head is passed all the way up</span></code></pre>
+
+  <p><strong>Your next step today:</strong> LeetCode 509. Write the plain recursive version, count the calls for n = 30 with a counter, then add <code>@lru_cache</code> and count again.</p>
+</section>
+
+<!-- ============================ QUIZ ============================ -->
+<section id="quiz">
+  <h2><span class="num">8</span>Self-check</h2>
+  <p>Answer out loud before opening. If you cannot answer in one breath, reread that section.</p>
+
+  <details><summary><span class="q">Q1</span>What are the two parts of every recursive function, and what happens if one is missing?</summary><div><p>The base case (answer directly, no call) and the recursive case (call yourself on a smaller input). Without a base case the calls never stop and the program crashes with a stack overflow; in Python, <code>RecursionError</code>.</p></div></details>
+
+  <details><summary><span class="q">Q2</span>Why does the lesson say recursion solves the sub-problems "in reverse order"?</summary><div><p>Because the biggest call starts first but finishes last. <code>factorial(5)</code> is the first call made and the last to return; <code>factorial(1)</code> is the last call made and the first to return. All the multiplication happens on the way back up.</p></div></details>
+
+  <details><summary><span class="q">Q3</span>Trace it: <code>factorial(4)</code>. List the calls in the order they are made, then the returns in the order they happen.</summary><div><p>Calls: factorial(4), factorial(3), factorial(2), factorial(1). Returns: factorial(1) → 1, factorial(2) → 2 × 1 = 2, factorial(3) → 3 × 2 = 6, factorial(4) → 4 × 6 = 24.</p></div></details>
+
+  <details><summary><span class="q">Q4</span><code>factorial</code> creates no list or dictionary. Why is its space complexity O(n)?</summary><div><p>Each call adds a frame to the call stack (the implicit stack the language keeps), and all n frames are alive at once when the base case runs. n frames → O(n) space.</p></div></details>
+
+  <details><summary><span class="q">Q5</span>What is the time and space of the iterative factorial, and why is it better here?</summary><div><p>O(n) time, O(1) space: a loop with two variables and no call stack. For a straight-line problem like factorial the loop is both simpler and cheaper. Recursion earns its keep on branching problems like trees.</p></div></details>
+
+  <details><summary><span class="q">Q6</span>What does Python do at 1000 nested calls, and what can you change?</summary><div><p>It raises <code>RecursionError: maximum recursion depth exceeded</code>. <code>sys.setrecursionlimit(k)</code> raises the limit. It helps a deep but correct recursion; it does not fix a missing base case, and for very large inputs a loop or explicit stack is the real fix.</p></div></details>
+
+  <details><summary><span class="q">Q7</span>Write the recurrence relation for Fibonacci, including both base cases.</summary><div><p><code>F(0) = 0</code>, <code>F(1) = 1</code>, and <code>F(n) = F(n-1) + F(n-2)</code> for n ≥ 2. In code the base case is <code>if n &lt;= 1: return n</code>.</p></div></details>
+
+  <details><summary><span class="q">Q8</span>Trace it: <code>fibonacci(4)</code>. How many calls are made in total, what is the deepest the stack gets, and which sub-problem is computed twice?</summary><div><p>9 calls. The stack reaches 4 frames (F4, F3, F2, F1). <code>F(2)</code> is computed twice: once under <code>F(3)</code> and once directly under <code>F(4)</code>. <code>F(1)</code> is also called three times. Result: 3.</p></div></details>
+
+  <details><summary><span class="q">Q9</span>Explain, level by level, why two-branch recursion of depth n is O(2^n).</summary><div><p>Level 0 has 1 node, level 1 has 2, level 2 has 4: each level can hold twice the previous, up to 2^n at level n. The total is the geometric series 1 + 2 + 4 + ... + 2^n = 2^(n+1) - 1. The last term dominates, so the node count is O(2^n), and each node is O(1) work.</p></div></details>
+
+  <details><summary><span class="q">Q10</span>The fibonacci call tree has about 2^n nodes. Why is the space only O(n)?</summary><div><p>Space is the maximum number of frames alive at one moment, which is one root-to-leaf path, of length at most n. Finished branches have already been popped off the stack.</p></div></details>
+
+  <details><summary><span class="q">Q11</span>In one sentence, what does memoization change about the fibonacci tree?</summary><div><p>Each distinct n is computed once and then served from a cache, so the repeated subtrees never run; calls drop from O(2^n) to O(n). Details on the DP page.</p></div></details>
+
+  <details><summary><span class="q">Q12</span>What is an accumulator, and what is different about where the work happens?</summary><div><p>An extra argument that carries the answer-so-far down into each call, like <code>helper(n - 1, acc * n)</code>. The work happens on the way down, and the base case already holds the final answer, so the way up just passes it along. That shape converts to a loop directly.</p></div></details>
+</section>
+
+<nav class="pager" aria-label="Previous and next topic">
+  <a class="prev" href="02-linked-lists.html"><small>Previous</small>Linked Lists</a>
+  <a class="next" href="04-sorting.html"><small>Next</small>Sorting</a>
+</nav>
+
+<footer>
+  Source: NeetCode "Algorithms and Data Structures for Beginners", lessons 8 (Recursion, One Branch) and 9 (Recursion, Two Branch). All Python in these notes was run and tested. Orange in every diagram marks what changed, or the value that came back.
+</footer>
+</div>
+</body>
+</html>
