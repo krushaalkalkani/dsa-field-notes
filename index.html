@@ -7,6 +7,28 @@
 <meta name="description" content="Visual study notes for the NeetCode DSA for Beginners course: 12 topics, 34 lessons, pointer-level diagrams, tested Python, Big-O tables, mistakes, practice lists and self-check quizzes.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
 <link rel="stylesheet" href="assets/style.css">
+<style>
+  /* progress tracking, index page only */
+  .topic-slot { position: relative; display: grid; }
+  /* reserve a band at the top of the card so the corner control never crowds the lesson label */
+  .topic-slot .topic-card { padding-top: 36px; }
+  .done-box {
+    position: absolute; top: 11px; right: 13px; z-index: 2;
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--muted); cursor: pointer; -webkit-user-select: none; user-select: none;
+  }
+  .done-box input { width: 14px; height: 14px; margin: 0; accent-color: var(--ptr); cursor: pointer; }
+  .done-box:hover, .done-box:focus-within { color: var(--ptr); }
+  .topic-slot.is-done .topic-card { border-color: var(--ptr); }
+  .topic-slot.is-done .done-box { color: var(--ptr); }
+  .done-count {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ptr); margin: 2px 0 10px;
+  }
+</style>
 </head>
 <body>
 
@@ -32,21 +54,22 @@
 
 <section id="map" style="padding-top:24px">
   <h2>Course map</h2>
+  <p class="done-count" id="done-count" hidden></p>
   <p>Topics build on each other in this order. Each card names the NeetCode lessons it covers.</p>
 
   <div class="topic-grid">
-    <a class="topic-card" href="topics/01-arrays.html"><div class="n">01 · LESSONS 1-4</div><h3>Arrays</h3><p>RAM, static and dynamic arrays, amortized O(1), stacks.</p><div class="lessons">RAM · Static Arrays · Dynamic Arrays · Stacks</div></a>
-    <a class="topic-card" href="topics/02-linked-lists.html"><div class="n">02 · LESSONS 5-7</div><h3>Linked Lists</h3><p>Nodes and pointers, head/tail, doubly linked, queues.</p><div class="lessons">Singly · Doubly · Queues</div></a>
-    <a class="topic-card" href="topics/03-recursion.html"><div class="n">03 · LESSONS 8-9</div><h3>Recursion</h3><p>Base case, call stack, one-branch and two-branch trees.</p><div class="lessons">Factorial · Fibonacci</div></a>
-    <a class="topic-card" href="topics/04-sorting.html"><div class="n">04 · LESSONS 10-13</div><h3>Sorting</h3><p>Insertion, merge, quick, bucket. Stability and O(n log n).</p><div class="lessons">Insertion · Merge · Quick · Bucket</div></a>
-    <a class="topic-card" href="topics/05-binary-search.html"><div class="n">05 · LESSONS 14-15</div><h3>Binary Search</h3><p>Halve the search space: on an array, on a range, on the answer.</p><div class="lessons">Search Array · Search Range</div></a>
-    <a class="topic-card" href="topics/06-trees.html"><div class="n">06 · LESSONS 16-21</div><h3>Trees</h3><p>Binary trees, BSTs, insert/remove, DFS orders, BFS, tree sets and maps.</p><div class="lessons">Binary Tree · BST · Insert/Remove · DFS · BFS · Sets and Maps</div></a>
-    <a class="topic-card" href="topics/07-backtracking.html"><div class="n">07 · LESSON 22</div><h3>Backtracking</h3><p>Choose, explore, un-choose. Tree maze and path building.</p><div class="lessons">Tree Maze</div></a>
-    <a class="topic-card" href="topics/08-heaps.html"><div class="n">08 · LESSONS 23-25</div><h3>Heap / Priority Queue</h3><p>Complete tree in an array, push, pop, heapify in O(n), heapq.</p><div class="lessons">Properties · Push and Pop · Heapify</div></a>
-    <a class="topic-card" href="topics/09-hashing.html"><div class="n">09 · LESSONS 26-27</div><h3>Hashing</h3><p>Hash maps and sets, hash functions, resizing, collisions.</p><div class="lessons">Hash Usage · Hash Implementation</div></a>
-    <a class="topic-card" href="topics/10-graphs.html"><div class="n">10 · LESSONS 28-31</div><h3>Graphs</h3><p>Matrix, adjacency matrix, adjacency list. DFS and BFS on both.</p><div class="lessons">Intro · Matrix DFS · Matrix BFS · Adjacency List</div></a>
-    <a class="topic-card" href="topics/11-dynamic-programming.html"><div class="n">11 · LESSONS 32-33</div><h3>Dynamic Programming</h3><p>Memoization and tabulation: fibonacci, unique paths.</p><div class="lessons">1-D DP · 2-D DP</div></a>
-    <a class="topic-card" href="topics/12-bit-manipulation.html"><div class="n">12 · LESSON 34</div><h3>Bit Manipulation</h3><p>AND, OR, XOR, NOT, shifts, counting bits, masks.</p><div class="lessons">Bit Operations</div></a>
+    <div class="topic-slot" data-topic="01-arrays"><a class="topic-card" href="topics/01-arrays.html"><div class="n">01 · LESSONS 1-4</div><h3>Arrays</h3><p>RAM, static and dynamic arrays, amortized O(1), stacks.</p><div class="lessons">RAM · Static Arrays · Dynamic Arrays · Stacks</div></a><label class="done-box"><input type="checkbox" aria-label="Mark Arrays done">Done</label></div>
+    <div class="topic-slot" data-topic="02-linked-lists"><a class="topic-card" href="topics/02-linked-lists.html"><div class="n">02 · LESSONS 5-7</div><h3>Linked Lists</h3><p>Nodes and pointers, head/tail, doubly linked, queues.</p><div class="lessons">Singly · Doubly · Queues</div></a><label class="done-box"><input type="checkbox" aria-label="Mark Linked Lists done">Done</label></div>
+    <div class="topic-slot" data-topic="03-recursion"><a class="topic-card" href="topics/03-recursion.html"><div class="n">03 · LESSONS 8-9</div><h3>Recursion</h3><p>Base case, call stack, one-branch and two-branch trees.</p><div class="lessons">Factorial · Fibonacci</div></a><label class="done-box"><input type="checkbox" aria-label="Mark Recursion done">Done</label></div>
+    <div class="topic-slot" data-topic="04-sorting"><a class="topic-card" href="topics/04-sorting.html"><div class="n">04 · LESSONS 10-13</div><h3>Sorting</h3><p>Insertion, merge, quick, bucket. Stability and O(n log n).</p><div class="lessons">Insertion · Merge · Quick · Bucket</div></a><label class="done-box"><input type="checkbox" aria-label="Mark Sorting done">Done</label></div>
+    <div class="topic-slot" data-topic="05-binary-search"><a class="topic-card" href="topics/05-binary-search.html"><div class="n">05 · LESSONS 14-15</div><h3>Binary Search</h3><p>Halve the search space: on an array, on a range, on the answer.</p><div class="lessons">Search Array · Search Range</div></a><label class="done-box"><input type="checkbox" aria-label="Mark Binary Search done">Done</label></div>
+    <div class="topic-slot" data-topic="06-trees"><a class="topic-card" href="topics/06-trees.html"><div class="n">06 · LESSONS 16-21</div><h3>Trees</h3><p>Binary trees, BSTs, insert/remove, DFS orders, BFS, tree sets and maps.</p><div class="lessons">Binary Tree · BST · Insert/Remove · DFS · BFS · Sets and Maps</div></a><label class="done-box"><input type="checkbox" aria-label="Mark Trees done">Done</label></div>
+    <div class="topic-slot" data-topic="07-backtracking"><a class="topic-card" href="topics/07-backtracking.html"><div class="n">07 · LESSON 22</div><h3>Backtracking</h3><p>Choose, explore, un-choose. Tree maze and path building.</p><div class="lessons">Tree Maze</div></a><label class="done-box"><input type="checkbox" aria-label="Mark Backtracking done">Done</label></div>
+    <div class="topic-slot" data-topic="08-heaps"><a class="topic-card" href="topics/08-heaps.html"><div class="n">08 · LESSONS 23-25</div><h3>Heap / Priority Queue</h3><p>Complete tree in an array, push, pop, heapify in O(n), heapq.</p><div class="lessons">Properties · Push and Pop · Heapify</div></a><label class="done-box"><input type="checkbox" aria-label="Mark Heap and Priority Queue done">Done</label></div>
+    <div class="topic-slot" data-topic="09-hashing"><a class="topic-card" href="topics/09-hashing.html"><div class="n">09 · LESSONS 26-27</div><h3>Hashing</h3><p>Hash maps and sets, hash functions, resizing, collisions.</p><div class="lessons">Hash Usage · Hash Implementation</div></a><label class="done-box"><input type="checkbox" aria-label="Mark Hashing done">Done</label></div>
+    <div class="topic-slot" data-topic="10-graphs"><a class="topic-card" href="topics/10-graphs.html"><div class="n">10 · LESSONS 28-31</div><h3>Graphs</h3><p>Matrix, adjacency matrix, adjacency list. DFS and BFS on both.</p><div class="lessons">Intro · Matrix DFS · Matrix BFS · Adjacency List</div></a><label class="done-box"><input type="checkbox" aria-label="Mark Graphs done">Done</label></div>
+    <div class="topic-slot" data-topic="11-dynamic-programming"><a class="topic-card" href="topics/11-dynamic-programming.html"><div class="n">11 · LESSONS 32-33</div><h3>Dynamic Programming</h3><p>Memoization and tabulation: fibonacci, unique paths.</p><div class="lessons">1-D DP · 2-D DP</div></a><label class="done-box"><input type="checkbox" aria-label="Mark Dynamic Programming done">Done</label></div>
+    <div class="topic-slot" data-topic="12-bit-manipulation"><a class="topic-card" href="topics/12-bit-manipulation.html"><div class="n">12 · LESSON 34</div><h3>Bit Manipulation</h3><p>AND, OR, XOR, NOT, shifts, counting bits, masks.</p><div class="lessons">Bit Operations</div></a><label class="done-box"><input type="checkbox" aria-label="Mark Bit Manipulation done">Done</label></div>
   </div>
 </section>
 
@@ -93,5 +116,60 @@
   DSA Field Notes · built by Krushal Kalkani with Claude · source course: <a href="https://neetcode.io/courses/dsa-for-beginners/0">NeetCode DSA for Beginners</a>
 </footer>
 </div>
+
+<script>
+/* Remembers which topics are marked done. Storage can throw in private mode, so every access is guarded. */
+(function () {
+  "use strict";
+  var KEY = "dsa-notes-done";
+  var slots = Array.prototype.slice.call(document.querySelectorAll(".topic-slot"));
+  var counter = document.getElementById("done-count");
+  if (!slots.length) return;
+
+  function read() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(KEY) || "[]");
+      return Array.isArray(saved) ? saved.filter(function (id) { return typeof id === "string"; }) : [];
+    } catch (err) {
+      return [];
+    }
+  }
+
+  function write(list) {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(list));
+    } catch (err) {
+      /* full or blocked storage: the page still works for this session */
+    }
+  }
+
+  function paint() {
+    slots.forEach(function (slot) {
+      var on = done.indexOf(slot.getAttribute("data-topic")) !== -1;
+      slot.querySelector("input[type=checkbox]").checked = on;
+      slot.classList.toggle("is-done", on);
+    });
+    if (counter) {
+      counter.textContent = done.length + " of " + slots.length + " done";
+      counter.hidden = false;
+    }
+  }
+
+  var ids = slots.map(function (slot) { return slot.getAttribute("data-topic"); });
+  var done = read().filter(function (id) { return ids.indexOf(id) !== -1; });
+  paint();
+
+  slots.forEach(function (slot) {
+    slot.querySelector("input[type=checkbox]").addEventListener("change", function () {
+      var id = slot.getAttribute("data-topic");
+      var at = done.indexOf(id);
+      if (this.checked && at === -1) done.push(id);
+      if (!this.checked && at !== -1) done.splice(at, 1);
+      write(done);
+      paint();
+    });
+  });
+})();
+</script>
 </body>
 </html>
