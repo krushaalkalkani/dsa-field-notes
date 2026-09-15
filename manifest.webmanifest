@@ -1,0 +1,12 @@
+{
+  "name": "DSA Field Notes",
+  "short_name": "DSA Notes",
+  "description": "Visual study notes for the NeetCode Algorithms and Data Structures for Beginners course.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F6F8FB",
+  "theme_color": "#F6F8FB",
+  "lang": "en"
+}

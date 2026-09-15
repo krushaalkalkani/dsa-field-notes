@@ -23,21 +23,30 @@ Diagram convention: teal = existing link, **orange = what changed in this step**
 
 ```
 index.html                  course map
-assets/style.css            shared styles (light + dark, phone-friendly)
-assets/nav.js               topic-page helpers: pager shortcuts and code-copy buttons
+assets/style.css            the whole visual shell (light + dark, mobile-first)
+assets/ui.js                progress bar, active section, copy buttons, Done state, [ ] paging
+manifest.webmanifest        Add to Home Screen on iOS
 topics/01-arrays.html ...   one page per topic
 topics/12-bit-manipulation.html
 checks/                     every code block on the pages, as runnable Python with asserts
 tooling/TEMPLATE.html       skeleton for a new topic page
 tooling/STYLE_GUIDE.md      writing and diagram rules for new pages
 tooling/verify_pages.py     structural check for every page (closed tags, nav anchors, dead links)
+tooling/verify_content.py   proves a redesign did not alter any note content
+tooling/verify_shell.mjs    headless layout check at phone and laptop widths
+tooling/diagnose-overflow.mjs  names any element that widens the page
 ```
+
+The pages are plain HTML and CSS with one small script. There is no build step and
+no dependency: open `index.html` in a browser and it works.
 
 ## Reading shortcuts
 
 - On the course map, tick **Done** on a card to track progress. The count sits under the heading and is kept in `localStorage`, on your machine only.
 - On a topic page, press `[` for the previous topic and `]` for the next.
-- Hover a code block and press **Copy** to take the Python without the line noise.
+- Every code block has a **Copy** button; the copied text is the Python, without the highlighting.
+- On a laptop the section list is a sticky sidebar that follows your reading position. On a phone it is a chip bar at the top, with a progress bar above it.
+- Diagrams wider than the screen scroll sideways inside their own frame, so the page itself never does.
 
 ## Verify the code
 

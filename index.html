@@ -2,33 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F6F8FB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F141A" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="DSA Notes">
+<meta name="format-detection" content="telephone=no">
 <title>DSA Field Notes</title>
 <meta name="description" content="Visual study notes for the NeetCode DSA for Beginners course: 12 topics, 34 lessons, pointer-level diagrams, tested Python, Big-O tables, mistakes, practice lists and self-check quizzes.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
 <link rel="stylesheet" href="assets/style.css">
-<style>
-  /* progress tracking, index page only */
-  .topic-slot { position: relative; display: grid; }
-  /* reserve a band at the top of the card so the corner control never crowds the lesson label */
-  .topic-slot .topic-card { padding-top: 36px; }
-  .done-box {
-    position: absolute; top: 11px; right: 13px; z-index: 2;
-    display: inline-flex; align-items: center; gap: 5px;
-    font-family: "JetBrains Mono", ui-monospace, monospace;
-    font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
-    color: var(--muted); cursor: pointer; -webkit-user-select: none; user-select: none;
-  }
-  .done-box input { width: 14px; height: 14px; margin: 0; accent-color: var(--ptr); cursor: pointer; }
-  .done-box:hover, .done-box:focus-within { color: var(--ptr); }
-  .topic-slot.is-done .topic-card { border-color: var(--ptr); }
-  .topic-slot.is-done .done-box { color: var(--ptr); }
-  .done-count {
-    font-family: "JetBrains Mono", ui-monospace, monospace;
-    font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
-    color: var(--ptr); margin: 2px 0 10px;
-  }
-</style>
+<link rel="manifest" href="manifest.webmanifest">
 </head>
 <body>
 
@@ -46,6 +31,9 @@
   <div class="crumbs"><span>NeetCode · Algorithms and Data Structures for Beginners</span></div>
 </header>
 
+<div class="layout">
+
+<div class="content">
 <header class="top">
   <div class="eyebrow">12 topics · 34 lessons · Python</div>
   <h1>DSA Field Notes</h1>
@@ -116,60 +104,8 @@
   DSA Field Notes · built by Krushal Kalkani with Claude · source course: <a href="https://neetcode.io/courses/dsa-for-beginners/0">NeetCode DSA for Beginners</a>
 </footer>
 </div>
-
-<script>
-/* Remembers which topics are marked done. Storage can throw in private mode, so every access is guarded. */
-(function () {
-  "use strict";
-  var KEY = "dsa-notes-done";
-  var slots = Array.prototype.slice.call(document.querySelectorAll(".topic-slot"));
-  var counter = document.getElementById("done-count");
-  if (!slots.length) return;
-
-  function read() {
-    try {
-      var saved = JSON.parse(localStorage.getItem(KEY) || "[]");
-      return Array.isArray(saved) ? saved.filter(function (id) { return typeof id === "string"; }) : [];
-    } catch (err) {
-      return [];
-    }
-  }
-
-  function write(list) {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(list));
-    } catch (err) {
-      /* full or blocked storage: the page still works for this session */
-    }
-  }
-
-  function paint() {
-    slots.forEach(function (slot) {
-      var on = done.indexOf(slot.getAttribute("data-topic")) !== -1;
-      slot.querySelector("input[type=checkbox]").checked = on;
-      slot.classList.toggle("is-done", on);
-    });
-    if (counter) {
-      counter.textContent = done.length + " of " + slots.length + " done";
-      counter.hidden = false;
-    }
-  }
-
-  var ids = slots.map(function (slot) { return slot.getAttribute("data-topic"); });
-  var done = read().filter(function (id) { return ids.indexOf(id) !== -1; });
-  paint();
-
-  slots.forEach(function (slot) {
-    slot.querySelector("input[type=checkbox]").addEventListener("change", function () {
-      var id = slot.getAttribute("data-topic");
-      var at = done.indexOf(id);
-      if (this.checked && at === -1) done.push(id);
-      if (!this.checked && at !== -1) done.splice(at, 1);
-      write(done);
-      paint();
-    });
-  });
-})();
-</script>
+</div>
+</div>
+<script src="assets/ui.js" defer></script>
 </body>
 </html>

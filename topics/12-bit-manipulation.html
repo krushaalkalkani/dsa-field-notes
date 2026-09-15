@@ -2,11 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F6F8FB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F141A" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="DSA Notes">
+<meta name="format-detection" content="telephone=no">
 <title>Bit Manipulation · DSA Field Notes</title>
 <meta name="description" content="Bits, truth tables, shifts, counting 1 bits, masks, XOR tricks and bitmask sets - box diagrams, tested Python, Big-O, mistakes, practice, self-check.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
 <link rel="stylesheet" href="../assets/style.css">
+<link rel="manifest" href="../manifest.webmanifest">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -24,13 +31,10 @@
   <a class="brand" href="../index.html">DSA <span>Field Notes</span></a>
   <div class="crumbs"><a href="../index.html">Course map</a> <span>/</span> <span>12 Bit Manipulation</span></div>
 </header>
-<header class="top">
-  <div class="eyebrow">NeetCode · DSA for Beginners · Lesson 34</div>
-  <h1>Bit Manipulation Field Notes</h1>
-  <p class="lede">Bits, the five operators, shifting, and the tricks built on them: count the 1s, clear the lowest bit, cancel pairs with XOR, use an integer as a set. Every diagram shows the bits as boxes so you can see what moved.</p>
-</header>
+<div class="layout">
 
 <nav class="sections" aria-label="Sections">
+  <a class="home" href="../index.html">Course map</a>
   <a href="#why">Why</a>
   <a href="#binary">Binary</a>
   <a href="#ops">Operators</a>
@@ -42,6 +46,13 @@
   <a href="#practice">Practice</a>
   <a href="#quiz">Self-check</a>
 </nav>
+
+<div class="content">
+<header class="top">
+  <div class="eyebrow">NeetCode · DSA for Beginners · Lesson 34</div>
+  <h1>Bit Manipulation Field Notes</h1>
+  <p class="lede">Bits, the five operators, shifting, and the tricks built on them: count the 1s, clear the lowest bit, cancel pairs with XOR, use an integer as a set. Every diagram shows the bits as boxes so you can see what moved.</p>
+</header>
 
 <!-- ============================ WHY ============================ -->
 <section id="why">
@@ -823,6 +834,8 @@ isPowerOfTwo(<span class="s">0</span>)    <span class="c"># False  the n &gt; 0 
   Source: NeetCode "Algorithms and Data Structures for Beginners", lesson 34 (Bit Manipulation). All Python in these notes was run and tested. Orange in every diagram marks the bit that changed.
 </footer>
 </div>
-<script src="../assets/nav.js" defer></script>
+</div>
+</div>
+<script src="../assets/ui.js" defer></script>
 </body>
 </html>

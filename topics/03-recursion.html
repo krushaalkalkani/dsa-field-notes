@@ -2,11 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F6F8FB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F141A" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="DSA Notes">
+<meta name="format-detection" content="telephone=no">
 <title>Recursion · DSA Field Notes</title>
 <meta name="description" content="One-branch recursion (factorial) and two-branch recursion (fibonacci) - call chains, the call stack, recursion trees, why fib is O(2^n), tested Python, mistakes, practice, self-check.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
 <link rel="stylesheet" href="../assets/style.css">
+<link rel="manifest" href="../manifest.webmanifest">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -24,13 +31,10 @@
   <a class="brand" href="../index.html">DSA <span>Field Notes</span></a>
   <div class="crumbs"><a href="../index.html">Course map</a> <span>/</span> <span>03 Recursion</span></div>
 </header>
-<header class="top">
-  <div class="eyebrow">NeetCode · DSA for Beginners · Lessons 8-9</div>
-  <h1>Recursion Field Notes</h1>
-  <p class="lede">A function that calls itself. One branch (factorial) and two branches (fibonacci). After this page you can trace any recursive call by hand, draw its call stack or call tree, say its Big-O, and turn it into a loop when the loop is simpler.</p>
-</header>
+<div class="layout">
 
 <nav class="sections" aria-label="Sections">
+  <a class="home" href="../index.html">Course map</a>
   <a href="#why">Why</a>
   <a href="#factorial">Factorial</a>
   <a href="#stack">Call stack</a>
@@ -41,6 +45,13 @@
   <a href="#practice">Practice</a>
   <a href="#quiz">Self-check</a>
 </nav>
+
+<div class="content">
+<header class="top">
+  <div class="eyebrow">NeetCode · DSA for Beginners · Lessons 8-9</div>
+  <h1>Recursion Field Notes</h1>
+  <p class="lede">A function that calls itself. One branch (factorial) and two branches (fibonacci). After this page you can trace any recursive call by hand, draw its call stack or call tree, say its Big-O, and turn it into a loop when the loop is simpler.</p>
+</header>
 
 <!-- ============================ WHY ============================ -->
 <section id="why">
@@ -831,6 +842,8 @@ fib_memo(<span class="s">50</span>)    <span class="c"># 12586269025, instantly.
   Source: NeetCode "Algorithms and Data Structures for Beginners", lessons 8 (Recursion, One Branch) and 9 (Recursion, Two Branch). All Python in these notes was run and tested. Orange in every diagram marks what changed, or the value that came back.
 </footer>
 </div>
-<script src="../assets/nav.js" defer></script>
+</div>
+</div>
+<script src="../assets/ui.js" defer></script>
 </body>
 </html>

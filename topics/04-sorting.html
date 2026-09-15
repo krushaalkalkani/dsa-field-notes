@@ -2,11 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F6F8FB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F141A" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="DSA Notes">
+<meta name="format-detection" content="telephone=no">
 <title>Sorting · DSA Field Notes</title>
 <meta name="description" content="Insertion sort, merge sort, quick sort, bucket sort - step-by-step diagrams, stability, tested Python, Big-O, mistakes, practice, self-check.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
 <link rel="stylesheet" href="../assets/style.css">
+<link rel="manifest" href="../manifest.webmanifest">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -24,13 +31,10 @@
   <a class="brand" href="../index.html">DSA <span>Field Notes</span></a>
   <div class="crumbs"><a href="../index.html">Course map</a> <span>/</span> <span>04 Sorting</span></div>
 </header>
-<header class="top">
-  <div class="eyebrow">NeetCode · DSA for Beginners · Lessons 10-13</div>
-  <h1>Sorting Field Notes</h1>
-  <p class="lede">Insertion sort, merge sort, quick sort, bucket sort. Each one traced on the exact arrays from the videos, with every swap drawn. After this page you can write all four from memory, say their Big-O, and explain which one to pick and why.</p>
-</header>
+<div class="layout">
 
 <nav class="sections" aria-label="Sections">
+  <a class="home" href="../index.html">Course map</a>
   <a href="#why">Why</a>
   <a href="#insertion">Insertion</a>
   <a href="#merge">Merge</a>
@@ -42,6 +46,13 @@
   <a href="#practice">Practice</a>
   <a href="#quiz">Self-check</a>
 </nav>
+
+<div class="content">
+<header class="top">
+  <div class="eyebrow">NeetCode · DSA for Beginners · Lessons 10-13</div>
+  <h1>Sorting Field Notes</h1>
+  <p class="lede">Insertion sort, merge sort, quick sort, bucket sort. Each one traced on the exact arrays from the videos, with every swap drawn. After this page you can write all four from memory, say their Big-O, and explain which one to pick and why.</p>
+</header>
 
 <!-- ============================ WHY ============================ -->
 <section id="why">
@@ -1203,6 +1214,8 @@ counting_sort([<span class="s">4</span>, <span class="s">1</span>, <span class="
   Source: NeetCode "Algorithms and Data Structures for Beginners", lessons 10 (Insertion Sort), 11 (Merge Sort), 12 (Quick Sort), 13 (Bucket Sort). All Python in these notes was run and tested. Orange in every diagram marks what changed in that step.
 </footer>
 </div>
-<script src="../assets/nav.js" defer></script>
+</div>
+</div>
+<script src="../assets/ui.js" defer></script>
 </body>
 </html>

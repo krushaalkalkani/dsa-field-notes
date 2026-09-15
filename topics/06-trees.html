@@ -2,11 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F6F8FB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F141A" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="DSA Notes">
+<meta name="format-detection" content="telephone=no">
 <title>Trees · DSA Field Notes</title>
 <meta name="description" content="Binary trees, binary search trees, BST insert and remove, depth-first and breadth-first search, tree sets and maps - diagrams, trace tables, tested Python, Big-O, mistakes, practice, self-check.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
 <link rel="stylesheet" href="../assets/style.css">
+<link rel="manifest" href="../manifest.webmanifest">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -24,13 +31,10 @@
   <a class="brand" href="../index.html">DSA <span>Field Notes</span></a>
   <div class="crumbs"><a href="../index.html">Course map</a> <span>/</span> <span>06 Trees</span></div>
 </header>
-<header class="top">
-  <div class="eyebrow">NeetCode · DSA for Beginners · Lessons 16-21</div>
-  <h1>Trees Field Notes</h1>
-  <p class="lede">Binary trees, binary search trees, insert and remove, the three depth-first orders, breadth-first search, and tree-backed sets and maps. Every diagram uses the same two trees as the NeetCode videos, so you can trace along.</p>
-</header>
+<div class="layout">
 
 <nav class="sections" aria-label="Sections">
+  <a class="home" href="../index.html">Course map</a>
   <a href="#why">Why</a>
   <a href="#binary">Binary trees</a>
   <a href="#bst">BST</a>
@@ -44,6 +48,13 @@
   <a href="#practice">Practice</a>
   <a href="#quiz">Self-check</a>
 </nav>
+
+<div class="content">
+<header class="top">
+  <div class="eyebrow">NeetCode · DSA for Beginners · Lessons 16-21</div>
+  <h1>Trees Field Notes</h1>
+  <p class="lede">Binary trees, binary search trees, insert and remove, the three depth-first orders, breadth-first search, and tree-backed sets and maps. Every diagram uses the same two trees as the NeetCode videos, so you can trace along.</p>
+</header>
 
 <!-- ============================ WHY ============================ -->
 <section id="why">
@@ -1184,6 +1195,8 @@ list(treemap.keys())    <span class="c"># ['a', 'b', 'c']  - always sorted</span
   Source: NeetCode "Algorithms and Data Structures for Beginners", lessons 16 (Binary Trees), 17 (Binary Search Trees), 18 (BST Insert and Remove), 19 (Depth-First Search), 20 (Breadth-First Search), 21 (BST Sets and Maps). All Python in these notes was run and tested. Orange in every diagram marks what changed or the order of visits.
 </footer>
 </div>
-<script src="../assets/nav.js" defer></script>
+</div>
+</div>
+<script src="../assets/ui.js" defer></script>
 </body>
 </html>

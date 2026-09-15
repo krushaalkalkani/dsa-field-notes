@@ -2,11 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F6F8FB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F141A" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="DSA Notes">
+<meta name="format-detection" content="telephone=no">
 <title>Backtracking · DSA Field Notes</title>
 <meta name="description" content="Backtracking on a binary tree: canReachLeaf, leafPath with append and pop, the choose-explore-unchoose template, subsets, permutations, combinations, Big-O, mistakes, practice, self-check.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
 <link rel="stylesheet" href="../assets/style.css">
+<link rel="manifest" href="../manifest.webmanifest">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -24,13 +31,10 @@
   <a class="brand" href="../index.html">DSA <span>Field Notes</span></a>
   <div class="crumbs"><a href="../index.html">Course map</a> <span>/</span> <span>07 Backtracking</span></div>
 </header>
-<header class="top">
-  <div class="eyebrow">NeetCode · DSA for Beginners · Lesson 22</div>
-  <h1>Backtracking Field Notes</h1>
-  <p class="lede">Try a choice, go deeper, and if it leads nowhere, undo the choice and try the next one. One tree problem teaches the whole idea. The same three lines then solve subsets, permutations, and combinations.</p>
-</header>
+<div class="layout">
 
 <nav class="sections" aria-label="Sections">
+  <a class="home" href="../index.html">Course map</a>
   <a href="#why">Why</a>
   <a href="#reach">Reach a leaf</a>
   <a href="#path">Build the path</a>
@@ -41,6 +45,13 @@
   <a href="#practice">Practice</a>
   <a href="#quiz">Self-check</a>
 </nav>
+
+<div class="content">
+<header class="top">
+  <div class="eyebrow">NeetCode · DSA for Beginners · Lesson 22</div>
+  <h1>Backtracking Field Notes</h1>
+  <p class="lede">Try a choice, go deeper, and if it leads nowhere, undo the choice and try the next one. One tree problem teaches the whole idea. The same three lines then solve subsets, permutations, and combinations.</p>
+</header>
 
 <!-- ============================ WHY ============================ -->
 <section id="why">
@@ -702,6 +713,8 @@ combinations(<span class="s">4</span>, <span class="s">2</span>)   <span class="
   Source: NeetCode "Algorithms and Data Structures for Beginners", lesson 22 (Backtracking, Tree Maze). All Python in these notes was run and tested. Orange in every diagram marks the path found or the value that changed.
 </footer>
 </div>
-<script src="../assets/nav.js" defer></script>
+</div>
+</div>
+<script src="../assets/ui.js" defer></script>
 </body>
 </html>
