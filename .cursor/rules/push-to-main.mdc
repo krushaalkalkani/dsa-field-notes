@@ -1,0 +1,8 @@
+---
+description: Push this repo straight to main
+alwaysApply: true
+---
+
+For this project only, commit on `main` and push to `origin/main`.
+
+Do not create a feature branch. Do not open a pull request. GitHub Pages publishes from `main`.
